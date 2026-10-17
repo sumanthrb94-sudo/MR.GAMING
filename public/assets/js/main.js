@@ -5,9 +5,9 @@
  * FIFA Tournament System, Live FOMO Toasts & Futuristic UI FX
  */
 
-// Global Configuration (Indian Franchise: 1 PS5 + 1 Xbox Setup)
+// Global Configuration (MR. GAMING Lounge at MR. Sandwich: 1 PS5 + 1 Xbox Setup)
 const LOUNGE_CONFIG = {
-  brandName: "MR. GAMING by MR. Sandwich",
+  brandName: "MR. GAMING (Located at MR. Sandwich)",
   whatsappNumber: "919876543210", // Indian franchise WhatsApp number (+91)
   currencySymbol: "₹",
   tournamentPrizePool: "₹25,000",
@@ -248,7 +248,7 @@ const aiChatResponses = [
   },
   {
     triggers: ['location', 'where', 'address', 'timing', 'open'],
-    reply: `📍 *MR. GAMING by MR. Sandwich (India):*%0AWe are located at Plot 42, Cyber Gaming Hub, 2nd Floor, Near Metro Station. Open daily from *11:00 AM till Midnight* (open till 2:00 AM on weekends)!`
+    reply: `📍 *MR. GAMING (Located at MR. Sandwich):*%0AWe are located inside MR. Sandwich at Plot 42, Cyber Gaming Hub, 2nd Floor, Near Metro Station. Open daily from *11:00 AM till Midnight* (open till 2:00 AM on weekends)!`
   }
 ];
 
