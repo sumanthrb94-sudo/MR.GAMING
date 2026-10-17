@@ -1,7 +1,7 @@
 /**
  * MR. GAMING x MR. SANDWICH LOUNGE (INDIA)
  * Exclusive Boutique Gaming Room: 1x PS5 Station + 1x Xbox Series X Station
- * Interactive Engine: WhatsApp AI Concierge, Slot Booking Calculator in INR (₹),
+ * Interactive Engine: WhatsApp Booking, Slot Booking Calculator in INR (₹),
  * FIFA Tournament System, Live FOMO Toasts & Futuristic UI FX
  */
 
@@ -251,125 +251,43 @@ function recalculatePrice() {
 }
 
 function sendBookingToWhatsApp(customNote = '') {
-  const text = `🎮 *MR. GAMING LOUNGE RESERVATION (INDIA)* 🥪%0A%0A` +
-    `• *Station:* ${calculatorState.consoleName}%0A` +
-    `• *Duration:* ${calculatorState.durationHours} Hour(s)%0A` +
-    (calculatorState.consoleType === 'both' ? `• *Players:* Squad (up to 4)%0A` : `• *Players:* ${calculatorState.players}%0A`) +
-    `• *MR. Sandwich Food:* ${calculatorState.sandwichName}%0A` +
-    `• *Estimated Total:* ₹${calculatorState.computedTotal} (INR)%0A` +
-    `• *Gamer Perk:* 10% off MR. Sandwich food & drinks%0A` +
-    (customNote ? `• *Note:* ${encodeURIComponent(customNote)}%0A%0A` : `%0A`) +
-    `*Hey Meta WhatsApp AI Concierge, is this station free right now? Please confirm booking!*`;
+  const lines = [
+    '🎮 *MR. GAMING BOOKING* 🥪',
+    '',
+    `• *Station:* ${calculatorState.consoleName}`,
+    `• *Duration:* ${calculatorState.durationHours} Hour(s)`,
+    calculatorState.consoleType === 'both' ? '• *Players:* Squad (up to 4)' : `• *Players:* ${calculatorState.players}`,
+    `• *MR. Sandwich Food:* ${calculatorState.sandwichName}`,
+    `• *Estimated Total:* ₹${calculatorState.computedTotal}`,
+    '• *Gamer Perk:* 10% off MR. Sandwich food & drinks'
+  ];
+  if (customNote) lines.push(`• *Note:* ${customNote}`);
+  lines.push('', '*Hi MR. GAMING, is this station free? Please confirm my booking!*');
 
-  const url = `https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${text}`;
-  window.open(url, '_blank');
+  openWhatsApp(lines.join('\n'));
 }
 
 // ==========================================
-// 3. META WHATSAPP AI ASSISTANT SIMULATOR (1 PS5 + 1 XBOX)
+// 3. WHATSAPP LINKS (floating button + chat preview pills)
 // ==========================================
-const aiChatResponses = [
-  {
-    triggers: ['slot', 'available', 'ps5', 'xbox', 'station', 'setup', 'booth', 'timing'],
-    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0ATell us *what time* you're coming and *how many players*, and we'll confirm which station is free.%0AHourly rate is *₹199/hr per person*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
-  },
-  {
-    triggers: ['fifa', 'tournament', 'championship', 'prize', 'ea fc'],
-    reply: `⚽ *MR. GAMING FIFA CUP — COMING SOON!* 🏆%0A• Head-to-head matches on our PS5 & Xbox stations.%0A• Date, entry fee & prizes will be announced soon.%0A• Reply with your Gamer Tag to join the waitlist and hear first!`
-  },
-  {
-    triggers: ['sandwich', 'food', 'menu', 'eat', 'burger', 'shake', 'price'],
-    reply: `🥪 *MR. Sandwich 100% PURE VEG Favorites:*%0A1. *Mr. Pizza Paneer Sub* - ₹279%0A2. *Paneer Pizza* - ₹249%0A3. *Double Trouble Burger* - ₹170%0A4. *Peri Peri Cheese Corn Nuggets (8 pcs)* - ₹169%0A5. *Loaded Fries* - ₹159%0A6. *Oreo Shake* - ₹129%0A🎮 Console bookers get *10% off* all food & drinks. Served right at your station!`
-  },
-  {
-    triggers: ['both', 'room', 'private', 'squad', 'party'],
-    reply: `👑 *Private Gaming Den Takeover!*%0AYes! You can book *BOTH the PS5 and Xbox Series X together* for up to *4 players* at *₹699/hr* (min 2 hrs) — just ₹175 per person, and the whole room is yours. Plus 10% off all food & drinks!`
-  },
-  {
-    triggers: ['location', 'where', 'address', 'timing', 'open', 'hyderabad', 'place', 'map', 'directions'],
-    reply: `📍 *MR. GAMING (Inside MR. Sandwich Pure Veg) - Hyderabad:*%0AWe are at 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana - 500032.%0A🗺️ *Google Maps Directions:* https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6%0AOpen daily! Walk-ins welcome or text me here to reserve Station 01 (PS5) or Station 02 (Xbox)!`
-  }
-];
+function openWhatsApp(message) {
+  const url = `https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
+}
 
 function initWhatsAppWidget() {
   const triggerBtn = document.getElementById('floating-wa-trigger');
-  const chatWindow = document.getElementById('wa-chat-window');
-  const closeBtn = document.getElementById('wa-close-btn');
-  const sendBtn = document.getElementById('wa-send-btn');
-  const inputField = document.getElementById('wa-input-text');
-  const messagesContainer = document.getElementById('wa-messages-container');
-
-  if (!triggerBtn || !chatWindow) return;
-
-  triggerBtn.addEventListener('click', () => {
-    sfx.playClick();
-    chatWindow.classList.toggle('open');
-    const badge = document.getElementById('wa-unread-badge');
-    if (badge) badge.style.display = 'none';
-    if (chatWindow.classList.contains('open')) {
-      inputField && inputField.focus();
-    }
-  });
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
+  if (triggerBtn) {
+    triggerBtn.addEventListener('click', () => {
       sfx.playClick();
-      chatWindow.classList.remove('open');
-    });
-  }
-
-  function appendMessage(text, isSent = false) {
-    const bubble = document.createElement('div');
-    bubble.className = `chat-bubble ${isSent ? 'bubble-sent' : 'bubble-received'}`;
-    bubble.innerHTML = text.replace(/%0A/g, '<br>').replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-    messagesContainer.appendChild(bubble);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  function handleSend() {
-    const userText = inputField.value.trim();
-    if (!userText) return;
-
-    appendMessage(userText, true);
-    inputField.value = '';
-    sfx.playClick();
-
-    const typingBubble = document.createElement('div');
-    typingBubble.className = 'chat-bubble bubble-received';
-    typingBubble.innerHTML = '<em>MR. Bot is typing... ⚡</em>';
-    messagesContainer.appendChild(typingBubble);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    setTimeout(() => {
-      typingBubble.remove();
-      const lower = userText.toLowerCase();
-      let matched = aiChatResponses.find(item => item.triggers.some(t => lower.includes(t)));
-
-      if (matched) {
-        appendMessage(matched.reply, false);
-      } else {
-        appendMessage(`Hey gamer! I'm *MR. Bot*, your Meta WhatsApp AI concierge for MR. GAMING in Hyderabad (located inside MR. Sandwich Pure Veg). We have *1 dedicated PS5 station* and *1 Xbox Series X station*. I can check console availability, join the FIFA tournament waitlist, provide Google Maps directions, or order fresh melts. Chat with us on WhatsApp anytime!`, false);
-      }
-      sfx.playBleep(800, 0.08);
-    }, 850);
-  }
-
-  if (sendBtn) {
-    sendBtn.addEventListener('click', handleSend);
-  }
-
-  if (inputField) {
-    inputField.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleSend();
+      openWhatsApp("Hi MR. GAMING! I'd like to book a console.");
     });
   }
 
   document.querySelectorAll('.quick-action-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       sfx.playClick();
-      const prompt = pill.dataset.prompt;
-      inputField.value = prompt;
-      handleSend();
+      openWhatsApp(`Hi MR. GAMING! ${pill.dataset.prompt}`);
     });
   });
 }
