@@ -2440,6 +2440,28 @@ button {
   }
 }
 
+
+.veg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #00a859;
+  border-radius: 3px;
+  padding: 1px;
+  background: #fff;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.veg-badge::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background: #00a859;
+  border-radius: 50%;
+}
+
 </style>
   <link rel="stylesheet" href="./assets/css/style.css">
 </head>
@@ -2452,7 +2474,7 @@ button {
     <div class="ticker-content">
       <div class="ticker-live-indicator">
         <span class="pulse-dot"></span>
-        <span>LIVE ROOM STATUS: 1x PS5 (IN MATCH) • 1x XBOX SERIES X (🟢 AVAILABLE NOW)</span>
+        <span>LIVE ROOM STATUS: 1x PS5 (IN MATCH) • 1x XBOX SERIES X (🟢 AVAILABLE NOW) • 🟢 100% PURE VEG</span>
       </div>
       <div class="ticker-actions">
         <span class="ticker-highlight">🔥 FIFA INDIA CHAMPIONSHIP: ₹25,000 CASH POOL • ONLY 4 SLOTS LEFT!</span>
@@ -2475,7 +2497,7 @@ button {
           <img src="./assets/images/logo.png" alt="MR. GAMING by MR. Sandwich Logo" class="brand-logo-img">
           <div class="brand-info">
             <span class="brand-title">MR. <span>GAMING</span></span>
-            <span class="brand-sub">BY MR. SANDWICH • INDIA</span>
+            <span class="brand-sub">BY MR. SANDWICH • 100% PURE VEG (INDIA)</span>
           </div>
         </a>
 
@@ -2544,6 +2566,7 @@ button {
             <div class="hero-highlights-pills">
               <span class="pill-feature"><i class="fab fa-playstation"></i> 1x PS5 4K 120FPS OLED</span>
               <span class="pill-feature"><i class="fab fa-xbox"></i> 1x Xbox Series X 400+ Games</span>
+              <span class="pill-feature" style="color: var(--neon-green); border-color: rgba(0,255,136,0.3);"><i class="fas fa-leaf"></i> 100% Pure Veg Cafe</span>
               <span class="pill-feature"><i class="fas fa-lock"></i> Private Squad Takeover</span>
               <span class="pill-feature"><i class="fab fa-whatsapp"></i> 24/7 WhatsApp AI Booking</span>
             </div>
@@ -2854,10 +2877,10 @@ button {
     <section class="section menu-section" id="menu">
       <div class="container">
         <div class="section-header">
-          <span class="section-tag tag-orange"><i class="fas fa-utensils"></i> MR. Sandwich Franchise Menu</span>
-          <h2 class="section-title">GOURMET FUEL <span class="gradient-text-fire">FOR GAMERS</span></h2>
+          <span class="section-tag tag-green"><i class="fas fa-leaf"></i> 100% Pure Vegetarian Cafe</span>
+          <h2 class="section-title">GOURMET VEG FUEL <span class="gradient-text-fire">FOR GAMERS</span></h2>
           <p class="section-subtitle">
-            Authentic artisan sandwiches, loaded melts, and cold energy boosters. Freshly grilled, non-greasy, and crafted for maximum controller comfort.
+            Authentic MR. Sandwich 100% Pure Vegetarian artisan grilled melts, loaded paneer subs, cheesy corn toasties, and chilled energy boosters. Freshly grilled, non-greasy, and crafted for gaming comfort.
           </p>
         </div>
 
@@ -2865,9 +2888,9 @@ button {
         <div class="menu-hero-banner">
           <div class="menu-banner-content">
             <span class="section-tag tag-green"><i class="fas fa-star"></i> BESTSELLER IN INDIA</span>
-            <h3>The God-Tier Triple Cheese & Chicken Melt Combo</h3>
+            <h3>The God-Tier Triple Cheese & Paneer Melt Combo (100% Pure Veg)</h3>
             <p>
-              Piping hot golden toasted sourdough layered with aged cheddar, smoked mozzarella, grilled herb chicken, and caramelized onions. Served with seasoned peri-peri fries and a chilled Blue Lagoon Energy Frost.
+              Piping hot golden toasted sourdough layered with aged cheddar, smoked mozzarella, fresh grilled herb paneer, sweet corn, and caramelized onions. Served with seasoned peri-peri fries and a chilled Blue Lagoon Energy Frost.
             </p>
             <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;">
               <span style="font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--neon-gold);">
@@ -2912,11 +2935,11 @@ button {
           <!-- Item 2 -->
           <div class="menu-card">
             <div class="menu-card-top">
-              <h4 class="menu-item-title">Spicy Tandoori Chicken Sub</h4>
+              <h4 class="menu-item-title">Spicy Tandoori Paneer Tikka Sub</h4>
               <span class="menu-item-price">₹189</span>
             </div>
             <p class="menu-item-desc">
-              Smoked tandoori chicken tikka, mint-mayo dressing, pickled red onions, and melted cheddar inside a crusty toasted sub.
+              Smoked tandoori paneer tikka, mint-mayo dressing, pickled red onions, capsicum, and melted cheddar inside a crusty toasted sub.
             </p>
             <div class="menu-tags-row">
               <span class="food-tag">High Protein</span>
@@ -2925,7 +2948,7 @@ button {
             </div>
             <div class="menu-card-action">
               <span style="font-size: 0.82rem; color: var(--text-muted);">Ready in 10 mins</span>
-              <button class="btn-add-food" data-name="Spicy Tandoori Chicken Sub" data-price="189">
+              <button class="btn-add-food" data-name="Spicy Tandoori Paneer Sub" data-price="189">
                 <i class="fas fa-plus"></i> Add ₹189
               </button>
             </div>
@@ -3170,7 +3193,7 @@ button {
             <!-- Step 3: Add MR. Sandwich Bites & Shakes -->
             <div class="calc-step">
               <div class="calc-step-label">
-                <span class="step-num">3</span> Add MR. Sandwich Gamer Fuel
+                <span class="step-num">3</span> Add MR. Sandwich Pure Veg Bites & Shakes
               </div>
               <div class="options-pill-grid">
                 <button type="button" class="calc-option-btn calc-food-btn selected" data-combo="none" data-price="0" data-name="No Food Added">
@@ -3183,8 +3206,8 @@ button {
                   <span class="calc-option-sub">+ ₹149</span>
                 </button>
 
-                <button type="button" class="calc-option-btn calc-food-btn" data-combo="chicken" data-price="189" data-name="Spicy Tandoori Sub">
-                  <span class="calc-option-title">Tandoori Sub</span>
+                <button type="button" class="calc-option-btn calc-food-btn" data-combo="paneer-tikka" data-price="189" data-name="Tandoori Paneer Tikka Sub">
+                  <span class="calc-option-title">Tandoori Paneer</span>
                   <span class="calc-option-sub">+ ₹189</span>
                 </button>
 
@@ -3274,7 +3297,7 @@ button {
                 <i class="fas fa-utensils"></i>
                 <div>
                   <h4>Pre-Order Gourmet Sandwiches</h4>
-                  <p>Order your Makhani Paneer or Tandoori Chicken melt in advance so it arrives right as you pick up the controller.</p>
+                  <p>Order your Makhani Paneer or Tandoori Paneer melt in advance so it arrives right as you pick up the controller.</p>
                 </div>
               </li>
               <li class="wa-list-item">
@@ -3490,7 +3513,7 @@ button {
             <img src="./assets/images/logo.png" alt="MR. Gaming Logo" class="brand-logo-img">
             <div class="brand-info">
               <span class="brand-title">MR. <span>GAMING</span></span>
-              <span class="brand-sub">BY MR. SANDWICH • INDIA</span>
+              <span class="brand-sub">BY MR. SANDWICH • 100% PURE VEG (INDIA)</span>
             </div>
           </div>
           <p>
@@ -3568,7 +3591,7 @@ button {
         <div class="chat-bubble bubble-received">
           Namaste gamer! 🎮 I am <strong>MR. Bot</strong>, your automated Meta WhatsApp AI concierge.<br><br>
           We have <strong>1x PS5 Station</strong> and <strong>1x Xbox Series X Station</strong>.<br><br>
-          Want to check which console is free right now, book the <strong>₹25,000 FIFA Cup (₹299)</strong>, or order hot <strong>MR. Sandwich melts</strong>?
+          Want to check which console is free right now, book the <strong>₹25,000 FIFA Cup (₹299)</strong>, or order hot <strong>100% Pure Veg MR. Sandwich melts</strong>?
         </div>
       </div>
 

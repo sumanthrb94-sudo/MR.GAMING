@@ -235,7 +235,7 @@ const aiChatResponses = [
   },
   {
     triggers: ['sandwich', 'food', 'menu', 'eat', 'burger', 'shake', 'price'],
-    reply: `🥪 *MR. Sandwich Lounge Favorites:*%0A1. *God-Tier Triple Cheese Corn Melt* - ₹139%0A2. *Spicy Tandoori Chicken Sourdough Sub* - ₹189%0A3. *Makhani Paneer Grilled Melt* - ₹149%0A4. *Peri-Peri Loaded Cheese Fries* - ₹119%0A5. *Blue Lagoon Gamer Chiller* - ₹99%0AFreshly grilled and served right at your console station!`
+    reply: `🥪 *MR. Sandwich 100% PURE VEG Lounge Favorites:*%0A1. *God-Tier Triple Cheese Corn Melt* - ₹139%0A2. *Spicy Tandoori Paneer Tikka Sub* - ₹189%0A3. *Makhani Paneer Grilled Melt* - ₹149%0A4. *Peri-Peri Loaded Cheese Fries* - ₹119%0A5. *Blue Lagoon Gamer Chiller* - ₹99%0AFreshly grilled and served right at your console station!`
   },
   {
     triggers: ['both', 'room', 'private', 'squad', 'party'],
