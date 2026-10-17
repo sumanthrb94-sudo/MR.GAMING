@@ -1,0 +1,23 @@
+{
+  "name": "mr-gaming-mr-sandwich",
+  "version": "1.0.0",
+  "description": "MR. GAMING by MR. Sandwich - Exclusive PS5 & Xbox Gaming Room & Gourmet Cafe (India)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'Build complete'"
+  },
+  "keywords": [
+    "gaming-lounge",
+    "ps5",
+    "xbox",
+    "mr-sandwich",
+    "esports",
+    "fifa-tournament",
+    "whatsapp-ai",
+    "india"
+  ],
+  "author": "MR. GAMING",
+  "license": "MIT"
+}
