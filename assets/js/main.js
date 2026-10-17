@@ -125,6 +125,7 @@ const calculatorState = {
   consoleName: 'PlayStation 5 Station (4K 120Hz)',
   baseRatePerHour: 199,
   durationHours: 2,
+  players: 1,
   durationLabel: '2 Hours (Includes Free Garlic Fries)',
   sandwichCombo: 'none',
   sandwichPrice: 0,
@@ -161,6 +162,17 @@ function initCalculator() {
     });
   });
 
+  const playerBtns = document.querySelectorAll('.calc-players-btn');
+  playerBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      sfx.playClick();
+      playerBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      calculatorState.players = parseInt(btn.dataset.players, 10);
+      recalculatePrice();
+    });
+  });
+
   foodBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       sfx.playClick();
@@ -185,9 +197,12 @@ function initCalculator() {
 }
 
 function recalculatePrice() {
-  let gamingTotal = calculatorState.baseRatePerHour * calculatorState.durationHours;
+  // Single stations are priced per person; the room takeover is a flat room rate
+  const isRoom = calculatorState.consoleType === 'both';
+  const players = isRoom ? 1 : calculatorState.players;
+  let gamingTotal = calculatorState.baseRatePerHour * calculatorState.durationHours * players;
   if (calculatorState.isMonthlyPass) {
-    gamingTotal = 799; // Flat 6-Hour Monthly Pass rate (Save ₹395)
+    gamingTotal = 799 * players; // 6-Hour Monthly Pass, per person
   }
   const foodTotal = calculatorState.sandwichPrice;
   const subtotal = gamingTotal + foodTotal;
@@ -202,7 +217,8 @@ function recalculatePrice() {
   const elDiscount = document.getElementById('calc-summary-discount');
   const elTotal = document.getElementById('calc-summary-total');
 
-  if (elConsole) elConsole.textContent = `${calculatorState.consoleName} (${calculatorState.durationHours} hr${calculatorState.durationHours > 1 ? 's' : ''})`;
+  const playersText = isRoom ? '' : `, ${players} player${players > 1 ? 's' : ''}`;
+  if (elConsole) elConsole.textContent = `${calculatorState.consoleName} (${calculatorState.durationHours} hr${calculatorState.durationHours > 1 ? 's' : ''}${playersText})`;
   if (elGamingPrice) elGamingPrice.textContent = `₹${gamingTotal}`;
   if (elFood) elFood.textContent = calculatorState.sandwichName;
   if (elFoodPrice) elFoodPrice.textContent = foodTotal > 0 ? `₹${foodTotal}` : '₹0';
@@ -216,6 +232,7 @@ function sendBookingToWhatsApp(customNote = '') {
   const text = `🎮 *MR. GAMING LOUNGE RESERVATION (INDIA)* 🥪%0A%0A` +
     `• *Station:* ${calculatorState.consoleName}%0A` +
     `• *Duration:* ${calculatorState.durationHours} Hour(s)%0A` +
+    (calculatorState.consoleType === 'both' ? '' : `• *Players:* ${calculatorState.players}%0A`) +
     `• *MR. Sandwich Food:* ${calculatorState.sandwichName}%0A` +
     `• *Estimated Total:* ₹${calculatorState.computedTotal} (INR)%0A` +
     `• *Promo Code:* MRGAMER10 (10% VIP Discount)%0A` +
@@ -232,7 +249,7 @@ function sendBookingToWhatsApp(customNote = '') {
 const aiChatResponses = [
   {
     triggers: ['slot', 'available', 'ps5', 'xbox', 'station', 'setup', 'booth', 'timing'],
-    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0A• *PS5:* Currently in match (Free in 25 mins)%0A• *Xbox Series X:* 🟢 *AVAILABLE NOW for walk-in!*%0AHourly rate is *₹199/hr*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
+    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0A• *PS5:* Currently in match (Free in 25 mins)%0A• *Xbox Series X:* 🟢 *AVAILABLE NOW for walk-in!*%0AHourly rate is *₹199/hr per person*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
   },
   {
     triggers: ['fifa', 'tournament', 'championship', 'prize', 'ea fc'],
