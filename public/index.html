@@ -2500,7 +2500,7 @@ button {
     <div class="ticker-content">
       <div class="ticker-live-indicator">
         <span class="pulse-dot"></span>
-        <span>LIVE ROOM STATUS: 1x PS5 (IN MATCH) • 1x XBOX SERIES X (🟢 AVAILABLE NOW) • 🟢 100% PURE VEG</span>
+        <span>1x PS5 + 1x XBOX SERIES X • WHATSAPP US TO CHECK WHAT'S FREE • 🟢 100% PURE VEG</span>
       </div>
       <div class="ticker-actions">
         <span class="ticker-highlight">🎟️ BOOK A CONSOLE = 10% OFF ALL MR. SANDWICH FOOD & DRINKS</span>
@@ -2638,7 +2638,7 @@ button {
               <!-- Floating HUD Top Status -->
               <div class="hud-tag-top">
                 <i class="fas fa-satellite-dish" style="color: var(--neon-cyan);"></i>
-                <span>LIVE ROOM TELEMETRY • AIR CONDITIONED</span>
+                <span>PRIVATE ROOM • 2 STATIONS</span>
               </div>
 
               <!-- Live Interactive Pod HUD Cards (1 PS5 & 1 Xbox) -->
@@ -2648,12 +2648,12 @@ button {
                     <span class="hud-console-badge badge-ps5">STATION 01</span>
                     <div>
                       <div class="hud-pod-title">Sony PlayStation 5</div>
-                      <div class="hud-pod-game">EA FC 25 • 4K 120Hz OLED • DualSense</div>
+                      <div class="hud-pod-game">2 controllers • ₹199/hr per person</div>
                     </div>
                   </div>
-                  <div class="hud-pod-status status-active">
-                    <span class="pulse-dot pulse-orange"></span> In Match [64']
-                  </div>
+                  <a href="https://wa.me/917337230311?text=Hi!%20Which%20console%20is%20free%20right%20now%3F" target="_blank" class="hud-pod-status status-free">
+                    <i class="fab fa-whatsapp"></i> Check if free
+                  </a>
                 </div>
 
                 <div class="hud-pod-card">
@@ -2661,12 +2661,12 @@ button {
                     <span class="hud-console-badge badge-xbox">STATION 02</span>
                     <div>
                       <div class="hud-pod-title">Xbox Series X</div>
-                      <div class="hud-pod-game">Game Pass Ultimate • Black Ops 6 Ready</div>
+                      <div class="hud-pod-game">2 controllers • ₹199/hr per person</div>
                     </div>
                   </div>
-                  <div class="hud-pod-status status-free">
-                    <span class="pulse-dot"></span> 🟢 AVAILABLE NOW
-                  </div>
+                  <a href="https://wa.me/917337230311?text=Hi!%20Which%20console%20is%20free%20right%20now%3F" target="_blank" class="hud-pod-status status-free">
+                    <i class="fab fa-whatsapp"></i> Check if free
+                  </a>
                 </div>
               </div>
             </div>
@@ -3107,11 +3107,11 @@ button {
             </span>
             <h4 style="font-size: 1.4rem; color: #fff; margin: 0.3rem 0;">Want the entire gaming room for your squad?</h4>
             <p style="font-size: 0.9rem; color: #cbd5e1; margin: 0;">
-              Book <strong>both the PS5 and Xbox Series X simultaneously</strong> for ₹279/hr. The entire room is exclusively yours!
+              Both the PS5 and Xbox Series X for up to <strong>4 players</strong> at <strong>₹699/hr</strong> (min 2 hrs). That's ₹175 per person instead of ₹199, and the whole room is yours.
             </p>
           </div>
           <a href="#calculator" class="btn-primary" style="white-space: nowrap;">
-            <i class="fas fa-users"></i> Book Both (₹279/hr)
+            <i class="fas fa-users"></i> Book Squad Room (₹699/hr)
           </a>
         </div>
       </div>
@@ -3151,16 +3151,16 @@ button {
                   <span class="calc-option-sub">₹199 / hr per person</span>
                 </button>
 
-                <button type="button" class="calc-option-btn calc-console-btn" data-console="both" data-name="Private Room Takeover (Both PS5 + Xbox)" data-rate="279">
+                <button type="button" class="calc-option-btn calc-console-btn" data-console="both" data-name="Squad Room (PS5 + Xbox, up to 4 players)" data-rate="699">
                   <i class="fas fa-crown" style="color: var(--neon-gold); font-size: 1.3rem;"></i>
-                  <span class="calc-option-title">Both Consoles</span>
-                  <span class="calc-option-sub" style="color: var(--neon-gold);">₹279 / hr (Squad)</span>
+                  <span class="calc-option-title">Squad Room</span>
+                  <span class="calc-option-sub" style="color: var(--neon-gold);">₹699 / hr · up to 4 · min 2 hrs</span>
                 </button>
               </div>
             </div>
 
             <!-- Step 1b: Number of Players (pricing is per person) -->
-            <div class="calc-step">
+            <div class="calc-step" id="calc-players-step">
               <div class="calc-step-label">
                 <span class="step-num"><i class="fas fa-users"></i></span> How Many Players?
               </div>
@@ -3187,14 +3187,14 @@ button {
                   <span class="calc-option-sub">₹199 / hr per person</span>
                 </button>
 
-                <button type="button" class="calc-option-btn calc-duration-btn selected" data-hours="2" data-is-pass="false" data-label="2 Hours (+ Free Fries)">
+                <button type="button" class="calc-option-btn calc-duration-btn selected" data-hours="2" data-is-pass="false" data-label="2 Hours">
                   <span class="calc-option-title">2 Hours</span>
-                  <span class="calc-option-sub" style="color: var(--neon-green);">+ Free Fries</span>
+                  <span class="calc-option-sub">₹398 / person</span>
                 </button>
 
-                <button type="button" class="calc-option-btn calc-duration-btn" data-hours="3" data-is-pass="false" data-label="3 Hours (+ Free Drink)">
+                <button type="button" class="calc-option-btn calc-duration-btn" data-hours="3" data-is-pass="false" data-label="3 Hours">
                   <span class="calc-option-title">3 Hours</span>
-                  <span class="calc-option-sub" style="color: var(--neon-cyan);">+ Free Drink</span>
+                  <span class="calc-option-sub">₹597 / person</span>
                 </button>
 
                 <button type="button" class="calc-option-btn calc-duration-btn" data-hours="6" data-is-pass="true" data-label="6-Hour Monthly Pass (₹799 - Save ₹395!)" style="border-color: var(--neon-gold);">
@@ -3303,8 +3303,8 @@ button {
               <li class="wa-list-item">
                 <i class="fas fa-bolt"></i>
                 <div>
-                  <h4>Live Station Availability Status</h4>
-                  <p>Check in seconds if Station 1 (PS5) or Station 2 (Xbox) is occupied before heading over.</p>
+                  <h4>Check What's Free Before You Come</h4>
+                  <p>Message us your time and number of players, and we'll confirm which station is free so you never wait.</p>
                 </div>
               </li>
               <li class="wa-list-item">
@@ -3348,8 +3348,7 @@ button {
               </div>
 
               <div class="chat-bubble bubble-received">
-                🎮 <strong>Xbox Series X is AVAILABLE NOW!</strong><br>
-                Our <strong>PS5 Station</strong> is currently in match (free in 20 mins).<br><br>
+                🎮 Let me check! Tell us <strong>what time</strong> you're coming and <strong>how many players</strong>, and we'll confirm which station is free.<br><br>
                 Rate is <strong>₹199/hr per person</strong>, or get our <strong>6-Hour Monthly Pass for just ₹799</strong> (Save ₹395! Valid for 30 days).<br><br>
                 🍔 <strong>Gamer perk:</strong> Book a console and get <strong>10% off</strong> all MR. Sandwich food &amp; drinks.<br>🏆 <strong>FIFA Cup:</strong> Coming soon! Join the waitlist.
               </div>
@@ -3445,10 +3444,10 @@ button {
 
             <div style="background: rgba(0, 255, 136, 0.05); border: 1px dashed rgba(0, 255, 136, 0.3); border-radius: var(--radius-sm); padding: 1rem 1.2rem; margin-bottom: 1.2rem;">
               <h5 style="color: var(--neon-green); font-size: 0.95rem; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
-                <i class="fas fa-crown"></i> Exclusive Hyderabad Squad Takeover (₹279/hr)
+                <i class="fas fa-crown"></i> Squad Room: up to 4 players, ₹699/hr
               </h5>
               <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.4; margin: 0;">
-                Book both Station 01 (PS5) and Station 02 (Xbox Series X) together for your squad. Private room with zero outside noise + fresh 100% Pure Veg food delivery from MR. Sandwich.
+                Both consoles for your squad (min 2 hours). ₹175 per person for 4 players, and 10% off all MR. Sandwich food &amp; drinks. Great for birthdays and college groups.
               </p>
             </div>
 

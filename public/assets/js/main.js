@@ -15,7 +15,7 @@ const LOUNGE_CONFIG = {
   baseHourlyRatePS5: 199,
   monthlyPass6Hr: 799,
   baseHourlyRateXbox: 199,
-  bothConsolesRate: 279, // Private room takeover: both PS5 + Xbox together
+  bothConsolesRate: 699, // Squad room: both consoles, up to 4 players, min 2 hrs
   totalConsoles: 2 // 1 PS5, 1 Xbox
 };
 
@@ -126,7 +126,7 @@ const calculatorState = {
   baseRatePerHour: 199,
   durationHours: 2,
   players: 1,
-  durationLabel: '2 Hours (Includes Free Garlic Fries)',
+  durationLabel: '2 Hours',
   sandwichCombo: 'none',
   sandwichPrice: 0,
   sandwichName: 'No Food Added',
@@ -146,6 +146,7 @@ function initCalculator() {
       calculatorState.consoleType = btn.dataset.console;
       calculatorState.consoleName = btn.dataset.name;
       calculatorState.baseRatePerHour = parseInt(btn.dataset.rate, 10);
+      applyRoomRules();
       recalculatePrice();
     });
   });
@@ -196,6 +197,27 @@ function initCalculator() {
   recalculatePrice();
 }
 
+// Squad room: flat rate for up to 4 players, minimum 2 hours, monthly pass not valid
+function applyRoomRules() {
+  const isRoom = calculatorState.consoleType === 'both';
+  const playersStep = document.getElementById('calc-players-step');
+  if (playersStep) playersStep.style.display = isRoom ? 'none' : '';
+
+  document.querySelectorAll('.calc-duration-btn').forEach(btn => {
+    const blocked = isRoom && (btn.dataset.hours === '1' || btn.dataset.isPass === 'true');
+    btn.disabled = blocked;
+    btn.style.opacity = blocked ? '0.35' : '';
+    if (blocked && btn.classList.contains('selected')) {
+      btn.classList.remove('selected');
+      const twoHr = document.querySelector('.calc-duration-btn[data-hours="2"]');
+      twoHr.classList.add('selected');
+      calculatorState.durationHours = 2;
+      calculatorState.durationLabel = twoHr.dataset.label;
+      calculatorState.isMonthlyPass = false;
+    }
+  });
+}
+
 function recalculatePrice() {
   // Single stations are priced per person; the room takeover is a flat room rate
   const isRoom = calculatorState.consoleType === 'both';
@@ -232,7 +254,7 @@ function sendBookingToWhatsApp(customNote = '') {
   const text = `🎮 *MR. GAMING LOUNGE RESERVATION (INDIA)* 🥪%0A%0A` +
     `• *Station:* ${calculatorState.consoleName}%0A` +
     `• *Duration:* ${calculatorState.durationHours} Hour(s)%0A` +
-    (calculatorState.consoleType === 'both' ? '' : `• *Players:* ${calculatorState.players}%0A`) +
+    (calculatorState.consoleType === 'both' ? `• *Players:* Squad (up to 4)%0A` : `• *Players:* ${calculatorState.players}%0A`) +
     `• *MR. Sandwich Food:* ${calculatorState.sandwichName}%0A` +
     `• *Estimated Total:* ₹${calculatorState.computedTotal} (INR)%0A` +
     `• *Gamer Perk:* 10% off MR. Sandwich food & drinks%0A` +
@@ -249,7 +271,7 @@ function sendBookingToWhatsApp(customNote = '') {
 const aiChatResponses = [
   {
     triggers: ['slot', 'available', 'ps5', 'xbox', 'station', 'setup', 'booth', 'timing'],
-    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0A• *PS5:* Currently in match (Free in 25 mins)%0A• *Xbox Series X:* 🟢 *AVAILABLE NOW for walk-in!*%0AHourly rate is *₹199/hr per person*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
+    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0ATell us *what time* you're coming and *how many players*, and we'll confirm which station is free.%0AHourly rate is *₹199/hr per person*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
   },
   {
     triggers: ['fifa', 'tournament', 'championship', 'prize', 'ea fc'],
@@ -261,7 +283,7 @@ const aiChatResponses = [
   },
   {
     triggers: ['both', 'room', 'private', 'squad', 'party'],
-    reply: `👑 *Private Gaming Den Takeover!*%0AYes! You can book *BOTH the PS5 and Xbox Series X together* for your squad for just *₹279/hr*! You get the entire air-conditioned gaming room to yourself with zero interruption.`
+    reply: `👑 *Private Gaming Den Takeover!*%0AYes! You can book *BOTH the PS5 and Xbox Series X together* for up to *4 players* at *₹699/hr* (min 2 hrs) — just ₹175 per person, and the whole room is yours. Plus 10% off all food & drinks!`
   },
   {
     triggers: ['location', 'where', 'address', 'timing', 'open', 'hyderabad', 'place', 'map', 'directions'],

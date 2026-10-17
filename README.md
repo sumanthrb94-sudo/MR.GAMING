@@ -9,7 +9,7 @@ Hyderabad's premier private esports console gaming room located inside the **MR.
 ## ⚡ Highlights
 
 - **Tailored Console Setup**: Built around exactly **1x PS5** (Station 01) and **1x Xbox Series X** (Station 02) + Private Squad Room Takeover.
-- **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr per person**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and private squad takeover for ₹279/hr.
+- **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr per person**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and a squad room (both consoles, up to 4 players) for ₹699/hr with a 2-hour minimum.
 - **Hyderabad Location & Google Maps**: Located at 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana - 500032 with direct Google Maps integration.
 - **MR. Sandwich 100% Pure Veg Partner**: Subs, pizzas, burgers, nuggets, fries, shakes and boba drinks. Console bookers get 10% off all food & drinks.
 - **Meta WhatsApp AI Concierge**: In-page interactive chat simulator (`MR. Bot`) and direct WhatsApp deep-links (`https://wa.me/...`) for instant automated station reservations.
