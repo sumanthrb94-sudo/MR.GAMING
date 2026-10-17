@@ -1,7 +1,7 @@
 {
   "name": "mr-gaming-mr-sandwich",
   "version": "1.0.0",
-  "description": "MR. GAMING by MR. Sandwich - Exclusive PS5 & Xbox Gaming Room & Gourmet Cafe (India)",
+  "description": "MR. GAMING, private PS5 & Xbox room inside MR. Sandwich, Gachibowli",
   "private": true,
   "scripts": {
     "start": "node server.js",

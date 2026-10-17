@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MR. Sandwich · Scan for the menu (A6 table card)</title>
+<style>
+  /* A6 portrait (105 × 148 mm). Rendered by scripts/make-qr-card.mjs to PNG + PDF. */
+  @font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair.woff2") format("woff2"); font-weight: 400 900; }
+  @font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair-italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; }
+  @font-face { font-family: "Archivo"; src: url("../public/assets/fonts/archivo.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; }
+  @font-face { font-family: "Fraktur"; src: url("../public/assets/fonts/unifraktur.woff2") format("woff2"); }
+  @page { size: 105mm 148mm; margin: 0; }
+  :root { --paper: #FAF8EE; --ink: #231F1F; --ink-2: #57524C; --rule: #4A4744; --yellow: #FAC607; --red: #9E1B1B; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 105mm; height: 148mm; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: "Archivo", sans-serif; -webkit-font-smoothing: antialiased;
+    background-image: linear-gradient(rgba(35,31,31,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(35,31,31,.045) 1px, transparent 1px);
+    background-size: 5mm 5mm;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .card { position: relative; width: 105mm; height: 148mm; padding: 6mm 7mm 0; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+  .strap { width: 100%; display: flex; justify-content: space-between; font: italic 700 6.2pt/1 "Playfair", serif; letter-spacing: .04em; text-transform: uppercase; padding-bottom: 1.6mm; white-space: nowrap; }
+  .dbl { width: 100%; height: 1.9mm; border-top: .8mm solid var(--rule); border-bottom: .25mm solid var(--rule); }
+  .times { font: 400 15pt/1 "Fraktur", serif; padding: 1.6mm 0 1.2mm; }
+  .logo { width: 21mm; height: 21mm; margin-top: 4mm; }
+  .scan { margin-top: 3mm; font: italic 700 12pt/1 "Playfair", serif; color: var(--red); }
+  .title { font: 900 25pt/.95 "Playfair", serif; text-transform: uppercase; letter-spacing: -.005em; margin-top: 1mm; }
+  .qr { position: relative; margin-top: 4mm; padding: 4.4mm; background: var(--paper); border: .9mm solid var(--ink); border-radius: 5mm; }
+  .qr img { display: block; width: 39mm; height: 39mm; }
+  .qr .tab { position: absolute; left: 50%; bottom: -3.4mm; transform: translateX(-50%); background: var(--yellow); border: .6mm solid var(--ink); border-radius: 99mm; padding: 1.1mm 3.2mm; font: 800 6.4pt/1 "Archivo", sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .tag { margin-top: 6.6mm; font: italic 600 8.6pt/1.25 "Playfair", serif; text-align: center; }
+  .meta { margin-top: 1.4mm; font: 700 6pt/1 "Archivo", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+  .perk { position: absolute; left: 0; right: 0; bottom: 0; background: var(--ink); color: var(--paper); padding: 3mm 7mm 3.4mm; text-align: center; }
+  .perk b { display: block; font: 800 6pt/1 "Archivo", sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--yellow); margin-bottom: 1.2mm; }
+  .perk span { font: 500 7.6pt/1.25 "Archivo", sans-serif; }
+  .perk strong { color: var(--yellow); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="strap"><span>Whatever you're craving</span><span>We've got something for it.</span></div>
+    <div class="dbl"></div>
+    <div class="times">The Hungry Times</div>
+    <div class="dbl"></div>
+    <img class="logo" src="mr-sandwich-640.png" alt="Mr. Sandwich">
+    <p class="scan">Scan for</p>
+    <h1 class="title">The Menu</h1>
+    <div class="qr">
+      <img src="qr-menu.svg" alt="QR code: mr-gaming-rho.vercel.app/menu">
+      <span class="tab">Point your camera</span>
+    </div>
+    <p class="tag">Made to be devoured.</p>
+    <p class="meta">100% Pure Veg · Gachibowli</p>
+    <div class="perk">
+      <b>Playing at MR. GAMING?</b>
+      <span>Book a PS5 or Xbox and get <strong>10% off</strong> all food &amp; drinks.</span>
+    </div>
+  </div>
+</body>
+</html>

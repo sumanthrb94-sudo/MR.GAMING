@@ -1,71 +1,63 @@
-# 🎮 MR. GAMING (Hyderabad, India)
+# MR. GAMING · Gachibowli
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sumanthrb94-sudo/MR.GAMING)
+Website for **MR. GAMING**, a private PS5 & Xbox gaming room inside **MR. Sandwich (100% pure veg)**, 110, My Home Vihanga Rd, Gachibowli, Hyderabad 500032.
 
-Hyderabad's premier private esports console gaming room located inside the **MR. Sandwich (100% Pure Veg)** store in **Gachibowli, Hyderabad**. Built specifically around an exclusive 2-station setup (**1x PlayStation 5** and **1x Xbox Series X**) with live **INR (₹)** pricing, **WhatsApp** booking, Google Maps directions, and an **EA FC 25 FIFA Hyderabad Championship** tournament hub.
+Live: https://mr-gaming-rho.vercel.app · Menu: https://mr-gaming-rho.vercel.app/menu
 
----
+Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food menu page is what the table QR code opens.
 
-## ⚡ Highlights
+## What's in it
 
-- **Tailored Console Setup**: Built around exactly **1x PS5** (Station 01) and **1x Xbox Series X** (Station 02) + Private Squad Room Takeover.
-- **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr per person**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and a squad room (both consoles, up to 4 players) for ₹699/hr with a 2-hour minimum.
-- **Hyderabad Location & Google Maps**: Located at 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana - 500032 with direct Google Maps integration.
-- **MR. Sandwich 100% Pure Veg Partner**: Subs, pizzas, burgers, nuggets, fries, shakes and boba drinks. Console bookers get 10% off all food & drinks.
-- **WhatsApp Booking**: Direct WhatsApp deep-links (`https://wa.me/...`) with booking details pre-filled.
-- **FIFA Tournament (Coming Soon)**: Waitlist sign-up via WhatsApp.
+| Page | File | Look |
+|---|---|---|
+| Home | `public/index.html` | MR. GAMING: near-black, one lime accent from the logo, Archivo (wide/black for headlines), light + dark mode |
+| Food menu | `public/menu.html` | MR. Sandwich "The Hungry Times" newspaper style from the printed menu: cream paper, double rules, Playfair, blackletter masthead, logo yellow |
+| 404 | `public/404.html` | |
 
-- **Vercel Ready**: Pre-configured with `vercel.json` for edge caching, security headers, and instant zero-config deployments.
+Home sections: hero → stations (PS5 / Xbox) → prices → booking builder (sends a pre-filled WhatsApp message with the estimated total) → food highlights → FIFA Cup waitlist → visit.
 
----
+Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-hosted in `public/assets/`.
 
-## 🚀 How to Deploy to Vercel
+## Editing content
 
-### Option 1: Via Vercel Dashboard (Easiest)
-1. Push this repository to your GitHub account (`git push origin main`).
-2. Go to [vercel.com](https://vercel.com) and log in.
-3. Click **"Add New..."** > **"Project"**.
-4. Import your **`MR.GAMING`** repository.
-5. Keep all default settings (Framework Preset: **Other** / Root Directory: `./`).
-6. Click **"Deploy"**! Your website will be live with an SSL HTTPS domain in ~15 seconds.
+| What | Where |
+|---|---|
+| Phone / WhatsApp number, hourly rate, pass, squad room price, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
+| Full food menu and prices | `public/assets/js/menu-data.js`. Items marked `featured: true` also show on the homepage. |
+| Address, Maps link | `public/index.html` (Visit section + JSON-LD), `public/menu.html` footer |
+| Room photo | Replace `public/assets/images/room-800.webp` and `room-1376.webp` (16:7 crop works best), then delete the "Representative image" caption in `index.html` |
 
-### Option 2: Via Vercel CLI (From Terminal)
-Run the following command from the project root:
+## Table QR card (MR. Sandwich menu)
+
+`print/mr-sandwich-menu-qr-a6.pdf` (print-ready A6) and `.png` (300 dpi). The QR opens `https://mr-gaming-rho.vercel.app/menu?src=qr`.
+
+To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-card.mjs` (needs Playwright). If the domain changes, regenerate `print/qr-menu.svg` first (command in the script header). Reprint the cards whenever the URL changes.
+
+## Rules
+
+- **Honest content only.** Every price, offer and claim comes from the owner or the printed menu. No invented reviews, ratings, "live" status or fake activity.
+- **Don't count consoles.** Say "PS5 & Xbox" / "private room", never "1 PS5, 1 Xbox".
+- **One accent per page.** Lime on MR. GAMING, yellow on MR. Sandwich. PS blue / Xbox green only mark which console a card is about.
+- **Tokens, not hex.** Colours, spacing (4px scale) and radii are CSS variables at the top of each stylesheet.
+- **Motion:** fade-in-blur reveals (once), word-by-word headline, rolling digits, sliding selectors, spring presses. Everything turns off under `prefers-reduced-motion`.
+
+## Before launch: owner to confirm
+
+- [ ] Opening hours (the site currently says "ask on WhatsApp")
+- [ ] Real photos of the room (replace the representative image)
+- [ ] Games installed (not listed yet)
+- [ ] FIFA Cup date, entry fee and prizes
+- [ ] Whether MR. Sandwich food can be ordered from the gaming room
+- [ ] A custom domain (then regenerate and reprint the QR)
+
+## Run locally
+
 ```bash
-npx vercel
-```
-Follow the quick CLI prompts to link and deploy your site immediately.
-
-To deploy to production:
-```bash
-npx vercel --prod
+node server.js          # http://localhost:5173  (serves public/, clean URLs like Vercel)
 ```
 
----
+## Deploy
 
-## 💻 Local Development
+Vercel, connected to this repo. `vercel.json` serves `public/` with clean URLs (`/menu` → `menu.html`), security headers and font caching. Pushing to `main` deploys production.
 
-Run the zero-dependency local server:
-```bash
-node server.js
-```
-Open your browser at `http://localhost:5173`.
-
----
-
-## ⚙️ How to Customize Store Details
-
-### Change WhatsApp Number
-1. In `assets/js/main.js` (line 10), update:
-   ```javascript
-   whatsappNumber: "917337230311", // Your 10-digit Indian WhatsApp number with 91 prefix
-   ```
-2. In `index.html`, search for `917337230311` and replace with your phone number.
-
-### Change Address & Operating Hours
-In `index.html`, navigate to the `<section id="location">` section to update your store address and timings.
-
----
-
-## 📄 License
-MIT © 2026 MR. GAMING by MR. Sandwich
+Built with [Brand Mint](https://brandmintstudios.in).

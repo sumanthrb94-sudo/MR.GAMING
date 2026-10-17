@@ -1,451 +1,224 @@
-/**
- * MR. GAMING x MR. SANDWICH LOUNGE (INDIA)
- * Exclusive Boutique Gaming Room: 1x PS5 Station + 1x Xbox Series X Station
- * Interactive Engine: WhatsApp Booking, Slot Booking Calculator in INR (₹),
- * FIFA Tournament System, Live FOMO Toasts & Futuristic UI FX
- */
+/* MR. GAMING — page behaviour. No dependencies. */
+(function () {
+  'use strict';
 
-// Global Configuration (MR. GAMING Lounge at MR. Sandwich: 1 PS5 + 1 Xbox Setup)
-const LOUNGE_CONFIG = {
-  brandName: "MR. GAMING (Located at MR. Sandwich)",
-  whatsappNumber: "917337230311", // Indian franchise WhatsApp number (+91)
-  currencySymbol: "₹",
-  tournamentPrizePool: "₹25,000",
-  tournamentEntryFee: 299,
-  baseHourlyRatePS5: 199,
-  monthlyPass6Hr: 799,
-  baseHourlyRateXbox: 199,
-  bothConsolesRate: 699, // Squad room: both consoles, up to 4 players, min 2 hrs
-  totalConsoles: 2 // 1 PS5, 1 Xbox
-};
-
-// Sound FX Synth (Web Audio API - No external files required)
-class SoundFX {
-  constructor() {
-    this.enabled = true;
-    this.ctx = null;
-  }
-
-  init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new AudioCtx();
+  /* ---------- business details: edit here ---------- */
+  const CONFIG = {
+    whatsapp: '917337230311',
+    rate: 199,          // ₹ per person per hour
+    pass: 799,          // ₹ per person, 6 hours within 30 days
+    squad: 699,         // ₹ per hour, whole room, up to 4 players, min 2 hours
+    foodPerk: 0.10,     // 10% off food for console bookers
+    food: {
+      'none': { name: 'No food', price: 0 },
+      'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
+      'paneer-pizza': { name: 'Paneer Pizza', price: 249 },
+      'sub-combo': { name: 'Mr. Veggie Sub + Salted Fries + Cold Coffee', price: 300 }
     }
+  };
+
+  const root = document.documentElement;
+  root.classList.add('js');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+  const waUrl = (text) => `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(text)}`;
+
+  /* ---------- WhatsApp links ---------- */
+  $$('[data-wa]').forEach((a) => { a.href = waUrl(a.dataset.wa); });
+
+  /* ---------- homepage food list (featured items from menu-data.js) ---------- */
+  const foodList = $('#food-list');
+  if (foodList && window.MENU) {
+    const featured = [];
+    window.MENU.sections.forEach((s) => s.groups.forEach((g) => g.items.forEach((it) => { if (it.featured) featured.push(it); })));
+    foodList.innerHTML = featured.map((it) => {
+      const price = it.prices ? `from ${inr(it.prices[0])}` : inr(it.price);
+      return `<li class="food-item" data-reveal><h3>${it.short || it.name}</h3><span class="price">${price}</span>${it.desc ? `<p>${it.desc}</p>` : ''}</li>`;
+    }).join('');
   }
 
-  toggle() {
-    this.enabled = !this.enabled;
-    return this.enabled;
-  }
-
-  playBleep(freq = 600, duration = 0.08, type = 'sine') {
-    if (!this.enabled) return;
-    try {
-      this.init();
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume();
-      }
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-      gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start();
-      osc.stop(this.ctx.currentTime + duration);
-    } catch (e) {
-      // Audio autoplay policy fallback
+  /* ---------- rolling digits ---------- */
+  function setRoll(el, value) {
+    const text = (el.dataset.prefix || '') + Math.round(value).toLocaleString('en-IN');
+    if (el.dataset.text && el.dataset.text.length === text.length) {
+      [...text].forEach((ch, i) => {
+        const col = el.children[i] && el.children[i].firstElementChild;
+        if (col && /\d/.test(ch)) col.style.transform = `translateY(-${ch}em)`;
+      });
+    } else {
+      el.innerHTML = [...text].map((ch) => /\d/.test(ch)
+        ? `<span class="d"><span>${'0123456789'.split('').map((n) => `<i>${n}</i>`).join('')}</span></span>`
+        : `<span class="d">${ch}</span>`).join('');
+      const cols = $$('.d > span', el);
+      const digits = [...text].filter((c) => /\d/.test(c));
+      if (reduced) cols.forEach((c, i) => { c.style.transform = `translateY(-${digits[i]}em)`; });
+      else requestAnimationFrame(() => requestAnimationFrame(() => cols.forEach((c, i) => {
+        c.style.transitionDelay = `${i * 60}ms`;
+        c.style.transform = `translateY(-${digits[i]}em)`;
+      })));
     }
+    el.dataset.text = text;
+    el.setAttribute('aria-label', text);
   }
 
-  playClick() {
-    this.playBleep(880, 0.04, 'triangle');
-  }
-
-  playSuccess() {
-    this.playBleep(523.25, 0.08, 'sine');
-    setTimeout(() => this.playBleep(659.25, 0.08, 'sine'), 60);
-    setTimeout(() => this.playBleep(783.99, 0.12, 'sine'), 120);
-  }
-}
-
-const sfx = new SoundFX();
-
-// ==========================================
-// 1. TOURNAMENT COUNTDOWN TIMER
-// ==========================================
-function initCountdown() {
-  const now = new Date();
-  const targetDate = new Date();
-  const daysUntilSunday = (7 - now.getDay()) % 7 || 7;
-  targetDate.setDate(now.getDate() + daysUntilSunday);
-  targetDate.setHours(12, 0, 0, 0);
-
-  function update() {
-    const current = new Date().getTime();
-    const diff = targetDate.getTime() - current;
-
-    if (diff <= 0) {
-      document.getElementById('days').textContent = '00';
-      document.getElementById('hours').textContent = '00';
-      document.getElementById('minutes').textContent = '00';
-      document.getElementById('seconds').textContent = '00';
-      return;
-    }
-
-    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-    const pad = (n) => String(n).padStart(2, '0');
-
-    const dEl = document.getElementById('days');
-    const hEl = document.getElementById('hours');
-    const mEl = document.getElementById('minutes');
-    const sEl = document.getElementById('seconds');
-
-    if (dEl) dEl.textContent = pad(d);
-    if (hEl) hEl.textContent = pad(h);
-    if (mEl) mEl.textContent = pad(m);
-    if (sEl) sEl.textContent = pad(s);
-  }
-
-  update();
-  setInterval(update, 1000);
-}
-
-// ==========================================
-// 2. LIVE SLOT & COMBO CALCULATOR (INR ₹ - 1 PS5 & 1 XBOX)
-// ==========================================
-const calculatorState = {
-  consoleType: 'ps5',
-  consoleName: 'PlayStation 5 Station (4K 120Hz)',
-  baseRatePerHour: 199,
-  durationHours: 2,
-  players: 1,
-  durationLabel: '2 Hours',
-  sandwichCombo: 'none',
-  sandwichPrice: 0,
-  sandwichName: 'No Food Added',
-  foodDiscountPercent: 10 // Console bookers get 10% off MR. Sandwich food & drinks
-};
-
-function initCalculator() {
-  const consoleBtns = document.querySelectorAll('.calc-console-btn');
-  const durationBtns = document.querySelectorAll('.calc-duration-btn');
-  const foodBtns = document.querySelectorAll('.calc-food-btn');
-
-  consoleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      consoleBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      calculatorState.consoleType = btn.dataset.console;
-      calculatorState.consoleName = btn.dataset.name;
-      calculatorState.baseRatePerHour = parseInt(btn.dataset.rate, 10);
-      applyRoomRules();
-      recalculatePrice();
+  /* ---------- hero headline: word-by-word fade-in-blur ---------- */
+  const title = $('#hero-title');
+  if (title) {
+    let w = 0;
+    $$('.line', title).forEach((line) => {
+      const em = $('em', line);
+      if (em) { em.classList.add('w'); em.style.setProperty('--w', w++); return; }
+      line.innerHTML = line.textContent.trim().split(/\s+/).map((word) => `<span class="w" style="--w:${w++}">${word}</span>`).join(' ');
     });
+    requestAnimationFrame(() => requestAnimationFrame(() => title.classList.add('is-in')));
+    setTimeout(() => { const s = $('.shine', title); if (s) s.classList.add('is-shining'); }, 900);
+  }
+
+  /* ---------- scroll reveals (once) ---------- */
+  $$('[data-stagger]').forEach((g) => $$('[data-reveal]', g).forEach((el, i) => el.style.setProperty('--i', i)));
+  const onReveal = (el) => {
+    el.classList.add('is-in');
+    $$('[data-roll]', el).forEach((r) => setRoll(r, +r.dataset.roll));
+  };
+  if ('IntersectionObserver' in window && !reduced) {
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { onReveal(e.target); io.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -8% 0px', threshold: .12 });
+    $$('[data-reveal]').forEach((el) => io.observe(el));
+  } else {
+    $$('[data-reveal]').forEach(onReveal);
+  }
+
+  /* ---------- top bar, dock, active nav ---------- */
+  const topbar = $('#topbar'), dock = $('#dock'), heroActions = $('.hero .actions');
+  const onScroll = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  if (dock && heroActions && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => dock.classList.toggle('is-visible', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(heroActions);
+  }
+
+  const nav = $('.nav'), navInd = $('.nav-ind');
+  const moveNavInd = (link) => {
+    if (!link) { navInd.style.opacity = 0; return; }
+    navInd.style.opacity = 1;
+    navInd.style.width = link.offsetWidth + 'px';
+    navInd.style.transform = `translateX(${link.offsetLeft}px)`;
+  };
+  if (nav && 'IntersectionObserver' in window) {
+    const links = $$('a[href^="#"]', nav);
+    const map = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+    const seen = new Map();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => seen.set(e.target.id, e.intersectionRatio));
+      let best = null, ratio = 0;
+      seen.forEach((r, id) => { if (r > ratio) { ratio = r; best = id; } });
+      links.forEach((a) => a.classList.remove('is-active'));
+      const link = best && map.get(best);
+      if (link) link.classList.add('is-active');
+      moveNavInd(link);
+    }, { threshold: [0, .25, .5, .75, 1], rootMargin: '-64px 0px -40% 0px' });
+    map.forEach((_, id) => { const s = document.getElementById(id); if (s) io.observe(s); });
+  }
+
+  /* ---------- theme ---------- */
+  const themeBtn = $('#theme-toggle'), metaTheme = $('meta[name="theme-color"]');
+  const effectiveTheme = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const paintMeta = () => { metaTheme.content = effectiveTheme() === 'light' ? '#F4F3EE' : '#0B0B0A'; };
+  paintMeta();
+  themeBtn.addEventListener('click', () => {
+    const next = effectiveTheme() === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    paintMeta();
   });
 
-  durationBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      durationBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      calculatorState.durationHours = parseInt(btn.dataset.hours, 10);
-      calculatorState.durationLabel = btn.dataset.label;
-      calculatorState.isMonthlyPass = btn.dataset.isPass === 'true';
-      recalculatePrice();
+  /* ---------- hero glow follows the pointer ---------- */
+  const hero = $('.hero'), glow = $('.hero-glow');
+  if (hero && glow && !reduced && matchMedia('(pointer: fine)').matches) {
+    let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+    const tick = () => {
+      x += (tx - x) * .08; y += (ty - y) * .08;
+      glow.style.transform = `translate(${x}px, ${y}px)`;
+      raf = Math.abs(tx - x) + Math.abs(ty - y) > .5 ? requestAnimationFrame(tick) : 0;
+    };
+    hero.addEventListener('pointermove', (e) => {
+      const r = hero.getBoundingClientRect(); tx = e.clientX - r.left; ty = e.clientY - r.top;
+      if (!hero.classList.contains('has-glow')) { x = tx; y = ty; hero.classList.add('has-glow'); }
+      if (!raf) raf = requestAnimationFrame(tick);
     });
-  });
-
-  const playerBtns = document.querySelectorAll('.calc-players-btn');
-  playerBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      playerBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      calculatorState.players = parseInt(btn.dataset.players, 10);
-      recalculatePrice();
-    });
-  });
-
-  foodBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      foodBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      calculatorState.sandwichCombo = btn.dataset.combo;
-      calculatorState.sandwichPrice = parseInt(btn.dataset.price, 10);
-      calculatorState.sandwichName = btn.dataset.name;
-      recalculatePrice();
-    });
-  });
-
-  const whatsappBookingBtn = document.getElementById('calc-whatsapp-book-btn');
-  if (whatsappBookingBtn) {
-    whatsappBookingBtn.addEventListener('click', () => {
-      sfx.playSuccess();
-      sendBookingToWhatsApp();
-    });
+    hero.addEventListener('pointerleave', () => hero.classList.remove('has-glow'));
   }
 
-  recalculatePrice();
-}
-
-// Squad room: flat rate for up to 4 players, minimum 2 hours, monthly pass not valid
-function applyRoomRules() {
-  const isRoom = calculatorState.consoleType === 'both';
-  const playersStep = document.getElementById('calc-players-step');
-  if (playersStep) playersStep.style.display = isRoom ? 'none' : '';
-
-  document.querySelectorAll('.calc-duration-btn').forEach(btn => {
-    const blocked = isRoom && (btn.dataset.hours === '1' || btn.dataset.isPass === 'true');
-    btn.disabled = blocked;
-    btn.style.opacity = blocked ? '0.35' : '';
-    if (blocked && btn.classList.contains('selected')) {
-      btn.classList.remove('selected');
-      const twoHr = document.querySelector('.calc-duration-btn[data-hours="2"]');
-      twoHr.classList.add('selected');
-      calculatorState.durationHours = 2;
-      calculatorState.durationLabel = twoHr.dataset.label;
-      calculatorState.isMonthlyPass = false;
-    }
-  });
-}
-
-function recalculatePrice() {
-  // Single stations are priced per person; the room takeover is a flat room rate
-  const isRoom = calculatorState.consoleType === 'both';
-  const players = isRoom ? 1 : calculatorState.players;
-  let gamingTotal = calculatorState.baseRatePerHour * calculatorState.durationHours * players;
-  if (calculatorState.isMonthlyPass) {
-    gamingTotal = 799 * players; // 6-Hour Monthly Pass, per person
+  /* ---------- segmented controls with a sliding indicator ---------- */
+  function placeInd(seg) {
+    const on = $('button[aria-pressed="true"]', seg), ind = $('.seg-ind', seg);
+    if (!on || !ind) return;
+    ind.style.width = on.offsetWidth + 'px';
+    ind.style.height = on.offsetHeight + 'px';
+    ind.style.transform = `translate(${on.offsetLeft}px, ${on.offsetTop}px)`;
   }
-  const foodTotal = calculatorState.sandwichPrice;
-  const subtotal = gamingTotal + foodTotal;
-  const discountAmount = Math.round((foodTotal * calculatorState.foodDiscountPercent) / 100);
-  const finalTotal = subtotal - discountAmount;
-
-  // Update UI Elements
-  const elConsole = document.getElementById('calc-summary-console');
-  const elGamingPrice = document.getElementById('calc-summary-gaming-price');
-  const elFood = document.getElementById('calc-summary-food');
-  const elFoodPrice = document.getElementById('calc-summary-food-price');
-  const elDiscount = document.getElementById('calc-summary-discount');
-  const elTotal = document.getElementById('calc-summary-total');
-
-  const playersText = isRoom ? '' : `, ${players} player${players > 1 ? 's' : ''}`;
-  if (elConsole) elConsole.textContent = `${calculatorState.consoleName} (${calculatorState.durationHours} hr${calculatorState.durationHours > 1 ? 's' : ''}${playersText})`;
-  if (elGamingPrice) elGamingPrice.textContent = `₹${gamingTotal}`;
-  if (elFood) elFood.textContent = calculatorState.sandwichName;
-  if (elFoodPrice) elFoodPrice.textContent = foodTotal > 0 ? `₹${foodTotal}` : '₹0';
-  if (elDiscount) elDiscount.textContent = `-₹${discountAmount}`;
-  if (elTotal) elTotal.textContent = `₹${finalTotal}`;
-
-  calculatorState.computedTotal = finalTotal;
-}
-
-function sendBookingToWhatsApp(customNote = '') {
-  const lines = [
-    '🎮 *MR. GAMING BOOKING* 🥪',
-    '',
-    `• *Station:* ${calculatorState.consoleName}`,
-    `• *Duration:* ${calculatorState.durationHours} Hour(s)`,
-    calculatorState.consoleType === 'both' ? '• *Players:* Squad (up to 4)' : `• *Players:* ${calculatorState.players}`,
-    `• *MR. Sandwich Food:* ${calculatorState.sandwichName}`,
-    `• *Estimated Total:* ₹${calculatorState.computedTotal}`,
-    '• *Gamer Perk:* 10% off MR. Sandwich food & drinks'
-  ];
-  if (customNote) lines.push(`• *Note:* ${customNote}`);
-  lines.push('', '*Hi MR. GAMING, is this station free? Please confirm my booking!*');
-
-  openWhatsApp(lines.join('\n'));
-}
-
-// ==========================================
-// 3. WHATSAPP LINKS (floating button + chat preview pills)
-// ==========================================
-function openWhatsApp(message) {
-  const url = `https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
-  window.open(url, '_blank');
-}
-
-function initWhatsAppWidget() {
-  const triggerBtn = document.getElementById('floating-wa-trigger');
-  if (triggerBtn) {
-    triggerBtn.addEventListener('click', () => {
-      sfx.playClick();
-      openWhatsApp("Hi MR. GAMING! I'd like to book a console.");
-    });
+  function select(seg, value) {
+    $$('button', seg).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === value)));
+    placeInd(seg);
   }
 
-  document.querySelectorAll('.quick-action-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      sfx.playClick();
-      openWhatsApp(`Hi MR. GAMING! ${pill.dataset.prompt}`);
-    });
-  });
-}
+  /* ---------- booking builder ---------- */
+  const builder = $('.builder');
+  if (builder) {
+    const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
+    const state = { station: 'ps5', players: '1', time: '2', food: 'none' };
+    const names = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room' };
 
-// ==========================================
-// 5. TRENDING GAMES FILTER
-// ==========================================
-function initGamesFilter() {
-  const filterBtns = document.querySelectorAll('.filter-btn');
-  const gameCards = document.querySelectorAll('.game-poster-card');
+    const render = () => {
+      const squad = state.station === 'squad';
+      $('#step-players').hidden = squad;
+      $$('button', segs.time).forEach((b) => { b.disabled = squad && (b.dataset.value === '1' || b.dataset.value === 'pass'); });
+      if (squad && (state.time === '1' || state.time === 'pass')) { state.time = '2'; select(segs.time, '2'); }
 
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      const pass = state.time === 'pass', hours = pass ? 6 : +state.time, players = squad ? 4 : +state.players;
+      const gaming = squad ? CONFIG.squad * hours : (pass ? CONFIG.pass : CONFIG.rate * hours) * players;
+      const food = CONFIG.food[state.food].price, perk = Math.round(food * CONFIG.foodPerk), total = gaming + food - perk;
 
-      const filter = btn.dataset.filter;
-      gameCards.forEach(card => {
-        if (filter === 'all' || card.dataset.category.includes(filter)) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
+      $('#time-hint').textContent = squad ? 'Whole room, up to 4 players. Minimum 2 hours.'
+        : pass ? '6 hours to use any time within 30 days.' : '';
+      $('#sum-title').textContent = squad ? `Squad room · ${hours} hrs · up to 4 players`
+        : `${names[state.station]} · ${pass ? '6-hr monthly pass' : hours + (hours > 1 ? ' hrs' : ' hr')} · ${players} player${players > 1 ? 's' : ''}`;
+      $('#sum-gaming').textContent = inr(gaming);
+      $('#sum-food').textContent = inr(food);
+      $('#sum-perk').textContent = '−' + inr(perk);
+      setRoll($('#sum-total'), total);
+      state.total = total;
+      $$('.seg', builder).forEach(placeInd);
+    };
+
+    Object.entries(segs).forEach(([key, seg]) => {
+      seg.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        state[key] = b.dataset.value; select(seg, b.dataset.value); render();
       });
     });
-  });
 
-  document.querySelectorAll('.btn-reserve-game').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playSuccess();
-      const gameTitle = btn.dataset.game;
-      const consoleReq = btn.dataset.console || 'PS5';
-      const text = `Hey MR. GAMING! 🎮 I want to reserve your *${consoleReq} Station* to play *${gameTitle}* today. Is the console free?`;
-      window.open(`https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+    $('#send-booking').addEventListener('click', () => {
+      const squad = state.station === 'squad', pass = state.time === 'pass';
+      const lines = [
+        'Hi MR. GAMING! I\'d like to book:',
+        '',
+        `• ${squad ? 'Squad room (up to 4 players)' : names[state.station]}`,
+        `• ${pass ? '6-hour monthly pass' : state.time + ' hour(s)'}`,
+        squad ? null : `• ${state.players} player(s)`,
+        `• Food: ${CONFIG.food[state.food].name}`,
+        `• Estimated total: ${inr(state.total)} (incl. 10% off food)`,
+        '',
+        'Is a slot free? When can I come?'
+      ].filter((l) => l !== null);
+      window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
     });
-  });
-}
 
-// ==========================================
-// 6. MODALS MANAGEMENT
-// ==========================================
-function initModals() {
-  const openTourneyBtns = document.querySelectorAll('.btn-open-tournament-modal');
-  const tourneyModal = document.getElementById('tournament-modal');
-  const closeTourneyBtn = document.getElementById('close-tournament-modal');
-  const tourneyForm = document.getElementById('tournament-reg-form');
-
-  openTourneyBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      tourneyModal.classList.add('open');
-    });
-  });
-
-  if (closeTourneyBtn) {
-    closeTourneyBtn.addEventListener('click', () => {
-      sfx.playClick();
-      tourneyModal.classList.remove('open');
-    });
+    render();
+    window.addEventListener('resize', () => $$('.seg', builder).forEach(placeInd));
+    document.fonts && document.fonts.ready.then(() => $$('.seg', builder).forEach(placeInd));
   }
-
-  if (tourneyForm) {
-    tourneyForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      sfx.playSuccess();
-      const gamerTag = document.getElementById('reg-gamertag').value;
-      const playerName = document.getElementById('reg-name').value;
-      const phone = document.getElementById('reg-phone').value;
-      const consolePref = document.getElementById('reg-console').value;
-      const favoriteTeam = document.getElementById('reg-team').value;
-
-      const waMsg = `🏆 *MR. GAMING FIFA CUP WAITLIST* ⚽%0A%0A` +
-        `• *Gamer Tag:* ${encodeURIComponent(gamerTag)}%0A` +
-        `• *Player Name:* ${encodeURIComponent(playerName)}%0A` +
-        `• *WhatsApp:* ${encodeURIComponent(phone)}%0A` +
-        `• *Preferred Console:* ${encodeURIComponent(consolePref)}%0A` +
-        `• *Favorite Team:* ${encodeURIComponent(favoriteTeam)}%0A` +
-        `%0A*Please add me to the tournament waitlist!*`;
-
-      tourneyModal.classList.remove('open');
-      window.open(`https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${waMsg}`, '_blank');
-      alert(`Thanks ${gamerTag}! Redirecting to WhatsApp to join the waitlist.`);
-    });
-  }
-
-  window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal-backdrop')) {
-      e.target.classList.remove('open');
-    }
-  });
-}
-
-// ==========================================
-// 7. MENU ADD TO COMBO ACTION
-// ==========================================
-function initMenuActions() {
-  document.querySelectorAll('.btn-add-food').forEach(btn => {
-    btn.addEventListener('click', () => {
-      sfx.playClick();
-      const itemName = btn.dataset.name;
-      const itemPrice = parseInt(btn.dataset.price, 10);
-
-      calculatorState.sandwichPrice = itemPrice;
-      calculatorState.sandwichName = itemName;
-      recalculatePrice();
-
-      const calcEl = document.getElementById('calculator');
-      if (calcEl) {
-        calcEl.scrollIntoView({ behavior: 'smooth' });
-      }
-
-      const summaryFood = document.getElementById('calc-summary-food');
-      if (summaryFood) {
-        summaryFood.style.color = '#00ff88';
-        setTimeout(() => summaryFood.style.color = '', 1000);
-      }
-    });
-  });
-}
-
-// ==========================================
-// 8. MOBILE NAV & SOUND TOGGLE
-// ==========================================
-function initNavigation() {
-  const toggleBtn = document.getElementById('mobile-nav-toggle');
-  const navLinks = document.getElementById('nav-links');
-  const soundBtn = document.getElementById('sound-toggle-btn');
-
-  if (toggleBtn && navLinks) {
-    toggleBtn.addEventListener('click', () => {
-      sfx.playClick();
-      navLinks.classList.toggle('mobile-open');
-    });
-
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
-        navLinks.classList.remove('mobile-open');
-      });
-    });
-  }
-
-  if (soundBtn) {
-    soundBtn.addEventListener('click', () => {
-      const isSoundOn = sfx.toggle();
-      soundBtn.innerHTML = isSoundOn ? '<i class="fas fa-volume-high"></i>' : '<i class="fas fa-volume-xmark"></i>';
-      soundBtn.title = isSoundOn ? 'Sound FX: ON' : 'Sound FX: MUTED';
-      if (isSoundOn) sfx.playSuccess();
-    });
-  }
-}
-
-// DOM Ready initialization
-document.addEventListener('DOMContentLoaded', () => {
-  initCalculator();
-  initWhatsAppWidget();
-  initGamesFilter();
-  initModals();
-  initMenuActions();
-  initNavigation();
-});
+})();
