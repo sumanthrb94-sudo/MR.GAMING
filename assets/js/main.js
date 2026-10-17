@@ -130,7 +130,7 @@ const calculatorState = {
   sandwichCombo: 'none',
   sandwichPrice: 0,
   sandwichName: 'No Food Added',
-  discountPercent: 10 // MRGAMER10 Promo Code
+  foodDiscountPercent: 10 // Console bookers get 10% off MR. Sandwich food & drinks
 };
 
 function initCalculator() {
@@ -206,7 +206,7 @@ function recalculatePrice() {
   }
   const foodTotal = calculatorState.sandwichPrice;
   const subtotal = gamingTotal + foodTotal;
-  const discountAmount = Math.round((subtotal * calculatorState.discountPercent) / 100);
+  const discountAmount = Math.round((foodTotal * calculatorState.foodDiscountPercent) / 100);
   const finalTotal = subtotal - discountAmount;
 
   // Update UI Elements
@@ -222,7 +222,7 @@ function recalculatePrice() {
   if (elGamingPrice) elGamingPrice.textContent = `₹${gamingTotal}`;
   if (elFood) elFood.textContent = calculatorState.sandwichName;
   if (elFoodPrice) elFoodPrice.textContent = foodTotal > 0 ? `₹${foodTotal}` : '₹0';
-  if (elDiscount) elDiscount.textContent = `-₹${discountAmount} (10% OFF)`;
+  if (elDiscount) elDiscount.textContent = `-₹${discountAmount}`;
   if (elTotal) elTotal.textContent = `₹${finalTotal}`;
 
   calculatorState.computedTotal = finalTotal;
@@ -235,7 +235,7 @@ function sendBookingToWhatsApp(customNote = '') {
     (calculatorState.consoleType === 'both' ? '' : `• *Players:* ${calculatorState.players}%0A`) +
     `• *MR. Sandwich Food:* ${calculatorState.sandwichName}%0A` +
     `• *Estimated Total:* ₹${calculatorState.computedTotal} (INR)%0A` +
-    `• *Promo Code:* MRGAMER10 (10% VIP Discount)%0A` +
+    `• *Gamer Perk:* 10% off MR. Sandwich food & drinks%0A` +
     (customNote ? `• *Note:* ${encodeURIComponent(customNote)}%0A%0A` : `%0A`) +
     `*Hey Meta WhatsApp AI Concierge, is this station free right now? Please confirm booking!*`;
 
@@ -253,11 +253,11 @@ const aiChatResponses = [
   },
   {
     triggers: ['fifa', 'tournament', 'championship', 'prize', 'ea fc'],
-    reply: `⚽ *MR. GAMING FC INDIA CHAMPIONSHIP!* 🏆%0A• Matches played head-to-head on our PS5 & Xbox tournament setups.%0A• *Cash Prize Pool:* ₹25,000 (1st: ₹15,000 + Trophy)%0A• *Entry Fee:* ₹299 (Includes a FREE Gourmet Cheese Melt & Chilled Drink)%0A• *Slots:* 28/32 Filled! Only 4 spots left. Reply with your Gamer Tag to lock your slot via UPI!`
+    reply: `⚽ *MR. GAMING FIFA CUP — COMING SOON!* 🏆%0A• Head-to-head matches on our PS5 & Xbox stations.%0A• Date, entry fee & prizes will be announced soon.%0A• Reply with your Gamer Tag to join the waitlist and hear first!`
   },
   {
     triggers: ['sandwich', 'food', 'menu', 'eat', 'burger', 'shake', 'price'],
-    reply: `🥪 *MR. Sandwich 100% PURE VEG Lounge Favorites:*%0A1. *God-Tier Triple Cheese Corn Melt* - ₹139%0A2. *Spicy Tandoori Paneer Tikka Sub* - ₹189%0A3. *Makhani Paneer Grilled Melt* - ₹149%0A4. *Peri-Peri Loaded Cheese Fries* - ₹119%0A5. *Blue Lagoon Gamer Chiller* - ₹99%0AFreshly grilled and served right at your console station!`
+    reply: `🥪 *MR. Sandwich 100% PURE VEG Favorites:*%0A1. *Mr. Pizza Paneer Sub* - ₹279%0A2. *Paneer Pizza* - ₹249%0A3. *Double Trouble Burger* - ₹170%0A4. *Peri Peri Cheese Corn Nuggets (8 pcs)* - ₹169%0A5. *Loaded Fries* - ₹159%0A6. *Oreo Shake* - ₹129%0A🎮 Console bookers get *10% off* all food & drinks. Served right at your station!`
   },
   {
     triggers: ['both', 'room', 'private', 'squad', 'party'],
@@ -326,7 +326,7 @@ function initWhatsAppWidget() {
       if (matched) {
         appendMessage(matched.reply, false);
       } else {
-        appendMessage(`Hey gamer! I'm *MR. Bot*, your Meta WhatsApp AI concierge for MR. GAMING in Hyderabad (located inside MR. Sandwich Pure Veg). We have *1 dedicated PS5 station* and *1 Xbox Series X station*. I can check console availability, book the ₹25,000 EA FC Tournament, provide Google Maps directions, or order fresh melts. Chat with us on WhatsApp anytime!`, false);
+        appendMessage(`Hey gamer! I'm *MR. Bot*, your Meta WhatsApp AI concierge for MR. GAMING in Hyderabad (located inside MR. Sandwich Pure Veg). We have *1 dedicated PS5 station* and *1 Xbox Series X station*. I can check console availability, join the FIFA tournament waitlist, provide Google Maps directions, or order fresh melts. Chat with us on WhatsApp anytime!`, false);
       }
       sfx.playBleep(800, 0.08);
     }, 850);
@@ -350,57 +350,6 @@ function initWhatsAppWidget() {
       handleSend();
     });
   });
-}
-
-// ==========================================
-// 4. FOMO LIVE TOAST NOTIFICATION ENGINE (1 PS5 & 1 XBOX INVENTORY)
-// ==========================================
-const fomoActivities = [
-  { name: "Rahul S. (Moosarambagh, Hyderabad)", action: "reserved Station 01 (PS5) for 7:00 PM session", icon: "fa-gamepad", time: "Just now" },
-  { name: "Aman Verma (Dilsukhnagar, Hyderabad)", action: "registered for FIFA Hyderabad Championship (Slot 29/32)", icon: "fa-trophy", time: "3 mins ago" },
-  { name: "Vikram & Squad (Malakpet, Hyderabad)", action: "booked Private VIP Takeover (Both PS5 & Xbox) for 2 hours", icon: "fa-crown", time: "6 mins ago" },
-  { name: "Rohan K. (Kothapet, Hyderabad)", action: "locked Station 02 (Xbox Series X) for Black Ops 6 120 FPS duel", icon: "fa-xbox", time: "9 mins ago" },
-  { name: "Pooja M. (Hyderabad)", action: "ordered Makhani Paneer Melt & Blue Lagoon for PS5 session", icon: "fa-burger", time: "12 mins ago" }
-];
-
-function initFomoToasts() {
-  const container = document.getElementById('fomo-toast-container');
-  if (!container) return;
-
-  let activityIndex = 0;
-
-  function triggerToast() {
-    const item = fomoActivities[activityIndex % fomoActivities.length];
-    activityIndex++;
-
-    const toast = document.createElement('div');
-    toast.className = 'fomo-toast';
-    toast.innerHTML = `
-      <div class="toast-icon-wrap">
-        <i class="fas ${item.icon}"></i>
-      </div>
-      <div class="toast-content">
-        <h5>${item.name}</h5>
-        <p>${item.action}</p>
-        <span class="toast-time">⚡ ${item.time}</span>
-      </div>
-    `;
-
-    container.appendChild(toast);
-    sfx.playBleep(1050, 0.05, 'triangle');
-
-    setTimeout(() => {
-      toast.classList.add('show');
-    }, 50);
-
-    setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 500);
-    }, 5500);
-  }
-
-  setTimeout(triggerToast, 3000);
-  setInterval(triggerToast, 16000);
 }
 
 // ==========================================
@@ -471,18 +420,17 @@ function initModals() {
       const consolePref = document.getElementById('reg-console').value;
       const favoriteTeam = document.getElementById('reg-team').value;
 
-      const waMsg = `🏆 *MR. GAMING FC INDIA CHAMPIONSHIP REGISTRATION* ⚽%0A%0A` +
+      const waMsg = `🏆 *MR. GAMING FIFA CUP WAITLIST* ⚽%0A%0A` +
         `• *Gamer Tag:* ${encodeURIComponent(gamerTag)}%0A` +
         `• *Player Name:* ${encodeURIComponent(playerName)}%0A` +
         `• *WhatsApp:* ${encodeURIComponent(phone)}%0A` +
         `• *Preferred Console:* ${encodeURIComponent(consolePref)}%0A` +
         `• *Favorite Team:* ${encodeURIComponent(favoriteTeam)}%0A` +
-        `• *Entry Fee:* ₹299 (Includes Free Grilled Cheese Melt & Beverage)%0A%0A` +
-        `*Please send UPI QR Code / Payment link to confirm my slot!*`;
+        `%0A*Please add me to the tournament waitlist!*`;
 
       tourneyModal.classList.remove('open');
       window.open(`https://wa.me/${LOUNGE_CONFIG.whatsappNumber}?text=${waMsg}`, '_blank');
-      alert(`Success! Your registration for "${gamerTag}" is initiated. Redirecting to WhatsApp to complete your ₹299 confirmation.`);
+      alert(`Thanks ${gamerTag}! Redirecting to WhatsApp to join the waitlist.`);
     });
   }
 
@@ -554,10 +502,8 @@ function initNavigation() {
 
 // DOM Ready initialization
 document.addEventListener('DOMContentLoaded', () => {
-  initCountdown();
   initCalculator();
   initWhatsAppWidget();
-  initFomoToasts();
   initGamesFilter();
   initModals();
   initMenuActions();

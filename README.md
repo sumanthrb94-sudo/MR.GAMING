@@ -11,10 +11,10 @@ Hyderabad's premier private esports console gaming room located inside the **MR.
 - **Tailored Console Setup**: Built around exactly **1x PS5** (Station 01) and **1x Xbox Series X** (Station 02) + Private Squad Room Takeover.
 - **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr per person**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and private squad takeover for ₹279/hr.
 - **Hyderabad Location & Google Maps**: Exclusively located at Sri Nagar Colony, Moosarambagh (Near Malakpet & Dilsukhnagar Metro), Hyderabad - 500036 with direct Google Maps integration.
-- **MR. Sandwich 100% Pure Veg Partner**: Authentic vegetarian gourmet snacks (Makhani Paneer Melt, Spicy Tandoori Paneer Tikka Sub, Triple Cheese Corn Toastie, Loaded Peri-Peri Fries, Monster Shakes).
+- **MR. Sandwich 100% Pure Veg Partner**: Subs, pizzas, burgers, nuggets, fries, shakes and boba drinks. Console bookers get 10% off all food & drinks.
 - **Meta WhatsApp AI Concierge**: In-page interactive chat simulator (`MR. Bot`) and direct WhatsApp deep-links (`https://wa.me/...`) for instant automated station reservations.
-- **FIFA ₹25,000 Hyderabad Championship**: Live countdown timer, urgency meter (*28/32 slots booked*), rules breakdown, and ₹299 UPI registration modal.
-- **Live FOMO Notifications**: Realistic real-time customer activity popups across Hyderabad areas (Moosarambagh, Dilsukhnagar, Malakpet, Kothapet).
+- **FIFA Tournament (Coming Soon)**: Waitlist sign-up via WhatsApp.
+
 - **Vercel Ready**: Pre-configured with `vercel.json` for edge caching, security headers, and instant zero-config deployments.
 
 ---
