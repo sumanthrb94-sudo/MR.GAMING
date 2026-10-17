@@ -265,7 +265,7 @@ const aiChatResponses = [
   },
   {
     triggers: ['location', 'where', 'address', 'timing', 'open', 'hyderabad', 'place', 'map', 'directions'],
-    reply: `📍 *MR. GAMING (Inside MR. Sandwich Pure Veg) - Hyderabad:*%0AWe are located at Sri Nagar Colony, Moosarambagh (Near Malakpet / Dilsukhnagar Metro), Hyderabad, Telangana - 500036.%0A🗺️ *Google Maps Directions:* https://maps.google.com/maps?ftid=0x3bcb93688e70c197:0x435d8fffc928f5b4%0AOpen daily! Walk-ins welcome or text me here to reserve Station 01 (PS5) or Station 02 (Xbox)!`
+    reply: `📍 *MR. GAMING (Inside MR. Sandwich Pure Veg) - Hyderabad:*%0AWe are at 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana - 500032.%0A🗺️ *Google Maps Directions:* https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6%0AOpen daily! Walk-ins welcome or text me here to reserve Station 01 (PS5) or Station 02 (Xbox)!`
   }
 ];
 

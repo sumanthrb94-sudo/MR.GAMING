@@ -2,7 +2,7 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sumanthrb94-sudo/MR.GAMING)
 
-Hyderabad's premier private esports console gaming room located inside the **MR. Sandwich (100% Pure Veg)** store in **Moosarambagh, Hyderabad**. Built specifically around an exclusive 2-station setup (**1x PlayStation 5** and **1x Xbox Series X**) with live **INR (₹)** pricing, **Meta WhatsApp AI** booking concierge, Google Maps directions, and an **EA FC 25 FIFA Hyderabad Championship** tournament hub.
+Hyderabad's premier private esports console gaming room located inside the **MR. Sandwich (100% Pure Veg)** store in **Gachibowli, Hyderabad**. Built specifically around an exclusive 2-station setup (**1x PlayStation 5** and **1x Xbox Series X**) with live **INR (₹)** pricing, **Meta WhatsApp AI** booking concierge, Google Maps directions, and an **EA FC 25 FIFA Hyderabad Championship** tournament hub.
 
 ---
 
@@ -10,7 +10,7 @@ Hyderabad's premier private esports console gaming room located inside the **MR.
 
 - **Tailored Console Setup**: Built around exactly **1x PS5** (Station 01) and **1x Xbox Series X** (Station 02) + Private Squad Room Takeover.
 - **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr per person**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and private squad takeover for ₹279/hr.
-- **Hyderabad Location & Google Maps**: Exclusively located at Sri Nagar Colony, Moosarambagh (Near Malakpet & Dilsukhnagar Metro), Hyderabad - 500036 with direct Google Maps integration.
+- **Hyderabad Location & Google Maps**: Located at 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana - 500032 with direct Google Maps integration.
 - **MR. Sandwich 100% Pure Veg Partner**: Subs, pizzas, burgers, nuggets, fries, shakes and boba drinks. Console bookers get 10% off all food & drinks.
 - **Meta WhatsApp AI Concierge**: In-page interactive chat simulator (`MR. Bot`) and direct WhatsApp deep-links (`https://wa.me/...`) for instant automated station reservations.
 - **FIFA Tournament (Coming Soon)**: Waitlist sign-up via WhatsApp.
