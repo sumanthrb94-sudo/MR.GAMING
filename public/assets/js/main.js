@@ -12,8 +12,9 @@ const LOUNGE_CONFIG = {
   currencySymbol: "₹",
   tournamentPrizePool: "₹25,000",
   tournamentEntryFee: 299,
-  baseHourlyRatePS5: 149,
-  baseHourlyRateXbox: 149,
+  baseHourlyRatePS5: 199,
+  monthlyPass6Hr: 799,
+  baseHourlyRateXbox: 199,
   bothConsolesRate: 279, // Private room takeover: both PS5 + Xbox together
   totalConsoles: 2 // 1 PS5, 1 Xbox
 };
@@ -122,7 +123,7 @@ function initCountdown() {
 const calculatorState = {
   consoleType: 'ps5',
   consoleName: 'PlayStation 5 Station (4K 120Hz)',
-  baseRatePerHour: 149,
+  baseRatePerHour: 199,
   durationHours: 2,
   durationLabel: '2 Hours (Includes Free Garlic Fries)',
   sandwichCombo: 'none',
@@ -155,6 +156,7 @@ function initCalculator() {
       btn.classList.add('selected');
       calculatorState.durationHours = parseInt(btn.dataset.hours, 10);
       calculatorState.durationLabel = btn.dataset.label;
+      calculatorState.isMonthlyPass = btn.dataset.isPass === 'true';
       recalculatePrice();
     });
   });
@@ -183,7 +185,10 @@ function initCalculator() {
 }
 
 function recalculatePrice() {
-  const gamingTotal = calculatorState.baseRatePerHour * calculatorState.durationHours;
+  let gamingTotal = calculatorState.baseRatePerHour * calculatorState.durationHours;
+  if (calculatorState.isMonthlyPass) {
+    gamingTotal = 799; // Flat 6-Hour Monthly Pass rate (Save ₹395)
+  }
   const foodTotal = calculatorState.sandwichPrice;
   const subtotal = gamingTotal + foodTotal;
   const discountAmount = Math.round((subtotal * calculatorState.discountPercent) / 100);
@@ -227,7 +232,7 @@ function sendBookingToWhatsApp(customNote = '') {
 const aiChatResponses = [
   {
     triggers: ['slot', 'available', 'ps5', 'xbox', 'station', 'setup', 'booth', 'timing'],
-    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0A• *PS5:* Currently in match (Free in 25 mins)%0A• *Xbox Series X:* 🟢 *AVAILABLE NOW for walk-in!*%0AHourly rate is just *₹149/hr*. Want me to reserve the Xbox or pre-book the PS5 for you?`
+    reply: `🎮 *Current Gaming Room Status:*%0AWe have an exclusive private gaming setup with *1x PS5 Station* and *1x Xbox Series X Station*.%0A• *PS5:* Currently in match (Free in 25 mins)%0A• *Xbox Series X:* 🟢 *AVAILABLE NOW for walk-in!*%0AHourly rate is *₹199/hr*, or you can grab our popular *6-Hour Monthly Pass for just ₹799* (valid 30 days, save ₹395!). Want me to reserve a station for you?`
   },
   {
     triggers: ['fifa', 'tournament', 'championship', 'prize', 'ea fc'],
