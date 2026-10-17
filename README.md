@@ -58,9 +58,9 @@ Open your browser at `http://localhost:5173`.
 ### Change WhatsApp Number
 1. In `assets/js/main.js` (line 10), update:
    ```javascript
-   whatsappNumber: "919876543210", // Your 10-digit Indian WhatsApp number with 91 prefix
+   whatsappNumber: "917337230311", // Your 10-digit Indian WhatsApp number with 91 prefix
    ```
-2. In `index.html`, search for `919876543210` and replace with your phone number.
+2. In `index.html`, search for `917337230311` and replace with your phone number.
 
 ### Change Address & Operating Hours
 In `index.html`, navigate to the `<section id="location">` section to update your store address and timings.

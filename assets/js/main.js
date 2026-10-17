@@ -8,7 +8,7 @@
 // Global Configuration (MR. GAMING Lounge at MR. Sandwich: 1 PS5 + 1 Xbox Setup)
 const LOUNGE_CONFIG = {
   brandName: "MR. GAMING (Located at MR. Sandwich)",
-  whatsappNumber: "919876543210", // Indian franchise WhatsApp number (+91)
+  whatsappNumber: "917337230311", // Indian franchise WhatsApp number (+91)
   currencySymbol: "₹",
   tournamentPrizePool: "₹25,000",
   tournamentEntryFee: 299,
