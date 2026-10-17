@@ -1,19 +1,20 @@
-# 🎮 MR. GAMING by MR. Sandwich (India)
+# 🎮 MR. GAMING (Hyderabad, India)
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sumanthrb94-sudo/MR.GAMING)
 
-India's premier private esports console gaming room & gourmet sandwich cafe website. Designed specifically for an exclusive **1x PlayStation 5** and **1x Xbox Series X** boutique lounge with live **INR (₹)** pricing, **Meta WhatsApp AI** booking assistant, and an **EA FC 25 FIFA India Championship** tournament hub.
+Hyderabad's premier private esports console gaming room located inside the **MR. Sandwich (100% Pure Veg)** store in **Moosarambagh, Hyderabad**. Built specifically around an exclusive 2-station setup (**1x PlayStation 5** and **1x Xbox Series X**) with live **INR (₹)** pricing, **Meta WhatsApp AI** booking concierge, Google Maps directions, and an **EA FC 25 FIFA Hyderabad Championship** tournament hub.
 
 ---
 
 ## ⚡ Highlights
 
 - **Tailored Console Setup**: Built around exactly **1x PS5** (Station 01) and **1x Xbox Series X** (Station 02) + Private Squad Room Takeover.
-- **Indian Rupee (₹) Pricing**: Gaming rates from ₹149/hr, ₹279/hr private squad room takeover, and gourmet melts from ₹99 to ₹249.
-- **Meta WhatsApp AI Concierge**: In-page interactive chat simulator (`MR. Bot`) and direct WhatsApp deep-links (`https://wa.me/...`) for instant automated pod reservations.
-- **FIFA ₹25,000 Championship**: Live countdown timer, urgency meter (*28/32 slots booked*), rules breakdown, and ₹299 UPI registration modal.
-- **MR. Sandwich Gourmet Fuel**: Signature Indian menu items (Makhani Paneer Melt, Spicy Tandoori Chicken Sub, Peri-Peri Cheesy Fries, Monster Shakes, Blue Lagoon Chiller).
-- **Live FOMO Notifications**: Realistic real-time customer activity popups (Bangalore, Delhi NCR, Mumbai, etc.).
+- **Indian Rupee (₹) Pricing**: Standard rate of **₹199/hr**, VIP **6-Hour Monthly Pass for ₹799** (valid for 30 days, saves ₹395), and private squad takeover for ₹279/hr.
+- **Hyderabad Location & Google Maps**: Exclusively located at Sri Nagar Colony, Moosarambagh (Near Malakpet & Dilsukhnagar Metro), Hyderabad - 500036 with direct Google Maps integration.
+- **MR. Sandwich 100% Pure Veg Partner**: Authentic vegetarian gourmet snacks (Makhani Paneer Melt, Spicy Tandoori Paneer Tikka Sub, Triple Cheese Corn Toastie, Loaded Peri-Peri Fries, Monster Shakes).
+- **Meta WhatsApp AI Concierge**: In-page interactive chat simulator (`MR. Bot`) and direct WhatsApp deep-links (`https://wa.me/...`) for instant automated station reservations.
+- **FIFA ₹25,000 Hyderabad Championship**: Live countdown timer, urgency meter (*28/32 slots booked*), rules breakdown, and ₹299 UPI registration modal.
+- **Live FOMO Notifications**: Realistic real-time customer activity popups across Hyderabad areas (Moosarambagh, Dilsukhnagar, Malakpet, Kothapet).
 - **Vercel Ready**: Pre-configured with `vercel.json` for edge caching, security headers, and instant zero-config deployments.
 
 ---

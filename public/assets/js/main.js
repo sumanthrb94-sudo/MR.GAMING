@@ -247,8 +247,8 @@ const aiChatResponses = [
     reply: `👑 *Private Gaming Den Takeover!*%0AYes! You can book *BOTH the PS5 and Xbox Series X together* for your squad for just *₹279/hr*! You get the entire air-conditioned gaming room to yourself with zero interruption.`
   },
   {
-    triggers: ['location', 'where', 'address', 'timing', 'open'],
-    reply: `📍 *MR. GAMING (Located at MR. Sandwich):*%0AWe are located inside MR. Sandwich at Plot 42, Cyber Gaming Hub, 2nd Floor, Near Metro Station. Open daily from *11:00 AM till Midnight* (open till 2:00 AM on weekends)!`
+    triggers: ['location', 'where', 'address', 'timing', 'open', 'hyderabad', 'place', 'map', 'directions'],
+    reply: `📍 *MR. GAMING (Inside MR. Sandwich Pure Veg) - Hyderabad:*%0AWe are located at Sri Nagar Colony, Moosarambagh (Near Malakpet / Dilsukhnagar Metro), Hyderabad, Telangana - 500036.%0A🗺️ *Google Maps Directions:* https://maps.google.com/maps?ftid=0x3bcb93688e70c197:0x435d8fffc928f5b4%0AOpen daily! Walk-ins welcome or text me here to reserve Station 01 (PS5) or Station 02 (Xbox)!`
   }
 ];
 
@@ -309,7 +309,7 @@ function initWhatsAppWidget() {
       if (matched) {
         appendMessage(matched.reply, false);
       } else {
-        appendMessage(`Hey gamer! I'm *MR. Bot*, your Meta WhatsApp AI concierge for MR. Sandwich & Gaming Lounge India. We have *1 dedicated PS5 station* and *1 Xbox Series X station*. I can check console availability, book the ₹25,000 FIFA Tournament, or order fresh melts. Chat with us on WhatsApp anytime!`, false);
+        appendMessage(`Hey gamer! I'm *MR. Bot*, your Meta WhatsApp AI concierge for MR. GAMING in Hyderabad (located inside MR. Sandwich Pure Veg). We have *1 dedicated PS5 station* and *1 Xbox Series X station*. I can check console availability, book the ₹25,000 EA FC Tournament, provide Google Maps directions, or order fresh melts. Chat with us on WhatsApp anytime!`, false);
       }
       sfx.playBleep(800, 0.08);
     }, 850);
@@ -339,11 +339,11 @@ function initWhatsAppWidget() {
 // 4. FOMO LIVE TOAST NOTIFICATION ENGINE (1 PS5 & 1 XBOX INVENTORY)
 // ==========================================
 const fomoActivities = [
-  { name: "Rahul S. (Bangalore)", action: "reserved the PS5 Station for 7:00 PM session", icon: "fa-gamepad", time: "Just now" },
-  { name: "Aman Verma (Delhi NCR)", action: "registered for FIFA India Championship (Slot 29/32)", icon: "fa-trophy", time: "3 mins ago" },
-  { name: "Vikram & Karan", action: "booked Private Takeover (Both PS5 & Xbox) for 2 hours", icon: "fa-crown", time: "6 mins ago" },
-  { name: "Rohan K.", action: "locked Xbox Series X for Black Ops 6 120 FPS duel", icon: "fa-xbox", time: "9 mins ago" },
-  { name: "Pooja M.", action: "ordered Makhani Paneer Melt & Blue Lagoon for PS5 gaming", icon: "fa-burger", time: "12 mins ago" }
+  { name: "Rahul S. (Moosarambagh, Hyderabad)", action: "reserved Station 01 (PS5) for 7:00 PM session", icon: "fa-gamepad", time: "Just now" },
+  { name: "Aman Verma (Dilsukhnagar, Hyderabad)", action: "registered for FIFA Hyderabad Championship (Slot 29/32)", icon: "fa-trophy", time: "3 mins ago" },
+  { name: "Vikram & Squad (Malakpet, Hyderabad)", action: "booked Private VIP Takeover (Both PS5 & Xbox) for 2 hours", icon: "fa-crown", time: "6 mins ago" },
+  { name: "Rohan K. (Kothapet, Hyderabad)", action: "locked Station 02 (Xbox Series X) for Black Ops 6 120 FPS duel", icon: "fa-xbox", time: "9 mins ago" },
+  { name: "Pooja M. (Hyderabad)", action: "ordered Makhani Paneer Melt & Blue Lagoon for PS5 session", icon: "fa-burger", time: "12 mins ago" }
 ];
 
 function initFomoToasts() {
