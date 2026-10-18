@@ -4,7 +4,6 @@
 .admin-login { max-width: 440px; padding: var(--s6); display: grid; gap: var(--s4); }
 .admin-form { display: grid; gap: var(--s3); }
 .admin-form .btn { margin-top: var(--s2); }
-.link-btn { justify-self: start; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
 .admin-msg { color: var(--muted); font-size: 14px; min-height: 1.4em; }
 .admin-uid { font: 500 14px/1.4 var(--f-mono); padding: var(--s3); border-radius: var(--r-sm); background: var(--surface-2); word-break: break-all; user-select: all; }
 .admin-days { width: 100%; }
@@ -37,10 +36,6 @@
 .sched-cell.is-blocked { background: var(--surface-2); color: var(--muted); text-decoration: line-through; }
 .admin-pass-form { padding: var(--s4); display: grid; gap: var(--s3); box-shadow: none; }
 @media (min-width: 720px) { .admin-pass-form { grid-template-columns: 1.2fr 1fr 1fr 110px auto; align-items: center; } .admin-pass-form .field { max-width: none; } }
-select.field { appearance: none; cursor: pointer; }
-.phone-row { display: flex; gap: var(--s2); align-items: stretch; }
-.phone-cc { display: grid; place-items: center; padding: 0 var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-weight: 700; }
-.phone-row .field { flex: 1; }
 .admin-hours { display: flex; align-items: center; gap: var(--s2); color: var(--muted); font-weight: 600; }
 .admin-hours .field { min-width: 0; }
 .admin-left { color: var(--text); }

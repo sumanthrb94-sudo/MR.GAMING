@@ -148,7 +148,7 @@ em { font-style: normal; color: var(--accent-text); }
 .topbar-in { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--s5); }
 .brand { display: inline-flex; align-items: center; gap: var(--s3); }
 .brand img { border-radius: 8px; }
-.brand-name { font-weight: 900; font-stretch: 120%; letter-spacing: -.02em; font-size: 18px; }
+.brand-name { font-weight: 900; font-stretch: 120%; letter-spacing: -.02em; font-size: 18px; white-space: nowrap; }
 .nav { position: relative; display: none; gap: var(--s1); }
 .nav a { position: relative; z-index: 1; padding: var(--s2) var(--s4); font-size: 15px; font-weight: 600; color: var(--muted); border-radius: var(--r-pill); transition: color .25s; }
 .nav a:hover, .nav a.is-active { color: var(--text); }
@@ -375,7 +375,18 @@ em { font-style: normal; color: var(--accent-text); }
 }
 
 /* pass card page (/pass) */
-.pass-main { padding-block: var(--s7) var(--s9); }
+.pass-main { padding-block: var(--s7) var(--s9); display: grid; gap: var(--s4); }
+.pass-cards { display: grid; gap: var(--s4); }
+.pass-cards:empty { display: none; }
+.pass-lede { color: var(--muted); }
+.pass-form { display: grid; gap: var(--s3); }
+.pass-form .btn { margin-top: var(--s2); }
+.pass-msg { color: var(--muted); font-size: 14px; }
+.pass-msg:empty, #recaptcha:empty { display: none; }
+.pass-who { font-size: 13px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 559px) { .pass-who { display: none; } }
+.pass-foot { text-align: center; }
+.text-link { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .pass-card { max-width: 520px; margin-inline: auto; padding: clamp(24px, 5vw, 40px); display: grid; gap: var(--s4); transition: opacity .4s; }
 .pass-card.is-dim .pass-left { color: var(--muted); }
 .pass-hi { font-weight: 850; font-stretch: 115%; font-size: clamp(28px, 6vw, 40px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
@@ -388,3 +399,21 @@ em { font-style: normal; color: var(--accent-text); }
 .pass-meta:empty { display: none; }
 .pass-card .actions { margin-top: var(--s2); }
 .pass-note { font-size: 13px; color: var(--muted); }
+
+/* sign-in pieces shared by /pass and /admin */
+select.field { appearance: none; cursor: pointer; }
+.phone-row { display: flex; gap: var(--s2); align-items: stretch; max-width: 420px; }
+.phone-cc { display: grid; place-items: center; padding: 0 var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-weight: 700; }
+.phone-row .field { flex: 1; min-width: 0; }
+.link-btn { justify-self: start; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
+
+/* "My pass" entry points on the home page */
+.my-pass { gap: var(--s2); }
+@media (max-width: 559px) {
+  .my-pass { width: 40px; padding: 0; } .my-pass span { display: none; }
+  .topbar-in { gap: var(--s3); } .topbar-actions { gap: var(--s2); }
+  .brand { gap: var(--s2); } .brand-name { font-size: 16px; }
+}
+@media (max-width: 389px) { #theme-toggle { display: none; } }
+.pass-login-link { margin-top: var(--s4); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); color: var(--muted); }
+.footer-links a { color: var(--text); }

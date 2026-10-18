@@ -88,10 +88,10 @@
       </div>
 
       <h2 class="admin-h">Passes</h2>
-      <p class="admin-note">Each pass has its own link. Send it and the customer sees their hours update live.</p>
+      <p class="admin-note">Customers see their hours at /pass: they sign in with the mobile number on the pass, or open the link you send.</p>
       <form class="card admin-pass-form" id="pass-form">
         <input class="field" id="pass-name" placeholder="Name" required maxlength="40">
-        <input class="field" id="pass-phone" placeholder="Phone" inputmode="tel" maxlength="15">
+        <input class="field" id="pass-phone" placeholder="Mobile (for sign-in)" inputmode="tel" maxlength="15">
         <select class="field" id="pass-type" aria-label="Pass type"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></select>
         <label class="admin-hours"><input class="field" id="pass-hours" type="number" min="1" max="99" value="6" required aria-label="Hours"><span>hrs</span></label>
         <button class="btn btn-accent press" type="submit">Add pass</button>

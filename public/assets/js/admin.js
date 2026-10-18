@@ -125,8 +125,6 @@ $('#upcoming').addEventListener('click', (e) => { const b = e.target.closest('[d
 /* requests */
 const holdIds = (r) => (r.station === 'squad' ? ['ps5', 'xbox'] : [r.station])
   .flatMap((c) => Array.from({ length: r.hours }, (_, i) => `${r.date}_${c}_${r.start + i}`));
-// Only touch hours this request still holds (a stale hold may since have gone to someone else)
-const ownHolds = (r) => holdIds(r).filter((id) => holds.some((h) => h.id === id && h.requestId === r.id));
 const telHref = (p) => 'tel:' + String(p).replace(/[^\d+]/g, '');
 
 function renderRequests() {
@@ -157,13 +155,18 @@ $('#requests').addEventListener('click', async (e) => {
   const r = requests.find((x) => x.id === b.dataset.id); if (!r) return;
   const act = b.dataset.act;
   if (act === 'cancel' && !confirm(`Cancel ${r.name}'s booking and free the slot?`)) return;
-  const batch = writeBatch(db), ref = doc(db, 'requests', r.id);
-  if (act === 'confirm') { batch.update(ref, { status: 'confirmed' }); ownHolds(r).forEach((id) => batch.update(doc(db, 'holds', id), { status: 'confirmed' })); }
-  if (act === 'done') batch.update(ref, { status: 'done' });
-  if (act === 'noshow') { batch.update(ref, { status: 'no-show' }); ownHolds(r).forEach((id) => batch.delete(doc(db, 'holds', id))); }
-  if (act === 'cancel') { batch.update(ref, { status: 'cancelled' }); ownHolds(r).forEach((id) => batch.delete(doc(db, 'holds', id))); }
   b.disabled = true;
-  try { await batch.commit(); } catch (err) { alert('Could not save. Check your connection.'); b.disabled = false; }
+  try {
+    // Read the hours from the database (not the on-screen schedule, which may still be loading) and only touch
+    // the ones this request still holds: a stale hold may since have gone to someone else
+    await runTransaction(db, async (tx) => {
+      const snaps = await Promise.all(holdIds(r).map((id) => tx.get(doc(db, 'holds', id))));
+      const mine = snaps.filter((x) => x.exists() && x.data().requestId === r.id).map((x) => x.ref);
+      tx.update(doc(db, 'requests', r.id), { status: { confirm: 'confirmed', done: 'done', noshow: 'no-show', cancel: 'cancelled' }[act] });
+      if (act === 'confirm') mine.forEach((ref) => tx.update(ref, { status: 'confirmed' }));
+      if (act === 'noshow' || act === 'cancel') mine.forEach((ref) => tx.delete(ref));
+    });
+  } catch (err) { alert('Could not save. Check your connection.'); b.disabled = false; }
 });
 
 /* add a booking (phone or walk-in): confirmed straight away, shows as booked on the website */
@@ -244,6 +247,8 @@ $('#sched').addEventListener('click', async (e) => {
 /* passes: /passes holds the owner's record (name, phone, price); /passCards is what the customer's link shows
    (first name and hours only). Every change writes both in one batch. */
 const passLink = (id) => `${location.origin}/pass?id=${id}`;
+// Indian mobile as +91XXXXXXXXXX: the customer signs in at /pass with this number to see their passes
+const toE164 = (p) => { let d = String(p || '').replace(/\D/g, '').replace(/^0/, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return /^[6-9]\d{9}$/.test(d) ? '+91' + d : ''; };
 const firstName = (n) => String(n).trim().split(/\s+/)[0].slice(0, 20);
 function watchPasses() {
   unsub.push(onSnapshot(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
@@ -256,7 +261,7 @@ function watchPasses() {
       const exp = p.expires?.toDate ? p.expires.toDate() : null, expired = exp && exp.getTime() < now;
       return `<li class="card admin-item ${expired || left <= 0 ? 'is-dim' : ''}">
         <div class="admin-item-top"><strong>${esc(p.name)}</strong><span class="pill">${esc(PASS[p.type]?.label || p.type)}</span></div>
-        <p class="admin-item-meta">${p.phone ? esc(p.phone) + ' · ' : ''}<b class="admin-left">${left} of ${total} hrs left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</p>
+        <p class="admin-item-meta">${p.phoneE164 ? esc(p.phone) + ' (can sign in) · ' : p.phone ? esc(p.phone) + ' · ' : 'no mobile, link only · '}<b class="admin-left">${left} of ${total} hrs left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</p>
         <div class="admin-actions">
           <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-use="1" ${left < 1 ? 'disabled' : ''}>Use 1 hr</button>
           <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-use="2" ${left < 2 ? 'disabled' : ''}>Use 2 hrs</button>
@@ -271,10 +276,13 @@ function watchPasses() {
 $('#pass-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const type = $('#pass-type').value, hours = Math.round(+$('#pass-hours').value), name = $('#pass-name').value.trim();
+  const phone = $('#pass-phone').value.trim(), phoneE164 = toE164(phone);
   if (!(hours >= 1 && hours <= 99)) { alert('Hours must be between 1 and 99.'); return; }
+  if (phone && !phoneE164) { alert('Enter a 10-digit Indian mobile number, or leave it empty.'); return; }
+  if (!phone && !confirm('No mobile number: the customer can only see this pass through the link you send. Add it anyway?')) return;
   const expires = Timestamp.fromMillis(Date.now() + 30 * DAY_MS), ref = doc(collection(db, 'passes'));
   const batch = writeBatch(db);
-  batch.set(ref, { name, phone: $('#pass-phone').value.trim(), type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires, createdAt: serverTimestamp() });
+  batch.set(ref, { name, phone, phoneE164, type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires, createdAt: serverTimestamp() });
   batch.set(doc(db, 'passCards', ref.id), { first: firstName(name), type, hoursTotal: hours, hoursUsed: 0, expires, updatedAt: serverTimestamp() });
   try { await batch.commit(); e.target.reset(); } catch (err) { alert('Could not save the pass.'); }
 });
@@ -303,7 +311,8 @@ $('#passes').addEventListener('click', async (e) => {
 });
 function sendPass(pid, p) {
   const left = (p.hoursTotal || 0) - (p.hoursUsed || 0), link = passLink(pid);
-  const text = `Hi ${firstName(p.name)}! Your MR. GAMING ${(PASS[p.type]?.label || 'pass').toLowerCase()} has ${left} hrs left. See your hours any time: ${link}`;
+  const text = `Hi ${firstName(p.name)}! Your MR. GAMING ${(PASS[p.type]?.label || 'pass').toLowerCase()} has ${left} hrs left. See your hours any time: ${link}`
+    + (p.phoneE164 ? ` or sign in with this number at ${location.origin}/pass` : '');
   let digits = String(p.phone || '').replace(/\D/g, '').replace(/^0/, '');
   if (digits.length === 10) digits = '91' + digits;
   if (digits.length === 12) { window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); return; }

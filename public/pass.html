@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Your pass · MR. GAMING</title>
+  <title>My pass · MR. GAMING</title>
+  <meta name="description" content="Sign in with your mobile number to see the hours left on your MR. GAMING pass.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0B0B0A">
   <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
@@ -25,25 +26,51 @@
         <img src="/assets/images/logo-96.webp" width="36" height="36" alt="">
         <span class="brand-name">MR. GAMING</span>
       </a>
+      <div class="topbar-actions">
+        <span class="pass-who" id="who"></span>
+        <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
+      </div>
     </div>
   </header>
 
   <main class="wrap pass-main">
-    <section class="card pass-card" id="pass" aria-live="polite">
-      <p class="eyebrow" id="pass-kind">Your pass</p>
-      <h1 class="pass-hi" id="pass-hi">Loading your hours…</h1>
-      <div class="pass-hours" id="pass-hours" hidden>
-        <span class="pass-left" id="pass-left"></span>
-        <span class="pass-of" id="pass-of"></span>
-      </div>
-      <div class="pass-bar" id="pass-bar" hidden><span id="pass-fill"></span></div>
-      <p class="pass-meta" id="pass-meta"></p>
-      <div class="actions" id="pass-actions" hidden>
-        <a class="btn btn-accent press" id="pass-book" href="/#book">Book with my pass <svg class="i"><use href="#i-arrow"/></svg></a>
-        <a class="btn btn-ghost press" id="pass-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp us</a>
-      </div>
-      <p class="pass-note">Updates on its own when we add or use hours.</p>
+    <!-- Sign in: mobile number + SMS code -->
+    <section class="card pass-card" id="login" hidden>
+      <p class="eyebrow">My pass</p>
+      <h1 class="pass-hi">See your hours</h1>
+      <p class="pass-lede">Sign in with the mobile number you gave us when you bought your pass.</p>
+      <form id="phone-form" class="pass-form">
+        <label class="field-label" for="phone">Mobile number</label>
+        <div class="phone-row">
+          <span class="phone-cc">+91</span>
+          <input class="field" id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="98765 43210" maxlength="11" required>
+        </div>
+        <button class="btn btn-accent press" id="send-code" type="submit">Send code</button>
+      </form>
+      <form id="code-form" class="pass-form" hidden>
+        <label class="field-label" for="code">6-digit code</label>
+        <input class="field" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required>
+        <button class="btn btn-accent press" type="submit">Sign in</button>
+        <button class="link-btn" id="change-number" type="button">Use a different number</button>
+      </form>
+      <p class="pass-msg" id="login-msg" role="status"></p>
+      <div id="recaptcha"></div>
+      <p class="pass-note">No pass yet? Pick "Buy a 6-hr pass" when you <a class="text-link" href="/#book">book a slot</a>.</p>
     </section>
+
+    <!-- Loading, or a message with no pass to show -->
+    <section class="card pass-card" id="status" aria-live="polite">
+      <p class="eyebrow">My pass</p>
+      <h1 class="pass-hi" id="status-text">Loading your hours…</h1>
+      <div class="actions" id="status-actions" hidden>
+        <a class="btn btn-accent press" href="/#book">Book a slot <svg class="i"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-ghost press" id="status-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp us</a>
+      </div>
+    </section>
+
+    <!-- One card per pass, filled by pass.js -->
+    <div class="pass-cards" id="cards" aria-live="polite"></div>
+    <p class="pass-note pass-foot" id="foot" hidden>Updates on its own when we add or use hours.</p>
   </main>
 
   <script type="module" src="/assets/js/pass.js"></script>

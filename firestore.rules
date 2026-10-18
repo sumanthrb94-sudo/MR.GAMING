@@ -2,7 +2,8 @@ rules_version = '2';
 
 // MR. GAMING booking database.
 // Public visitors may: read which slots are taken (no names), create a booking request
-// with the hold documents for the hours it needs, and open their own pass card by its link.
+// with the hold documents for the hours it needs, open their own pass card by its link, and,
+// once signed in with their mobile number, read the passes saved under that number.
 // Everything else is owner-only.
 // An owner is a signed-in user whose uid has a document in /admins (created with the admin key, never from the site).
 service cloud.firestore {
@@ -59,8 +60,15 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // A customer signed in with their mobile number (SMS code) can read the passes saved under that number
+    function isPassHolder() {
+      return request.auth != null && request.auth.token.phone_number != null
+        && resource.data.phoneE164 == request.auth.token.phone_number;
+    }
+
     match /passes/{passId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || isPassHolder();
+      allow write: if isAdmin();
     }
 
     // What a pass holder sees at /pass?id=...: first name and hours only, no phone.
