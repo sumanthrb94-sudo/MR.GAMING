@@ -6,7 +6,7 @@
   const CONFIG = {
     whatsapp: '917337230311',
     rate: 199,          // ₹ per person per hour
-    pass: 799,          // ₹ per person, 6 hours within 30 days
+    pass: 899,          // ₹ per person, 6 hours within 30 days
     squadMinHours: 2,   // squad room: whole room, 2-4 players at the same per-person rate
     open: 11,           // opening hour, 24h clock (11 am)
     close: 23,          // closing hour (11 pm); sessions must end by then
