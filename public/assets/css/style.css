@@ -230,11 +230,14 @@ em { font-style: normal; color: var(--accent-text); }
 
 /* prices */
 .plan { padding: clamp(24px, 3vw, 36px); display: flex; flex-direction: column; gap: var(--s3); }
-@media (min-width: 900px) { .plan { min-height: 260px; } }
+@media (min-width: 900px) { .plan { min-height: 240px; } }
 .plan-name { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); font-weight: 700; font-size: 18px; }
-.plan-price { margin-top: auto; padding-top: var(--s4); font-weight: 900; font-stretch: 120%; font-size: clamp(48px, 5.4vw, 72px); line-height: 1; letter-spacing: -.04em; }
+.plan-price { margin-top: var(--s6); font-weight: 900; font-stretch: 120%; font-size: clamp(48px, 5.4vw, 72px); line-height: 1; letter-spacing: -.04em; }
 .plan-price small { font-size: .3em; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--muted); margin-left: 4px; }
 .plan-note { color: var(--muted); font-size: 15px; }
+.passes { margin-top: var(--s4); }
+@media (min-width: 720px) { .passes { margin-top: var(--s5); } }
+@media (min-width: 900px) { .plan.pass { min-height: 200px; } }
 .plan-hot { border-color: var(--accent); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface)); }
 .tag { font: 600 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; padding: 6px 10px; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
 .perk { margin-top: var(--s5); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); padding: var(--s4) var(--s5); border-radius: var(--r-md); border: 1px dashed var(--line-strong); color: var(--muted); font-size: 16px; }

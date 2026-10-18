@@ -16,7 +16,9 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 
 Home sections: hero → stations (PS5 / Xbox) + installed games → prices → booking request → food highlights → FIFA Cup waitlist → visit.
 
-**Booking (no database):** the visitor picks console, players, length, day (next 7 days), start time (inside 11 am–11 pm, past times hidden, Indian time), game and food, then enters a name. "Request on WhatsApp" opens a chat to the owner with a request ID and an itemised bill. The owner confirms in that chat and sends the UPI QR for the advance. The site cannot show which slots are taken; add a database later for live availability.
+**Pricing:** per console per hour, solo ₹199, duo (2 players on one console) ₹320. Squad room adds up both consoles: 2 players ₹398, 3 ₹519, 4 ₹640 (min 2 hours). Passes, 6 hours within 30 days: solo ₹899, duo ₹1,499. 10% off food for console bookers.
+
+**Booking (no database):** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (inside 11 am–11 pm, past times hidden, Indian time), game and food, then enters a name. "Request on WhatsApp" opens a chat to the owner with a request ID and an itemised bill. The owner confirms in that chat and sends the UPI QR for the advance. The site cannot show which slots are taken; add a database later for live availability.
 
 Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-hosted in `public/assets/`.
 
@@ -24,7 +26,7 @@ Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-
 
 | What | Where |
 |---|---|
-| Phone / WhatsApp number, hourly rate, pass, squad-room minimum hours, opening and closing hour, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
+| Phone / WhatsApp number, solo and duo rates, solo and duo pass prices, squad-room minimum hours, opening and closing hour, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
 | Full food menu and prices | `public/assets/js/menu-data.js`. Items marked `featured: true` also show on the homepage. |
 | Installed games | The "Installed" list in `public/index.html`; the booking form copies its game choices from it |
 | Address, Maps link | `public/index.html` (Visit section + JSON-LD), `public/menu.html` footer |
