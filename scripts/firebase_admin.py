@@ -2,7 +2,8 @@
 """One-off Firebase setup with a service-account key (kept OUTSIDE the repo).
 
   python3 scripts/firebase_admin.py KEY.json deploy-rules        publish firestore.rules
-  python3 scripts/firebase_admin.py KEY.json add-owner EMAIL     let that Firebase Auth user use /admin
+  python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX   let that mobile number use /admin
+                                                                     (creates the phone sign-in user if needed)
 
 Needs: pip install google-auth requests. The key is never printed or stored."""
 import pathlib, sys
@@ -30,16 +31,22 @@ if cmd == 'deploy-rules':
     print('rules published:', ruleset)
 
 elif cmd == 'add-owner':
-    email = sys.argv[3]
-    r = S.post(f'https://identitytoolkit.googleapis.com/v1/projects/{project}/accounts:lookup', json={'email': [email]})
+    phone = sys.argv[3].replace(' ', '')
+    if not phone.startswith('+'):
+        phone = '+91' + phone.lstrip('0')
+    base = f'https://identitytoolkit.googleapis.com/v1/projects/{project}/accounts'
+    r = S.post(base + ':lookup', json={'phoneNumber': [phone]})
     r.raise_for_status()
     users = r.json().get('users') or []
-    if not users:
-        sys.exit(f'No Firebase Auth user with email {email}. Add the user in Firebase > Authentication first.')
-    uid = users[0]['localId']
+    if users:
+        uid = users[0]['localId']
+    else:
+        r = S.post(base, json={'phoneNumber': phone})   # creates the phone sign-in user
+        r.raise_for_status()
+        uid = r.json()['localId']
     r = S.patch(f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/admins/{uid}',
-                json={'fields': {'email': {'stringValue': email}}})
+                json={'fields': {'phone': {'stringValue': phone}}})
     r.raise_for_status()
-    print(f'owner added: {email} ({uid})')
+    print(f'owner added: {phone} ({uid})')
 else:
     sys.exit(__doc__)

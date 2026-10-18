@@ -1,7 +1,7 @@
 /* MR. GAMING owner page: requests, schedule (block / free hours) and passes.
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins). */
 import {
-  initializeApp, getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail,
+  initializeApp, getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch,
   addDoc, serverTimestamp, Timestamp, increment
 } from '/assets/vendor/firebase-admin.js';
@@ -20,25 +20,45 @@ const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const show = (id) => ['login', 'denied', 'dash'].forEach((x) => { $('#' + x).hidden = x !== id; });
 
-/* ---------- sign in ---------- */
-$('#login-form').addEventListener('submit', async (e) => {
+/* ---------- sign in: mobile number + SMS code ---------- */
+auth.languageCode = 'en';
+let verifier = null, confirmation = null;
+const msg = (t) => { $('#login-msg').textContent = t; };
+const resetVerifier = () => { if (verifier) { verifier.clear(); verifier = null; } };
+
+$('#phone-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  $('#login-msg').textContent = 'Signing in…';
-  try { await signInWithEmailAndPassword(auth, $('#email').value.trim(), $('#password').value); $('#login-msg').textContent = ''; }
-  catch (err) { $('#login-msg').textContent = 'Wrong email or password.'; }
+  const digits = $('#phone').value.replace(/\D/g, '').replace(/^0/, '');
+  if (digits.length !== 10) { msg('Enter the 10-digit mobile number.'); return; }
+  $('#send-code').disabled = true; msg('Sending code…');
+  try {
+    resetVerifier();
+    verifier = new RecaptchaVerifier(auth, 'recaptcha', { size: 'invisible' });
+    confirmation = await signInWithPhoneNumber(auth, '+91' + digits, verifier);
+    $('#phone-form').hidden = true; $('#code-form').hidden = false; $('#code').focus();
+    msg(`Code sent to +91 ${digits.slice(0, 5)} ${digits.slice(5)}.`);
+  } catch (err) {
+    resetVerifier();
+    msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.' : 'Could not send the code. Check the number and try again.');
+  } finally { $('#send-code').disabled = false; }
 });
-$('#forgot').addEventListener('click', async () => {
-  const email = $('#email').value.trim();
-  if (!email) { $('#login-msg').textContent = 'Type your email first.'; return; }
-  try { await sendPasswordResetEmail(auth, email); $('#login-msg').textContent = 'Reset link sent. Check your email.'; }
-  catch (err) { $('#login-msg').textContent = 'Could not send the reset link.'; }
+$('#code-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!confirmation) return;
+  msg('Checking…');
+  try { await confirmation.confirm($('#code').value.trim()); msg(''); }
+  catch (err) { msg('That code is wrong or expired.'); }
+});
+$('#change-number').addEventListener('click', () => {
+  confirmation = null; resetVerifier();
+  $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; msg('');
 });
 $('#signout').addEventListener('click', () => signOut(auth));
 
 let unsub = [];
 onAuthStateChanged(auth, async (user) => {
   unsub.forEach((u) => u()); unsub = [];
-  $('#signout').hidden = !user; $('#who').textContent = user ? user.email : '';
+  $('#signout').hidden = !user; $('#who').textContent = user ? (user.phoneNumber || '') : '';
   if (!user) return show('login');
   const isOwner = (await getDoc(doc(db, 'admins', user.uid)).catch(() => null))?.exists();
   if (!isOwner) { $('#uid').textContent = user.uid; return show('denied'); }

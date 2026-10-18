@@ -20,7 +20,7 @@ Home sections: hero → stations (PS5 / Xbox) + installed games → prices → b
 
 **Booking:** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (11 am–11 pm, past times hidden, Indian time), game and food, then a name. Times already held are crossed out. "Request on WhatsApp" saves the request and holds those hours in Firestore, then opens WhatsApp with a request ID and an itemised bill. If Firestore can't be reached, the request still goes to WhatsApp (just without holding the slot).
 
-**Owner page** (`/admin`, not linked, not indexed): sign in with Firebase Auth; see each day's requests and confirm / mark done / no-show / cancel (cancel frees the hours); block or free hours on a PS5/Xbox schedule; add passes and take hours off them. An unconfirmed hold stops blocking its slot after 3 hours.
+**Owner page** (`/admin`, not linked, not indexed): sign in with mobile number + SMS code; see each day's requests and confirm / mark done / no-show / cancel (cancel frees the hours); block or free hours on a PS5/Xbox schedule; add passes and take hours off them. An unconfirmed hold stops blocking its slot after 3 hours.
 
 **Database:** Firebase project `mrgaming-cd566`, Firestore collections `requests` (owner-only), `holds` (public read, no names), `passes` (owner-only), `admins` (owner uids, written only with the admin key). All access is enforced by `firestore.rules`. Firebase SDK 12.19.0 is bundled into `public/assets/vendor/` (`scripts/build-firebase.mjs`), no CDN.
 
@@ -68,10 +68,10 @@ The admin service-account key stays outside the repo (`.gitignore` blocks `*fire
 ```bash
 pip install google-auth requests
 python3 scripts/firebase_admin.py /path/to/key.json deploy-rules        # after editing firestore.rules
-python3 scripts/firebase_admin.py /path/to/key.json add-owner owner@example.com
+python3 scripts/firebase_admin.py /path/to/key.json add-owner +917337230311
 ```
 
-The owner account itself is created in Firebase console > Authentication > Users (Email/Password).
+Owners sign in at `/admin` with their mobile number and an SMS code (Firebase Phone Auth). The site's domain must be listed in Firebase > Authentication > Settings > Authorized domains.
 
 ## Run locally
 
