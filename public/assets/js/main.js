@@ -7,7 +7,7 @@
     whatsapp: '917337230311',
     rate: 199,          // ₹ per person per hour
     pass: 799,          // ₹ per person, 6 hours within 30 days
-    squad: 699,         // ₹ per hour, whole room, up to 4 players, min 2 hours
+    squadMinHours: 2,   // squad room: whole room, 2-4 players at the same per-person rate
     foodPerk: 0.10,     // 10% off food for console bookers
     food: {
       'none': { name: 'No food', price: 0 },
@@ -173,18 +173,20 @@
 
     const render = () => {
       const squad = state.station === 'squad';
-      $('#step-players').hidden = squad;
-      $$('button', segs.time).forEach((b) => { b.disabled = squad && (b.dataset.value === '1' || b.dataset.value === 'pass'); });
+      // Squad room takes 2-4 players; a single console takes 1-2
+      $$('button', segs.players).forEach((b) => { const n = +b.dataset.value; b.hidden = squad ? n < 2 : n > 2; });
+      if (squad && +state.players < 2) { state.players = '2'; select(segs.players, '2'); }
+      if (!squad && +state.players > 2) { state.players = '2'; select(segs.players, '2'); }
+      $$('button', segs.time).forEach((b) => { b.disabled = squad && (+b.dataset.value < CONFIG.squadMinHours || b.dataset.value === 'pass'); });
       if (squad && (state.time === '1' || state.time === 'pass')) { state.time = '2'; select(segs.time, '2'); }
 
-      const pass = state.time === 'pass', hours = pass ? 6 : +state.time, players = squad ? 4 : +state.players;
-      const gaming = squad ? CONFIG.squad * hours : (pass ? CONFIG.pass : CONFIG.rate * hours) * players;
+      const pass = state.time === 'pass', hours = pass ? 6 : +state.time, players = +state.players;
+      const gaming = (pass ? CONFIG.pass : CONFIG.rate * hours) * players;
       const food = CONFIG.food[state.food].price, perk = Math.round(food * CONFIG.foodPerk), total = gaming + food - perk;
 
-      $('#time-hint').textContent = squad ? 'Whole room, up to 4 players. Minimum 2 hours.'
+      $('#time-hint').textContent = squad ? 'The whole room for your group. Minimum 2 hours.'
         : pass ? '6 hours to use any time within 30 days.' : '';
-      $('#sum-title').textContent = squad ? `Squad room · ${hours} hrs · up to 4 players`
-        : `${names[state.station]} · ${pass ? '6-hr monthly pass' : hours + (hours > 1 ? ' hrs' : ' hr')} · ${players} player${players > 1 ? 's' : ''}`;
+      $('#sum-title').textContent = `${names[state.station]} · ${pass ? '6-hr monthly pass' : hours + (hours > 1 ? ' hrs' : ' hr')} · ${players} player${players > 1 ? 's' : ''}`;
       $('#sum-gaming').textContent = inr(gaming);
       $('#sum-food').textContent = inr(food);
       $('#sum-perk').textContent = '−' + inr(perk);
@@ -206,9 +208,9 @@
       const lines = [
         'Hi MR. GAMING! I\'d like to book:',
         '',
-        `• ${squad ? 'Squad room (up to 4 players)' : names[state.station]}`,
+        `• ${squad ? 'Squad room (whole room)' : names[state.station]}`,
         `• ${pass ? '6-hour monthly pass' : state.time + ' hour(s)'}`,
-        squad ? null : `• ${state.players} player(s)`,
+        `• ${state.players} player(s)`,
         `• Food: ${CONFIG.food[state.food].name}`,
         `• Estimated total: ${inr(state.total)} (incl. 10% off food)`,
         '',

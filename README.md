@@ -22,7 +22,7 @@ Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-
 
 | What | Where |
 |---|---|
-| Phone / WhatsApp number, hourly rate, pass, squad room price, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
+| Phone / WhatsApp number, hourly rate, pass, squad-room minimum hours, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
 | Full food menu and prices | `public/assets/js/menu-data.js`. Items marked `featured: true` also show on the homepage. |
 | Address, Maps link | `public/index.html` (Visit section + JSON-LD), `public/menu.html` footer |
 | Room photo | Replace `public/assets/images/room-800.webp` and `room-1376.webp` (16:7 crop works best), then delete the "Representative image" caption in `index.html` |
