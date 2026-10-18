@@ -219,6 +219,10 @@ em { font-style: normal; color: var(--accent-text); }
 .specs { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .specs li { padding: 6px var(--s3); border: 1px solid var(--line); border-radius: var(--r-pill); font-size: 14px; color: var(--muted); }
 
+.games { margin-top: var(--s5); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); }
+.games-label { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.games-list { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.games-list li { padding: var(--s2) var(--s4); border-radius: var(--r-pill); background: var(--surface-2); font-weight: 800; font-stretch: 110%; font-size: 15px; letter-spacing: -.01em; }
 .room { margin-top: var(--s5); position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); }
 .room img { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; }
 .room figcaption { position: absolute; left: var(--s4); bottom: var(--s4); padding: 6px var(--s3); border-radius: var(--r-pill); font: 500 12px/1.2 var(--f-mono); letter-spacing: .04em; background: rgba(11,11,10,.72); color: #F3F2EC; backdrop-filter: blur(8px); }
@@ -284,6 +288,7 @@ em { font-style: normal; color: var(--accent-text); }
 .visit-label { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .visit-address { font-style: normal; font-weight: 800; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; letter-spacing: -.02em; }
 .visit-phone { font-weight: 900; font-stretch: 115%; font-size: clamp(30px, 3.6vw, 44px); line-height: 1; letter-spacing: -.03em; }
+.visit-hours { font-weight: 700; font-size: 18px; }
 .visit-note { color: var(--muted); }
 .visit .btn { justify-self: start; }
 

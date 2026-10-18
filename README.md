@@ -43,9 +43,10 @@ To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-ca
 
 ## Before launch: owner to confirm
 
-- [ ] Opening hours (the site currently says "ask on WhatsApp")
+- [x] Opening hours: 11 am – 11 pm daily
+- [x] Games: EA FC, Call of Duty, GTA V, Tekken, Mortal Kombat
+- [x] Payment: UPI, cash, card · not GST registered
 - [ ] Real photos of the room (replace the representative image)
-- [ ] Games installed (not listed yet)
 - [ ] FIFA Cup date, entry fee and prizes
 - [ ] Whether MR. Sandwich food can be ordered from the gaming room
 - [ ] A custom domain (then regenerate and reprint the QR)
