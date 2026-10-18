@@ -8,6 +8,8 @@
     rate: 199,          // ₹ per person per hour
     pass: 799,          // ₹ per person, 6 hours within 30 days
     squadMinHours: 2,   // squad room: whole room, 2-4 players at the same per-person rate
+    open: 11,           // opening hour, 24h clock (11 am)
+    close: 23,          // closing hour (11 pm); sessions must end by then
     foodPerk: 0.10,     // 10% off food for console bookers
     food: {
       'none': { name: 'No food', price: 0 },
@@ -95,8 +97,13 @@
   const topbar = $('#topbar'), dock = $('#dock'), heroActions = $('.hero .actions');
   const onScroll = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // Mobile dock: show once past the hero buttons, hide while the booking form is on screen
   if (dock && heroActions && 'IntersectionObserver' in window) {
-    new IntersectionObserver(([e]) => dock.classList.toggle('is-visible', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(heroActions);
+    let pastHero = false, inBook = false;
+    const paint = () => dock.classList.toggle('is-visible', pastHero && !inBook);
+    new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting && e.boundingClientRect.top < 0; paint(); }).observe(heroActions);
+    const book = $('#book');
+    if (book) new IntersectionObserver(([e]) => { inBook = e.isIntersecting; paint(); }, { rootMargin: '-20% 0px -20% 0px' }).observe(book);
   }
 
   const nav = $('.nav'), navInd = $('.nav-ind');
@@ -164,12 +171,36 @@
     placeInd(seg);
   }
 
-  /* ---------- booking builder ---------- */
+  /* ---------- booking request builder (no database: the request and bill go to WhatsApp) ---------- */
   const builder = $('.builder');
   if (builder) {
-    const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
-    const state = { station: 'ps5', players: '1', time: '2', food: 'none' };
     const names = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room' };
+    const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = (n) => String(n).padStart(2, '0');
+    const clock = (h) => `${h % 12 || 12}${h < 12 ? ' am' : ' pm'}`;
+    // "Now" in Hyderabad, whatever the visitor's phone timezone is
+    const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
+    const dayLabel = (d) => `${DAY[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
+
+    // Fill the day, start-time and game choices
+    const now = nowIst();
+    const days = [];
+    for (let i = 0; i < 8 && days.length < 7; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      // Skip today once the last 1-hour slot has started
+      if (i === 0 && now.getHours() * 60 + now.getMinutes() > (CONFIG.close - 1) * 60 - 15) continue;
+      days.push({ key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d), date: d, today: i === 0 });
+    }
+    const segDate = $('.seg[data-key="date"]', builder), segStart = $('.seg[data-key="start"]', builder), segGame = $('.seg[data-key="game"]', builder);
+    segDate.insertAdjacentHTML('afterbegin', days.map((d, i) => `<button type="button" data-value="${d.key}" aria-pressed="${i === 0}">${d.label}</button>`).join(''));
+    const hoursOpen = []; for (let h = CONFIG.open; h < CONFIG.close; h++) hoursOpen.push(h);
+    segStart.insertAdjacentHTML('afterbegin', hoursOpen.map((h) => `<button type="button" data-value="${h}" aria-pressed="false">${clock(h)}</button>`).join(''));
+    $$('.games-list li').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
+
+    const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
+    const state = { station: 'ps5', players: '1', time: '2', food: 'none', date: days[0].key, start: null, game: 'any' };
+    const nameInput = $('#book-name'), sendBtn = $('#send-booking');
 
     const render = () => {
       const squad = state.station === 'squad';
@@ -182,16 +213,29 @@
 
       const pass = state.time === 'pass', hours = pass ? 6 : +state.time, players = +state.players;
       const gaming = (pass ? CONFIG.pass : CONFIG.rate * hours) * players;
-      const food = CONFIG.food[state.food].price, perk = Math.round(food * CONFIG.foodPerk), total = gaming + food - perk;
+      const foodPrice = CONFIG.food[state.food].price, perk = Math.round(foodPrice * CONFIG.foodPerk), total = gaming + foodPrice - perk;
+
+      // Start times: inside opening hours for the whole session, and not already past today
+      const day = days.find((d) => d.key === state.date), t = nowIst();
+      const earliest = day.today ? Math.ceil((t.getHours() * 60 + t.getMinutes() + 15) / 60) : CONFIG.open;
+      const latest = CONFIG.close - (pass ? 1 : hours);
+      $$('button', segs.start).forEach((b) => { const h = +b.dataset.value; b.disabled = h < earliest || h > latest; });
+      const valid = $$('button:not(:disabled)', segs.start).map((b) => b.dataset.value);
+      if (!valid.includes(state.start)) state.start = valid[0] || null;
+      select(segs.start, state.start);
+      $('#start-hint').textContent = state.start ? '' : 'No slots left that day for this length. Pick another day or a shorter session.';
 
       $('#time-hint').textContent = squad ? 'The whole room for your group. Minimum 2 hours.'
-        : pass ? '6 hours to use any time within 30 days.' : '';
+        : pass ? '6 hours to use any time within 30 days. Pick when your first visit starts.' : '';
       $('#sum-title').textContent = `${names[state.station]} · ${pass ? '6-hr monthly pass' : hours + (hours > 1 ? ' hrs' : ' hr')} · ${players} player${players > 1 ? 's' : ''}`;
+      const s0 = +state.start;
+      $('#sum-when').textContent = state.start ? `${day.today ? 'Today, ' : ''}${dayLabel(day.date)} · ${pass ? 'from ' + clock(s0) : clock(s0) + ' – ' + clock(s0 + hours)}` : 'Pick a start time';
       $('#sum-gaming').textContent = inr(gaming);
-      $('#sum-food').textContent = inr(food);
+      $('#sum-food').textContent = inr(foodPrice);
       $('#sum-perk').textContent = '−' + inr(perk);
       setRoll($('#sum-total'), total);
-      state.total = total;
+      sendBtn.disabled = !state.start;
+      Object.assign(state, { total, gaming, foodPrice, perk, hours, pass, squad, day });
       $$('.seg', builder).forEach(placeInd);
     };
 
@@ -203,18 +247,29 @@
       });
     });
 
-    $('#send-booking').addEventListener('click', () => {
-      const squad = state.station === 'squad', pass = state.time === 'pass';
+    sendBtn.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) { nameInput.focus(); nameInput.setAttribute('aria-invalid', 'true'); return; }
+      nameInput.removeAttribute('aria-invalid');
+      const st = state, s0 = +st.start, d = st.day.date, p = +st.players;
+      const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
+      const what = st.squad ? 'Squad room (whole room)' : names[st.station];
       const lines = [
-        'Hi MR. GAMING! I\'d like to book:',
+        `Hi MR. GAMING! Booking request ${id}`,
         '',
-        `• ${squad ? 'Squad room (whole room)' : names[state.station]}`,
-        `• ${pass ? '6-hour monthly pass' : state.time + ' hour(s)'}`,
-        `• ${state.players} player(s)`,
-        `• Food: ${CONFIG.food[state.food].name}`,
-        `• Estimated total: ${inr(state.total)} (incl. 10% off food)`,
+        `Name: ${name}`,
+        `When: ${dayLabel(d)}, ${st.pass ? 'first visit from ' + clock(s0) : clock(s0) + ' – ' + clock(s0 + st.hours)}`,
+        `Console: ${what} · ${p} player${p > 1 ? 's' : ''}`,
+        st.game !== 'any' ? `Game: ${st.game}` : null,
         '',
-        'Is a slot free? When can I come?'
+        '*Bill*',
+        st.pass ? `6-hr monthly pass: ${p} × ${inr(CONFIG.pass)} = ${inr(st.gaming)}`
+                : `Gaming: ${p} player${p > 1 ? 's' : ''} × ${st.hours} hr${st.hours > 1 ? 's' : ''} × ${inr(CONFIG.rate)} = ${inr(st.gaming)}`,
+        st.foodPrice ? `Food: ${CONFIG.food[st.food].name} = ${inr(st.foodPrice)}` : null,
+        st.perk ? `Gamer perk (10% off food): −${inr(st.perk)}` : null,
+        `*Total: ${inr(st.total)}*`,
+        '',
+        'Please confirm and send the UPI QR for the advance.'
       ].filter((l) => l !== null);
       window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
     });

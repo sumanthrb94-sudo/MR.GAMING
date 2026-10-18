@@ -14,7 +14,9 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 | Food menu | `public/menu.html` | MR. Sandwich "The Hungry Times" newspaper style from the printed menu: cream paper, double rules, Playfair, blackletter masthead, logo yellow |
 | 404 | `public/404.html` | |
 
-Home sections: hero → stations (PS5 / Xbox) → prices → booking builder (sends a pre-filled WhatsApp message with the estimated total) → food highlights → FIFA Cup waitlist → visit.
+Home sections: hero → stations (PS5 / Xbox) + installed games → prices → booking request → food highlights → FIFA Cup waitlist → visit.
+
+**Booking (no database):** the visitor picks console, players, length, day (next 7 days), start time (inside 11 am–11 pm, past times hidden, Indian time), game and food, then enters a name. "Request on WhatsApp" opens a chat to the owner with a request ID and an itemised bill. The owner confirms in that chat and sends the UPI QR for the advance. The site cannot show which slots are taken; add a database later for live availability.
 
 Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-hosted in `public/assets/`.
 
@@ -22,8 +24,9 @@ Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-
 
 | What | Where |
 |---|---|
-| Phone / WhatsApp number, hourly rate, pass, squad-room minimum hours, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
+| Phone / WhatsApp number, hourly rate, pass, squad-room minimum hours, opening and closing hour, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
 | Full food menu and prices | `public/assets/js/menu-data.js`. Items marked `featured: true` also show on the homepage. |
+| Installed games | The "Installed" list in `public/index.html`; the booking form copies its game choices from it |
 | Address, Maps link | `public/index.html` (Visit section + JSON-LD), `public/menu.html` footer |
 | Room photo | Replace `public/assets/images/room-800.webp` and `room-1376.webp` (16:7 crop works best), then delete the "Representative image" caption in `index.html` |
 
@@ -44,11 +47,12 @@ To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-ca
 ## Before launch: owner to confirm
 
 - [x] Opening hours: 11 am – 11 pm daily
-- [x] Games: EA FC, Call of Duty, GTA V, Tekken, Mortal Kombat
+- [x] Games: GTA V, Fortnite, Minecraft, Forza, Spider-Man (Call of Duty to be added)
 - [x] Payment: UPI, cash, card · not GST registered
 - [ ] Real photos of the room (replace the representative image)
 - [ ] FIFA Cup date, entry fee and prizes
-- [ ] Whether MR. Sandwich food can be ordered from the gaming room
+- [x] MR. Sandwich food is served in the gaming room
+- [ ] EA FC, needed before the FIFA Cup can run
 - [ ] A custom domain (then regenerate and reprint the QR)
 
 ## Run locally

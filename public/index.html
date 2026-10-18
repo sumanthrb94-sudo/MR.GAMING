@@ -162,11 +162,11 @@
         <div class="games" data-reveal>
           <p class="games-label">Installed</p>
           <ul class="games-list">
-            <li>EA FC</li>
-            <li>Call of Duty</li>
             <li>GTA V</li>
-            <li>Tekken</li>
-            <li>Mortal Kombat</li>
+            <li>Fortnite</li>
+            <li>Minecraft</li>
+            <li>Forza</li>
+            <li>Spider-Man</li>
           </ul>
         </div>
 
@@ -212,7 +212,7 @@
       <div class="wrap">
         <header class="sec-head" data-reveal>
           <p class="eyebrow"><span class="num">03</span> Book</p>
-          <h2 class="h2">Build your session. <span class="dim">Send it on WhatsApp.</span></h2>
+          <h2 class="h2">Pick a slot. <span class="dim">Request it on WhatsApp.</span></h2>
         </header>
 
         <div class="builder" data-reveal>
@@ -251,6 +251,32 @@
             </fieldset>
 
             <fieldset class="step">
+              <legend>Day</legend>
+              <div class="seg seg-wrap" data-key="date">
+                <!-- Next 7 days, filled by main.js -->
+                <span class="seg-ind" aria-hidden="true"></span>
+              </div>
+            </fieldset>
+
+            <fieldset class="step">
+              <legend>Start time <span class="legend-note">Open 11 am – 11 pm</span></legend>
+              <div class="seg seg-wrap" data-key="start">
+                <!-- 11 am to 10 pm, filled by main.js -->
+                <span class="seg-ind" aria-hidden="true"></span>
+              </div>
+              <p class="step-hint" id="start-hint"></p>
+            </fieldset>
+
+            <fieldset class="step">
+              <legend>Game <span class="legend-note">Optional</span></legend>
+              <div class="seg seg-wrap" data-key="game">
+                <button type="button" data-value="any" aria-pressed="true">Any</button>
+                <!-- Installed games, copied from the list above by main.js -->
+                <span class="seg-ind" aria-hidden="true"></span>
+              </div>
+            </fieldset>
+
+            <fieldset class="step">
               <legend>Food <span class="legend-note">10% off with your booking</span></legend>
               <div class="seg seg-wrap" data-key="food">
                 <button type="button" data-value="none" aria-pressed="true">No food</button>
@@ -260,10 +286,16 @@
                 <span class="seg-ind" aria-hidden="true"></span>
               </div>
             </fieldset>
+
+            <div class="step">
+              <label class="field-label" for="book-name">Your name</label>
+              <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40">
+            </div>
           </div>
 
           <aside class="summary card" aria-live="polite">
             <p class="summary-title" id="sum-title">PS5 · 2 hrs · 1 player</p>
+            <p class="summary-when" id="sum-when"></p>
             <dl class="summary-lines">
               <div><dt>Gaming</dt><dd id="sum-gaming">₹398</dd></div>
               <div><dt>Food</dt><dd id="sum-food">₹0</dd></div>
@@ -271,12 +303,12 @@
             </dl>
             <div class="summary-total">
               <span>Total</span>
-              <span class="total"><span class="roll" id="sum-total" data-roll="398" data-prefix="₹"></span></span>
+              <span class="total"><span class="roll" id="sum-total" data-prefix="₹"></span></span>
             </div>
             <button class="btn btn-accent btn-block press" id="send-booking" type="button">
-              <svg class="i"><use href="#i-wa"/></svg> Send on WhatsApp
+              <svg class="i"><use href="#i-wa"/></svg> Request on WhatsApp
             </button>
-            <p class="summary-note">We'll confirm your slot on WhatsApp. Pay by UPI, cash or card at the counter.</p>
+            <p class="summary-note">This sends a booking request with your bill. We confirm on WhatsApp and send a UPI QR for the advance.</p>
           </aside>
         </div>
       </div>
@@ -360,9 +392,7 @@
   <!-- Mobile action bar -->
   <div class="dock" id="dock">
     <a class="icon-btn icon-btn-lg press" href="tel:+917337230311" aria-label="Call MR. GAMING"><svg class="i"><use href="#i-phone"/></svg></a>
-    <a class="btn btn-accent btn-block press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">
-      <svg class="i"><use href="#i-wa"/></svg> Book on WhatsApp
-    </a>
+    <a class="btn btn-accent btn-block press" href="#book">Book a slot</a>
   </div>
 
   <script src="/assets/js/menu-data.js"></script>
