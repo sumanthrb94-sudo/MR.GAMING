@@ -1,8 +1,9 @@
 rules_version = '2';
 
 // MR. GAMING booking database.
-// Public visitors may: read which slots are taken (no names), and create a booking request
-// with the hold documents for the hours it needs. Everything else is owner-only.
+// Public visitors may: read which slots are taken (no names), create a booking request
+// with the hold documents for the hours it needs, and open their own pass card by its link.
+// Everything else is owner-only.
 // An owner is a signed-in user whose uid has a document in /admins (created with the admin key, never from the site).
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -39,7 +40,8 @@ service cloud.firestore {
     }
 
     match /requests/{requestId} {
-      allow create: if request.resource.data.keys().hasOnly(['id', 'name', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
+      // The owner adds phone and walk-in bookings from /admin
+      allow create: if isAdmin() || request.resource.data.keys().hasOnly(['id', 'name', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
         && request.resource.data.id == requestId
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
         && isDate(request.resource.data.date)
@@ -59,6 +61,14 @@ service cloud.firestore {
 
     match /passes/{passId} {
       allow read, write: if isAdmin();
+    }
+
+    // What a pass holder sees at /pass?id=...: first name and hours only, no phone.
+    // Readable one at a time by its unguessable id, never listed.
+    match /passCards/{passId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin();
     }
 
     match /admins/{uid} {

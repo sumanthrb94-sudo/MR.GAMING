@@ -174,7 +174,7 @@
     placeInd(seg);
   }
 
-  /* ---------- booking request builder (no database: the request and bill go to WhatsApp) ---------- */
+  /* ---------- booking request builder + availability board (bill goes to WhatsApp, slots held in Firestore) ---------- */
   const builder = $('.builder');
   if (builder) {
     const names = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room' };
@@ -196,13 +196,23 @@
       days.push({ key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d), date: d, today: i === 0 });
     }
     const segDate = $('.seg[data-key="date"]', builder), segStart = $('.seg[data-key="start"]', builder), segGame = $('.seg[data-key="game"]', builder);
-    segDate.insertAdjacentHTML('afterbegin', days.map((d, i) => `<button type="button" data-value="${d.key}" aria-pressed="${i === 0}">${d.label}</button>`).join(''));
+    const dayButtons = days.map((d, i) => `<button type="button" data-value="${d.key}" aria-pressed="${i === 0}">${d.label}</button>`).join('');
+    segDate.insertAdjacentHTML('afterbegin', dayButtons);
+    const availDays = $('#avail-days'), grid = $('#avail-grid'), availNote = $('#avail-note');
+    availDays.insertAdjacentHTML('afterbegin', dayButtons);
     const hoursOpen = []; for (let h = CONFIG.open; h < CONFIG.close; h++) hoursOpen.push(h);
     segStart.insertAdjacentHTML('afterbegin', hoursOpen.map((h) => `<button type="button" data-value="${h}" aria-pressed="false">${clock(h)}</button>`).join(''));
     $$('.games-list li').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
 
     const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
-    const state = { station: 'ps5', players: '1', time: '2', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', taken: new Set() };
+    // live: null while loading a day's slots, true once loaded, false if the database can't be reached
+    const state = { station: 'ps5', players: '1', time: '2', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', taken: new Set(), live: null };
+    // Opened from a pass card (/?pass=duo#book): pay with the pass
+    const passKind = new URLSearchParams(location.search).get('pass');
+    if (passKind === 'solo' || passKind === 'duo') {
+      Object.assign(state, { plan: 'use-pass', players: passKind === 'duo' ? '2' : '1' });
+      select(segs.plan, state.plan); select(segs.players, state.players);
+    }
     const nameInput = $('#book-name'), sendBtn = $('#send-booking');
 
     // Squad room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
@@ -265,28 +275,66 @@
       setRoll($('#sum-total'), total);
       sendBtn.disabled = !state.start;
       Object.assign(state, { total, gaming, foodPrice, perk, hours, squad, day, rate, kind, passName });
-      $$('.seg', builder).forEach(placeInd);
+      renderBoard(day, earliest, consoles);
+      $$('.seg', builder).forEach(placeInd); placeInd(availDays);
     };
+
+    // Availability board: PS5 and Xbox by hour for the chosen day. Never shows "Open" unless the database answered.
+    const renderBoard = (day, earliest, consoles) => {
+      grid.hidden = $('.avail-legend').hidden = state.live === false;
+      availNote.textContent = state.live === false ? "Live availability isn't loading right now. Pick a time below and we'll confirm on WhatsApp."
+        : state.live === null ? 'Checking…' : `${day.label}, live. Tap an open hour to book it.`;
+      if (state.live === false) return;
+      const s0 = state.start === null ? -1 : +state.start, picked = (c, h) => consoles.includes(c) && h >= s0 && h < s0 + state.hours;
+      grid.innerHTML = `<span style="--r:1;--c:1"></span><span class="avail-con" style="--r:1;--c:2">PS5</span><span class="avail-con" style="--r:1;--c:3">Xbox</span>`
+        + hoursOpen.map((h, i) => `<span class="avail-time" style="--r:${i + 2};--c:1">${clock(h)}</span>` + ['ps5', 'xbox'].map((c, j) => {
+          const past = h < earliest, booked = state.taken.has(`${c}_${h}`), loading = state.live === null;
+          const cls = loading ? 'is-loading' : past ? 'is-past' : booked ? 'is-booked' : picked(c, h) ? 'is-picked' : 'is-open';
+          const label = loading ? '' : past ? '–' : booked ? 'Booked' : cls === 'is-picked' ? 'Picked' : 'Open';
+          return `<button type="button" class="avail-cell ${cls}" style="--r:${i + 2};--c:${j + 2}" data-console="${c}" data-hour="${h}" ${cls === 'is-open' || cls === 'is-picked' ? '' : 'disabled'} aria-label="${names[c]} ${clock(h)}: ${label || 'loading'}">${label}</button>`;
+        }).join('')).join('');
+    };
+
+    // Tap an open hour: book that console from that hour, shortening the session if it doesn't fit
+    const pickSlot = (c, h) => {
+      const tryAt = () => { state.start = String(h); render(); return state.start === String(h); };
+      const bothFree = ['ps5', 'xbox'].every((k) => !state.taken.has(`${k}_${h}`));
+      if (!(state.station === 'squad' && bothFree)) { state.station = c; select(segs.station, c); }
+      let ok = tryAt();
+      if (!ok && state.station === 'squad') { state.station = c; select(segs.station, c); ok = tryAt(); }
+      for (let t = +state.time - 1; !ok && t >= 1; t--) { state.time = String(t); select(segs.time, state.time); ok = tryAt(); }
+      if (ok) availNote.textContent = `${names[state.station]} from ${clock(h)} picked. Finish your request below.`;
+    };
+    grid.addEventListener('click', (e) => { const b = e.target.closest('button.avail-cell'); if (b && !b.disabled) pickSlot(b.dataset.console, +b.dataset.hour); });
+    const setDate = (key) => { state.date = key; select(segs.date, key); select(availDays, key); refreshTaken(); };
+    availDays.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setDate(b.dataset.value); });
+    // "See when it's free" on the console cards
+    $$('[data-pick]').forEach((a) => a.addEventListener('click', () => { state.station = a.dataset.pick; select(segs.station, state.station); render(); }));
 
     Object.entries(segs).forEach(([key, seg]) => {
       seg.addEventListener('click', (e) => {
         const b = e.target.closest('button');
         if (!b || b.disabled) return;
-        state[key] = b.dataset.value; select(seg, b.dataset.value);
-        if (key === 'date') refreshTaken(); else render();
+        if (key === 'date') { setDate(b.dataset.value); return; }
+        state[key] = b.dataset.value; select(seg, b.dataset.value); render();
       });
     });
 
     // Live availability from the booking database (loaded on demand; the form works without it)
-    const refreshTaken = () => {
-      if (!window.MGDB) { render(); return; }
+    let dbFailed = false;
+    const refreshTaken = (quiet) => {
+      if (!window.MGDB) { if (dbFailed) state.live = false; render(); return; }
       const date = state.date;
-      window.MGDB.takenFor(date).then((taken) => { if (state.date === date) { state.taken = taken; render(); } })
-        .catch(() => render());
+      if (!quiet) Object.assign(state, { taken: new Set(), live: null });
+      render();
+      window.MGDB.takenFor(date).then((taken) => { if (state.date === date) { Object.assign(state, { taken, live: true }); render(); } })
+        .catch(() => { if (state.date === date) { state.live = false; render(); } });
     };
-    window.addEventListener('mgdb-ready', refreshTaken);
-    import('/assets/js/booking-db.js').catch(() => { /* offline or blocked: WhatsApp-only requests */ });
-    setInterval(() => { if (document.visibilityState === 'visible') refreshTaken(); }, 120000);
+    window.addEventListener('mgdb-ready', () => refreshTaken());
+    import('/assets/js/booking-db.js').catch(() => { dbFailed = true; refreshTaken(); });   // offline or blocked: WhatsApp-only requests
+    const refreshQuiet = () => { if (document.visibilityState === 'visible' && window.MGDB) refreshTaken(true); };
+    setInterval(refreshQuiet, 60000);
+    document.addEventListener('visibilitychange', refreshQuiet);
 
     const statusEl = $('#book-status');
     sendBtn.addEventListener('click', async () => {
@@ -337,7 +385,8 @@
     });
 
     render();
-    window.addEventListener('resize', () => $$('.seg', builder).forEach(placeInd));
-    document.fonts && document.fonts.ready.then(() => $$('.seg', builder).forEach(placeInd));
+    const placeAll = () => { $$('.seg', builder).forEach(placeInd); placeInd(availDays); };
+    window.addEventListener('resize', placeAll);
+    document.fonts && document.fonts.ready.then(placeAll);
   }
 })();

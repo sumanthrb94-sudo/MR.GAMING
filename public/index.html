@@ -140,8 +140,8 @@
               <li>Beanbag seating</li>
               <li>Solo ₹199/hr · Duo ₹320/hr</li>
             </ul>
-            <a class="link-arrow" data-wa="Hi MR. GAMING! Is the PS5 free? I'd like to book it." href="https://wa.me/917337230311" target="_blank" rel="noopener">
-              Check if it's free <svg class="i"><use href="#i-arrow"/></svg>
+            <a class="link-arrow" href="#availability" data-pick="ps5">
+              See when it's free <svg class="i"><use href="#i-arrow"/></svg>
             </a>
           </article>
 
@@ -153,8 +153,8 @@
               <li>Beanbag seating</li>
               <li>Solo ₹199/hr · Duo ₹320/hr</li>
             </ul>
-            <a class="link-arrow" data-wa="Hi MR. GAMING! Is the Xbox free? I'd like to book it." href="https://wa.me/917337230311" target="_blank" rel="noopener">
-              Check if it's free <svg class="i"><use href="#i-arrow"/></svg>
+            <a class="link-arrow" href="#availability" data-pick="xbox">
+              See when it's free <svg class="i"><use href="#i-arrow"/></svg>
             </a>
           </article>
         </div>
@@ -227,6 +227,21 @@
           <p class="eyebrow"><span class="num">03</span> Book</p>
           <h2 class="h2">Pick a slot. <span class="dim">Request it on WhatsApp.</span></h2>
         </header>
+
+        <div class="avail card" id="availability" data-reveal>
+          <div class="avail-head">
+            <div>
+              <h3 class="avail-title">Availability</h3>
+              <p class="avail-note" id="avail-note">Loading live availability… or ask us on WhatsApp.</p>
+            </div>
+            <div class="seg seg-wrap" id="avail-days">
+              <!-- Next 7 days, filled by main.js -->
+              <span class="seg-ind" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="avail-grid" id="avail-grid"></div>
+          <p class="avail-legend" aria-hidden="true"><span class="key key-open"></span>Open <span class="key key-picked"></span>Your pick <span class="key key-booked"></span>Booked</p>
+        </div>
 
         <div class="builder" data-reveal>
           <div class="builder-steps">

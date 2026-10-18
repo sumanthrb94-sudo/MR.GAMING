@@ -12,17 +12,23 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 |---|---|---|
 | Home | `public/index.html` | MR. GAMING: near-black, one lime accent from the logo, Archivo (wide/black for headlines), light + dark mode |
 | Food menu | `public/menu.html` | MR. Sandwich "The Hungry Times" newspaper style from the printed menu: cream paper, double rules, Playfair, blackletter masthead, logo yellow |
+| Pass card | `public/pass.html` | What a pass holder opens from the link the owner sends: first name, hours left, valid till. Not indexed. |
+| Owner | `public/admin.html` | Not linked, not indexed |
 | 404 | `public/404.html` | |
 
-Home sections: hero → stations (PS5 / Xbox) + installed games → prices → booking request → food highlights → FIFA Cup waitlist → visit.
+Home sections: hero → stations (PS5 / Xbox) + installed games → prices → availability board + booking request → food highlights → FIFA Cup waitlist → visit.
 
 **Pricing:** per console per hour, solo ₹199, duo (2 players on one console) ₹320. Squad room adds up both consoles: 2 players ₹398, 3 ₹519, 4 ₹640 (min 2 hours). Passes, 6 hours within 30 days: solo ₹899, duo ₹1,499. 10% off food for console bookers.
 
+**Availability:** the Book section opens with a live board, PS5 and Xbox by hour for any of the next 7 days. Booked hours (website requests, the owner's phone / walk-in bookings, blocked hours) show as Booked; tapping an open hour fills the form. It re-reads every minute and when the tab comes back. If the database can't be reached it says so instead of showing anything as open.
+
 **Booking:** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (11 am–11 pm, past times hidden, Indian time), game and food, then a name. Times already held are crossed out. "Request on WhatsApp" saves the request and holds those hours in Firestore, then opens WhatsApp with a request ID and an itemised bill. If Firestore can't be reached, the request still goes to WhatsApp (just without holding the slot).
 
-**Owner page** (`/admin`, not linked, not indexed): sign in with mobile number + SMS code; see each day's requests and confirm / mark done / no-show / cancel (cancel frees the hours); block or free hours on a PS5/Xbox schedule; add passes and take hours off them. An unconfirmed hold stops blocking its slot after 3 hours.
+**Owner page** (`/admin`, not linked, not indexed): sign in with mobile number + SMS code. **Upcoming** lists every live booking from today on, all days. Pick a day (chips for the next week, or any date) to see its requests and confirm / mark done / no-show / cancel (cancel frees the hours). **Add a booking** records phone and walk-in bookings, confirmed straight away, and refuses an hour that's already taken. Block or free hours on the PS5/Xbox schedule. **Passes:** add a pass with any number of hours, use 1 or 2 hrs, **Add hours** (also renews it for 30 days from today), **Send link** (opens WhatsApp to the customer with their pass link). An unconfirmed hold stops blocking its slot after 3 hours.
 
-**Database:** Firebase project `mrgaming-cd566`, Firestore collections `requests` (owner-only), `holds` (public read, no names), `passes` (owner-only), `admins` (owner uids, written only with the admin key). All access is enforced by `firestore.rules`. Firebase SDK 12.19.0 is bundled into `public/assets/vendor/` (`scripts/build-firebase.mjs`), no CDN.
+**Pass link** (`/pass?id=…`): the customer sees their hours left and valid-till date, updated within 30 seconds of any change, with "Book with my pass" (opens the form on Use my pass).
+
+**Database:** Firebase project `mrgaming-cd566`, Firestore collections `requests` (owner-only), `holds` (public read, no names), `passes` (owner-only), `passCards` (public read one at a time by link id: first name and hours only, never listed), `admins` (owner uids, written only with the admin key). Phone sign-in SMS is allowed to India only (Firebase Auth SMS region policy). All access is enforced by `firestore.rules`. Firebase SDK 12.19.0 is bundled into `public/assets/vendor/` (`scripts/build-firebase.mjs`), no CDN.
 
 Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-hosted in `public/assets/`.
 

@@ -36,8 +36,40 @@
 .sched-cell.is-confirmed { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .sched-cell.is-blocked { background: var(--surface-2); color: var(--muted); text-decoration: line-through; }
 .admin-pass-form { padding: var(--s4); display: grid; gap: var(--s3); box-shadow: none; }
-@media (min-width: 720px) { .admin-pass-form { grid-template-columns: 1.2fr 1fr 1fr auto; align-items: center; } .admin-pass-form .field { max-width: none; } }
+@media (min-width: 720px) { .admin-pass-form { grid-template-columns: 1.2fr 1fr 1fr 110px auto; align-items: center; } .admin-pass-form .field { max-width: none; } }
 select.field { appearance: none; cursor: pointer; }
 .phone-row { display: flex; gap: var(--s2); align-items: stretch; }
 .phone-cc { display: grid; place-items: center; padding: 0 var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-weight: 700; }
 .phone-row .field { flex: 1; }
+.admin-hours { display: flex; align-items: center; gap: var(--s2); color: var(--muted); font-weight: 600; }
+.admin-hours .field { min-width: 0; }
+.admin-left { color: var(--text); }
+.admin-tel { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* upcoming bookings, all days */
+.admin-up { display: grid; gap: var(--s1); }
+.admin-up-row { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: var(--s1) var(--s3); align-items: center; padding: var(--s3) var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); text-align: left; transition: border-color .25s, transform .4s var(--ease-spring); }
+.admin-up-row:hover { border-color: var(--line-strong); }
+.admin-up-row:active { transform: scale(.98); }
+.admin-up-when { font-weight: 800; }
+.admin-up-who { grid-column: 1; color: var(--muted); font-size: 14px; }
+.admin-up-row .pill { grid-column: 2; grid-row: 1 / span 2; }
+@media (min-width: 720px) { .admin-up-row { grid-template-columns: 220px 1fr auto; } .admin-up-who { grid-column: 2; } .admin-up-row .pill { grid-column: 3; grid-row: 1; } }
+
+/* day picker */
+.admin-dayrow { display: grid; gap: var(--s3); margin-top: var(--s5); }
+@media (min-width: 960px) { .admin-dayrow { grid-template-columns: 1fr 220px; align-items: end; } }
+.admin-pick { display: grid; gap: var(--s2); }
+.admin-pick .field { min-height: 44px; }
+
+/* add a booking */
+.admin-add { margin-top: var(--s3); box-shadow: none; }
+.admin-add summary { padding: var(--s4) var(--s5); font-weight: 800; cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: baseline; }
+.admin-add summary::-webkit-details-marker { display: none; }
+.admin-add summary::before { content: "+"; font-weight: 900; color: var(--accent-text); transition: transform .4s var(--ease-spring); }
+.admin-add[open] summary::before { transform: rotate(45deg); }
+.admin-add summary .dim { font-weight: 500; font-size: 14px; }
+.admin-book-form { padding: 0 var(--s5) var(--s5); display: grid; gap: var(--s3); }
+.admin-book-form .field { max-width: none; }
+@media (min-width: 520px) { .admin-book-form { grid-template-columns: 1fr 1fr; } .admin-book-form > p, .admin-book-form > .btn { grid-column: 1 / -1; } }
+.admin-bk-total { font-weight: 900; font-stretch: 115%; font-size: 20px; }

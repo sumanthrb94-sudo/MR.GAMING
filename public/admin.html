@@ -52,12 +52,33 @@
 
     <!-- Dashboard -->
     <section id="dash" hidden>
-      <div class="seg seg-wrap admin-days" id="days"><span class="seg-ind" aria-hidden="true"></span></div>
+      <h2 class="admin-h">Upcoming <span class="admin-count" id="up-count"></span></h2>
+      <ul class="admin-up" id="upcoming"></ul>
+
+      <div class="admin-dayrow">
+        <div class="seg seg-wrap admin-days" id="days"><span class="seg-ind" aria-hidden="true"></span></div>
+        <label class="admin-pick"><span class="field-label">Other day</span><input class="field" id="day-pick" type="date"></label>
+      </div>
 
       <div class="admin-grid">
         <div>
           <h2 class="admin-h">Requests <span class="admin-count" id="req-count"></span></h2>
           <ul class="admin-list" id="requests"></ul>
+          <details class="card admin-add" id="add-booking">
+            <summary>Add a booking <span class="dim">phone or walk-in, for <span id="bk-day"></span></span></summary>
+            <form class="admin-book-form" id="book-form">
+              <input class="field" id="bk-name" placeholder="Name" required maxlength="40" autocomplete="off">
+              <input class="field" id="bk-phone" placeholder="Phone (optional)" inputmode="tel" maxlength="15" autocomplete="off">
+              <select class="field" id="bk-station" aria-label="Console"><option value="ps5">PS5</option><option value="xbox">Xbox</option><option value="squad">Squad room (both)</option></select>
+              <select class="field" id="bk-players" aria-label="Players"><option value="1">1 player</option><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>
+              <select class="field" id="bk-start" aria-label="Start time"></select>
+              <select class="field" id="bk-hours" aria-label="Hours"></select>
+              <select class="field" id="bk-plan" aria-label="Pays with"><option value="hourly">Pays hourly</option><option value="use-pass">Uses a pass</option><option value="buy-pass">Buys a pass</option></select>
+              <p class="admin-bk-total" id="bk-total"></p>
+              <button class="btn btn-accent press" type="submit">Add booking</button>
+              <p class="admin-msg" id="bk-msg" role="status"></p>
+            </form>
+          </details>
         </div>
         <div>
           <h2 class="admin-h">Schedule</h2>
@@ -67,10 +88,12 @@
       </div>
 
       <h2 class="admin-h">Passes</h2>
+      <p class="admin-note">Each pass has its own link. Send it and the customer sees their hours update live.</p>
       <form class="card admin-pass-form" id="pass-form">
         <input class="field" id="pass-name" placeholder="Name" required maxlength="40">
         <input class="field" id="pass-phone" placeholder="Phone" inputmode="tel" maxlength="15">
-        <select class="field" id="pass-type"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></select>
+        <select class="field" id="pass-type" aria-label="Pass type"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></select>
+        <label class="admin-hours"><input class="field" id="pass-hours" type="number" min="1" max="99" value="6" required aria-label="Hours"><span>hrs</span></label>
         <button class="btn btn-accent press" type="submit">Add pass</button>
       </form>
       <ul class="admin-list" id="passes"></ul>

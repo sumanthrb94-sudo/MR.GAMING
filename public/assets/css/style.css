@@ -283,6 +283,40 @@ em { font-style: normal; color: var(--accent-text); }
 .book-status:empty { display: none; }
 .summary-note { font-size: 14px; color: var(--muted); text-align: center; }
 
+/* availability board: hours down the side on phones, across the top on desktop */
+.avail { padding: clamp(20px, 3vw, 32px); margin-bottom: clamp(32px, 5vw, 64px); display: grid; gap: var(--s5); }
+.avail-head { display: grid; gap: var(--s4); }
+@media (min-width: 900px) { .avail-head { grid-template-columns: 1fr auto; align-items: end; } }
+.avail-title { font-weight: 850; font-stretch: 115%; font-size: 24px; letter-spacing: -.02em; line-height: 1.1; }
+.avail-note { color: var(--muted); font-size: 15px; margin-top: var(--s1); }
+.avail-grid { display: grid; grid-template-columns: 56px 1fr 1fr; gap: var(--s1); align-items: center; }
+.avail-grid > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
+.avail-con, .avail-time { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.avail-con { padding-bottom: var(--s2); }
+.avail-time { letter-spacing: 0; font-size: 13px; }
+.avail-cell { min-height: 40px; padding: 0 var(--s3); border-radius: var(--r-sm); border: 1px solid var(--line); font-size: 13px; font-weight: 700; text-align: left; white-space: nowrap; transition: transform .45s var(--ease-spring), background-color .25s, border-color .25s, color .25s; }
+.avail-cell.is-open { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent-text); }
+.avail-cell.is-open:hover { border-color: var(--accent); }
+.avail-cell.is-open:active { transform: scale(.95); }
+.avail-cell.is-picked { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.avail-cell.is-booked { background: var(--surface-2); color: var(--muted); text-decoration: line-through; cursor: not-allowed; }
+.avail-cell.is-past { color: var(--muted); opacity: .4; cursor: default; }
+.avail-cell.is-loading { background: var(--surface-2); animation: avail-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes avail-pulse { to { opacity: .45; } }
+@media (min-width: 900px) {
+  .avail-grid { grid-template-columns: 56px repeat(12, 1fr); }
+  .avail-grid > * { grid-row: var(--c); grid-column: var(--r); }
+  .avail-con { padding: 0; }
+  .avail-time { text-align: center; padding-bottom: var(--s2); }
+  .avail-cell { padding: 0; text-align: center; }
+}
+.avail-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); font-size: 13px; color: var(--muted); }
+.key { width: 12px; height: 12px; border-radius: 4px; border: 1px solid var(--line); margin-left: var(--s2); }
+.key:first-child { margin-left: 0; }
+.key-open { border-color: var(--accent); }
+.key-picked { background: var(--accent); border-color: var(--accent); }
+.key-booked { background: var(--surface-2); }
+
 /* food */
 .food-list { display: grid; border-top: 1px solid var(--line); }
 @media (min-width: 900px) { .food-list { grid-template-columns: 1fr 1fr; column-gap: var(--s7); } }
@@ -339,3 +373,18 @@ em { font-style: normal; color: var(--accent-text); }
   .js [data-reveal], .js .display .w { opacity: 1 !important; transform: none !important; filter: none !important; }
   .marquee-track { animation: none; }
 }
+
+/* pass card page (/pass) */
+.pass-main { padding-block: var(--s7) var(--s9); }
+.pass-card { max-width: 520px; margin-inline: auto; padding: clamp(24px, 5vw, 40px); display: grid; gap: var(--s4); transition: opacity .4s; }
+.pass-card.is-dim .pass-left { color: var(--muted); }
+.pass-hi { font-weight: 850; font-stretch: 115%; font-size: clamp(28px, 6vw, 40px); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; }
+.pass-hours { display: flex; align-items: baseline; gap: var(--s3); }
+.pass-left { font-weight: 900; font-stretch: 125%; font-size: clamp(96px, 26vw, 152px); line-height: .85; letter-spacing: -.05em; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.pass-of { font-weight: 700; font-size: 18px; color: var(--muted); }
+.pass-bar { height: 10px; border-radius: var(--r-pill); background: var(--surface-2); overflow: hidden; }
+.pass-bar span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width .9s var(--ease-out); }
+.pass-meta { font-weight: 700; }
+.pass-meta:empty { display: none; }
+.pass-card .actions { margin-top: var(--s2); }
+.pass-note { font-size: 13px; color: var(--muted); }
