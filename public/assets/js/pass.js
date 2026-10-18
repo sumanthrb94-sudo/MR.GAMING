@@ -116,7 +116,10 @@ function startAccount() {
       msg(`Code sent to +91 ${digits.slice(0, 5)} ${digits.slice(5)}.`);
     } catch (err) {
       resetVerifier();
-      msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.' : 'Could not send the code. Check the number and try again.');
+      msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.'
+        : err.code === 'auth/invalid-phone-number' ? 'That number looks wrong. Check it and try again.'
+        : "We couldn't send a code right now. Ask us on WhatsApp for your hours, or try again later.");
+      if (err.code) console.warn('Sign-in code not sent:', err.code);
     } finally { $('#send-code').disabled = false; }
   });
   $('#code-form').addEventListener('submit', async (e) => {

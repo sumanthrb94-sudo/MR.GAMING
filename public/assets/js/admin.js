@@ -44,7 +44,10 @@ $('#phone-form').addEventListener('submit', async (e) => {
     msg(`Code sent to +91 ${digits.slice(0, 5)} ${digits.slice(5)}.`);
   } catch (err) {
     resetVerifier();
-    msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.' : 'Could not send the code. Check the number and try again.');
+    msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.'
+      : err.code === 'auth/billing-not-enabled' ? 'SMS sign-in needs the Firebase Blaze plan. Turn on billing in the Firebase console, then try again.'
+      : err.code === 'auth/invalid-phone-number' ? 'That number looks wrong. Check it and try again.'
+      : `Could not send the code (${err.code || 'unknown error'}). Try again.`);
   } finally { $('#send-code').disabled = false; }
 });
 $('#code-form').addEventListener('submit', async (e) => {
