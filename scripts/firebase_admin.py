@@ -24,9 +24,10 @@ if cmd == 'deploy-rules':
     r.raise_for_status()
     ruleset = r.json()['name']
     name = f'projects/{project}/releases/cloud.firestore'
-    r = S.post(f'https://firebaserules.googleapis.com/v1/projects/{project}/releases', json={'name': name, 'rulesetName': ruleset})
-    if r.status_code == 409:
-        r = S.patch(f'https://firebaserules.googleapis.com/v1/{name}', json={'release': {'name': name, 'rulesetName': ruleset}})
+    # Creating the database makes a default release, so update it; create one only if it is missing
+    r = S.patch(f'https://firebaserules.googleapis.com/v1/{name}', json={'release': {'name': name, 'rulesetName': ruleset}})
+    if r.status_code == 404:
+        r = S.post(f'https://firebaserules.googleapis.com/v1/projects/{project}/releases', json={'name': name, 'rulesetName': ruleset})
     r.raise_for_status()
     print('rules published:', ruleset)
 
