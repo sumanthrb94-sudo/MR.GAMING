@@ -202,7 +202,7 @@
     $$('.games-list li').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
 
     const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
-    const state = { station: 'ps5', players: '1', time: '2', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any' };
+    const state = { station: 'ps5', players: '1', time: '2', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', taken: new Set() };
     const nameInput = $('#book-name'), sendBtn = $('#send-booking');
 
     // Squad room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
@@ -231,11 +231,22 @@
       const day = days.find((d) => d.key === state.date), t = nowIst();
       const earliest = day.today ? Math.ceil((t.getHours() * 60 + t.getMinutes() + 15) / 60) : CONFIG.open;
       const latest = CONFIG.close - hours;
-      $$('button', segs.start).forEach((b) => { const h = +b.dataset.value; b.disabled = h < earliest || h > latest; });
+      // Taken: any hour of the session already held on a console this booking needs
+      const consoles = squad ? ['ps5', 'xbox'] : [state.station];
+      const isTaken = (h0) => consoles.some((c) => Array.from({ length: hours }, (_, i) => h0 + i).some((h) => state.taken.has(`${c}_${h}`)));
+      let anyTaken = false;
+      $$('button', segs.start).forEach((b) => {
+        const h = +b.dataset.value, taken = isTaken(h);
+        b.disabled = h < earliest || h > latest || taken;
+        b.classList.toggle('is-taken', taken);
+        b.title = taken ? 'Taken' : '';
+        if (taken) anyTaken = true;
+      });
       const valid = $$('button:not(:disabled)', segs.start).map((b) => b.dataset.value);
       if (!valid.includes(state.start)) state.start = valid[0] || null;
       select(segs.start, state.start);
-      $('#start-hint').textContent = state.start ? '' : 'No slots left that day for this length. Pick another day or a shorter session.';
+      $('#start-hint').textContent = !state.start ? 'No slots left that day for this length. Pick another day or a shorter session.'
+        : anyTaken ? 'Crossed-out times are already booked.' : '';
 
       const passName = kind === 'duo' ? 'Duo pass' : 'Solo pass';
       $('#time-hint').textContent = squad ? `Squad room for ${players}: ${splitLabel[players]}, ${inr(rate)}/hr. Minimum ${CONFIG.squadMinHours} hours.`
@@ -261,16 +272,29 @@
       seg.addEventListener('click', (e) => {
         const b = e.target.closest('button');
         if (!b || b.disabled) return;
-        state[key] = b.dataset.value; select(seg, b.dataset.value); render();
+        state[key] = b.dataset.value; select(seg, b.dataset.value);
+        if (key === 'date') refreshTaken(); else render();
       });
     });
 
-    sendBtn.addEventListener('click', () => {
+    // Live availability from the booking database (loaded on demand; the form works without it)
+    const refreshTaken = () => {
+      if (!window.MGDB) { render(); return; }
+      const date = state.date;
+      window.MGDB.takenFor(date).then((taken) => { if (state.date === date) { state.taken = taken; render(); } })
+        .catch(() => render());
+    };
+    window.addEventListener('mgdb-ready', refreshTaken);
+    import('/assets/js/booking-db.js').catch(() => { /* offline or blocked: WhatsApp-only requests */ });
+    setInterval(() => { if (document.visibilityState === 'visible') refreshTaken(); }, 120000);
+
+    const statusEl = $('#book-status');
+    sendBtn.addEventListener('click', async () => {
       const name = nameInput.value.trim();
       if (!name) { nameInput.focus(); nameInput.setAttribute('aria-invalid', 'true'); return; }
       nameInput.removeAttribute('aria-invalid');
       const st = state, s0 = +st.start, d = st.day.date, p = +st.players, hrs = `${st.hours} hr${st.hours > 1 ? 's' : ''}`;
-      const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
+      const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
       const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${st.kind === 'duo' ? 'Duo, 2 players on one console' : 'Solo, 1 player'}`;
       const gamingLine = st.plan === 'buy-pass' ? `${st.passName} (${CONFIG.passHours} hrs, valid 30 days) = ${inr(st.gaming)}\nThis visit uses ${st.hours} of ${CONFIG.passHours} hrs`
         : st.plan === 'use-pass' ? `Gaming: ${hrs} from my ${st.passName.toLowerCase()} = ₹0`
@@ -291,7 +315,25 @@
         '',
         st.total ? 'Please confirm and send the UPI QR for the advance.' : 'Please confirm my slot.'
       ].filter((l) => l !== null);
-      window.open(waUrl(lines.join('\n')), '_blank', 'noopener');
+      const url = waUrl(lines.join('\n'));
+
+      if (!window.MGDB) { window.open(url, '_blank', 'noopener'); return; }
+      // Open the tab now (browsers block pop-ups opened after a wait), then fill it once the slot is reserved
+      const tab = window.open('', '_blank');
+      sendBtn.disabled = true; statusEl.textContent = 'Reserving your slot…';
+      const res = await window.MGDB.reserve({
+        id, name, date: st.date, start: s0, hours: st.hours, station: st.station, players: p, plan: st.plan,
+        game: st.game === 'any' ? '' : st.game, food: st.foodPrice ? CONFIG.food[st.food].name : '', total: st.total
+      });
+      sendBtn.disabled = false;
+      if (res.reason === 'taken') {
+        if (tab) tab.close();
+        state.taken = res.taken; render();
+        statusEl.textContent = 'Someone just booked that time. Pick another slot.';
+        return;
+      }
+      statusEl.textContent = res.ok ? `Slot held for you (${id}). We'll confirm on WhatsApp.` : '';
+      if (tab) tab.location.href = url; else window.location.href = url;
     });
 
     render();

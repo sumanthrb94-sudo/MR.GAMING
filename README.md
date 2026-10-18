@@ -18,7 +18,11 @@ Home sections: hero → stations (PS5 / Xbox) + installed games → prices → b
 
 **Pricing:** per console per hour, solo ₹199, duo (2 players on one console) ₹320. Squad room adds up both consoles: 2 players ₹398, 3 ₹519, 4 ₹640 (min 2 hours). Passes, 6 hours within 30 days: solo ₹899, duo ₹1,499. 10% off food for console bookers.
 
-**Booking (no database):** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (inside 11 am–11 pm, past times hidden, Indian time), game and food, then enters a name. "Request on WhatsApp" opens a chat to the owner with a request ID and an itemised bill. The owner confirms in that chat and sends the UPI QR for the advance. The site cannot show which slots are taken; add a database later for live availability.
+**Booking:** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (11 am–11 pm, past times hidden, Indian time), game and food, then a name. Times already held are crossed out. "Request on WhatsApp" saves the request and holds those hours in Firestore, then opens WhatsApp with a request ID and an itemised bill. If Firestore can't be reached, the request still goes to WhatsApp (just without holding the slot).
+
+**Owner page** (`/admin`, not linked, not indexed): sign in with Firebase Auth; see each day's requests and confirm / mark done / no-show / cancel (cancel frees the hours); block or free hours on a PS5/Xbox schedule; add passes and take hours off them. An unconfirmed hold stops blocking its slot after 3 hours.
+
+**Database:** Firebase project `mrgaming-cd566`, Firestore collections `requests` (owner-only), `holds` (public read, no names), `passes` (owner-only), `admins` (owner uids, written only with the admin key). All access is enforced by `firestore.rules`. Firebase SDK 12.19.0 is bundled into `public/assets/vendor/` (`scripts/build-firebase.mjs`), no CDN.
 
 Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-hosted in `public/assets/`.
 
@@ -56,6 +60,18 @@ To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-ca
 - [x] MR. Sandwich food is served in the gaming room
 - [ ] EA FC, needed before the FIFA Cup can run
 - [ ] A custom domain (then regenerate and reprint the QR)
+
+## Firebase setup and maintenance
+
+The admin service-account key stays outside the repo (`.gitignore` blocks `*firebase-adminsdk*.json`).
+
+```bash
+pip install google-auth requests
+python3 scripts/firebase_admin.py /path/to/key.json deploy-rules        # after editing firestore.rules
+python3 scripts/firebase_admin.py /path/to/key.json add-owner owner@example.com
+```
+
+The owner account itself is created in Firebase console > Authentication > Users (Email/Password).
 
 ## Run locally
 

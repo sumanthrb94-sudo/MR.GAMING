@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Owner · MR. GAMING</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0B0A">
+  <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body class="admin">
+  <header class="topbar is-scrolled">
+    <div class="wrap topbar-in">
+      <a class="brand" href="/"><img src="/assets/images/logo-96.webp" width="36" height="36" alt=""><span class="brand-name">MR. GAMING</span></a>
+      <div class="topbar-actions">
+        <span class="admin-who" id="who"></span>
+        <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap admin-main">
+    <!-- Sign in -->
+    <section class="card admin-login" id="login" hidden>
+      <h1 class="h2">Owner sign in</h1>
+      <form id="login-form" class="admin-form">
+        <label class="field-label" for="email">Email</label>
+        <input class="field" id="email" type="email" autocomplete="username" required>
+        <label class="field-label" for="password">Password</label>
+        <input class="field" id="password" type="password" autocomplete="current-password" required>
+        <button class="btn btn-accent press" type="submit">Sign in</button>
+        <button class="link-btn" id="forgot" type="button">Forgot password?</button>
+        <p class="admin-msg" id="login-msg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- Not an owner yet -->
+    <section class="card admin-login" id="denied" hidden>
+      <h1 class="h2">Not an owner yet</h1>
+      <p class="admin-msg">This account is signed in but isn't on the owner list. Share this ID with Brand Mint to be added:</p>
+      <p class="admin-uid" id="uid"></p>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dash" hidden>
+      <div class="seg seg-wrap admin-days" id="days"><span class="seg-ind" aria-hidden="true"></span></div>
+
+      <div class="admin-grid">
+        <div>
+          <h2 class="admin-h">Requests <span class="admin-count" id="req-count"></span></h2>
+          <ul class="admin-list" id="requests"></ul>
+        </div>
+        <div>
+          <h2 class="admin-h">Schedule</h2>
+          <p class="admin-note">Tap a free hour to block it. Tap a blocked hour to free it.</p>
+          <div class="sched" id="sched"></div>
+        </div>
+      </div>
+
+      <h2 class="admin-h">Passes</h2>
+      <form class="card admin-pass-form" id="pass-form">
+        <input class="field" id="pass-name" placeholder="Name" required maxlength="40">
+        <input class="field" id="pass-phone" placeholder="Phone" inputmode="tel" maxlength="15">
+        <select class="field" id="pass-type"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></select>
+        <button class="btn btn-accent press" type="submit">Add pass</button>
+      </form>
+      <ul class="admin-list" id="passes"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="/assets/js/admin.js"></script>
+</body>
+</html>
