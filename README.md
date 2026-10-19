@@ -13,7 +13,7 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 | Home | `public/index.html` | MR. GAMING: near-black, one lime accent from the logo, Archivo (wide/black for headlines), light + dark mode |
 | Food menu | `public/menu.html` | MR. Sandwich "The Hungry Times" newspaper style from the printed menu: cream paper, double rules, Playfair, blackletter masthead, logo yellow |
 | My pass | `public/pass.html` | Customers sign in with their mobile number + SMS code and see every pass on that number (hours left, valid till), or open the link the owner sends. Linked from the header ("My pass"), the prices section and the footer. Not indexed. |
-| Owner | `public/admin.html` | "Owner login" in the footer. Not indexed |
+| Owner | `public/admin.html` | Owner dashboard. No login of its own: owners use the same "Log in" as customers and are sent here. Not indexed |
 | 404 | `public/404.html` | |
 
 Home sections: hero → stations (PS5 / Xbox) + game cards → prices → availability board + booking request → birthday package → food highlights → FIFA Cup waitlist → visit.
@@ -30,7 +30,7 @@ Home sections: hero → stations (PS5 / Xbox) + game cards → prices → availa
 
 **Booking:** the visitor picks console, players, length, pay with (hourly / buy a pass / use my pass), day (next 7 days), start time (11 am–11 pm, past times hidden, Indian time), game and food, then a name. Times already held are crossed out. "Request on WhatsApp" saves the request and holds those hours in Firestore, then opens WhatsApp with a request ID and an itemised bill. If Firestore can't be reached, the request still goes to WhatsApp (just without holding the slot).
 
-**Owner page** (`/admin`, footer "Owner login", not indexed): sign in with mobile number + SMS code. **Upcoming** lists every live booking from today on, all days. Pick a day (chips for the next week, or any date) to see its requests and confirm / mark done / no-show / cancel (cancel frees the hours). **Add a booking** records phone and walk-in bookings, confirmed straight away, and refuses an hour that's already taken. Block or free hours on the PS5/Xbox schedule. **Passes:** add a pass with any number of hours, use 1 or 2 hrs, **Add hours** (also renews it for 30 days from today), **Send link** (opens WhatsApp to the customer with their pass link). An unconfirmed hold stops blocking its slot after 3 hours.
+**Owner page** (`/admin`, not indexed): one login for everyone. The owner taps "Log in" (or "My pass") like a customer and signs in with their mobile number + SMS code; if that number's account is on the owner list (`/admins` in Firestore) the site opens the dashboard instead of the passes. Opening `/admin` signed out goes to the login; a signed-in number that isn't an owner sees "Not an owner yet". **Upcoming** lists every live booking from today on, all days. Pick a day (chips for the next week, or any date) to see its requests and confirm / mark done / no-show / cancel (cancel frees the hours). **Add a booking** records phone and walk-in bookings, confirmed straight away, and refuses an hour that's already taken. Block or free hours on the PS5/Xbox schedule. **Passes:** add a pass with any number of hours, use 1 or 2 hrs, **Add hours** (also renews it for 30 days from today), **Send link** (opens WhatsApp to the customer with their pass link). An unconfirmed hold stops blocking its slot after 3 hours.
 
 **My pass** (`/pass`): the customer signs in with the mobile number saved on their pass (SMS code) and sees all their passes, or opens the link the owner sends (`/pass?id=…`, no sign-in). Hours left and valid-till update within 30 seconds of any change; "Book with my pass" opens the form on Use my pass. The owner's pass form saves the mobile as `+91…` (`phoneE164`); a pass without a mobile is link-only.
 
@@ -84,7 +84,7 @@ python3 scripts/firebase_admin.py /path/to/key.json deploy-rules        # after 
 python3 scripts/firebase_admin.py /path/to/key.json add-owner +917337230311
 ```
 
-Owners sign in at `/admin` with their mobile number and an SMS code (Firebase Phone Auth). The site's domain must be listed in Firebase > Authentication > Settings > Authorized domains.
+Owners sign in through "Log in" (`/pass`) with their mobile number and an SMS code (Firebase Phone Auth); an account listed in `/admins` is taken to `/admin`. To add an owner: `python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX`. The site's domain must be listed in Firebase > Authentication > Settings > Authorized domains.
 
 ## Run locally
 

@@ -2,7 +2,7 @@
 """One-off Firebase setup with a service-account key (kept OUTSIDE the repo).
 
   python3 scripts/firebase_admin.py KEY.json deploy-rules        publish firestore.rules
-  python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX   let that mobile number use /admin
+  python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX   log in on the site as an owner (opens /admin)
                                                                      (creates the phone sign-in user if needed)
 
 Needs: pip install google-auth requests. The key is never printed or stored."""

@@ -2,7 +2,8 @@
    Two ways in:
    - /pass?id=...  the link the owner sends: reads that one pass card (first name and hours only, no sign-in)
    - /pass         the customer signs in with their mobile number + SMS code and sees every pass saved
-                   under that number (firestore.rules lets a signed-in number read only its own passes)
+                   under that number (firestore.rules lets a signed-in number read only its own passes).
+                   The same login serves the owner: a number listed in /admins is sent to /admin.
    Hours are re-read every 30 seconds and when the page comes back into view. */
 import {
   initializeApp, getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
@@ -144,7 +145,11 @@ function startAccount() {
     $('#signout').hidden = !user;
     $('#login').hidden = !!user;
     if (!user) { $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
-    showStatus('Loading your hours…', false); loadMine();
+    showStatus('Loading your hours…', false);
+    // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead
+    getDoc(doc(db, 'admins', u.uid)).then((a) => {
+      if (a.exists()) { showStatus('Opening the owner dashboard…', false); location.replace('/admin'); } else loadMine();
+    }).catch(() => loadMine());
   });
 }
 

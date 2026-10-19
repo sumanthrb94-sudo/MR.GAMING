@@ -1,8 +1,9 @@
 /* MR. GAMING owner page: upcoming bookings, each day's requests, adding phone / walk-in bookings,
    schedule (block / free hours) and passes (add or use hours, send the customer their pass link).
-   Access is enforced by firestore.rules (owner = signed-in user listed in /admins). */
+   Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
+   Owners log in on /pass like everyone else; it sees their /admins entry and opens this page. */
 import {
-  initializeApp, getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
+  initializeApp, getAuth, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, deleteDoc, writeBatch,
   runTransaction, serverTimestamp, Timestamp, increment
 } from '/assets/vendor/firebase-admin.js';
@@ -27,49 +28,14 @@ const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return n
 const dayName = (key) => dateOf(key).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 const show = (id) => ['login', 'denied', 'dash'].forEach((x) => { $('#' + x).hidden = x !== id; });
 
-/* ---------- sign in: mobile number + SMS code ---------- */
-auth.languageCode = 'en';
-let verifier = null, confirmation = null;
-const msg = (t) => { $('#login-msg').textContent = t; };
-const resetVerifier = () => { if (verifier) { verifier.clear(); verifier = null; } };
-
-$('#phone-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const digits = $('#phone').value.replace(/\D/g, '').replace(/^0/, '');
-  if (digits.length !== 10) { msg('Enter the 10-digit mobile number.'); return; }
-  $('#send-code').disabled = true; msg('Sending code…');
-  try {
-    resetVerifier();
-    verifier = new RecaptchaVerifier(auth, 'recaptcha', { size: 'invisible' });
-    confirmation = await signInWithPhoneNumber(auth, '+91' + digits, verifier);
-    $('#phone-form').hidden = true; $('#code-form').hidden = false; $('#code').focus();
-    msg(`Code sent to +91 ${digits.slice(0, 5)} ${digits.slice(5)}.`);
-  } catch (err) {
-    resetVerifier();
-    msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.'
-      : err.code === 'auth/billing-not-enabled' ? 'SMS sign-in needs the Firebase Blaze plan. Turn on billing in the Firebase console, then try again.'
-      : err.code === 'auth/invalid-phone-number' ? 'That number looks wrong. Check it and try again.'
-      : `Could not send the code (${err.code || 'unknown error'}). Try again.`);
-  } finally { $('#send-code').disabled = false; }
-});
-$('#code-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!confirmation) return;
-  msg('Checking…');
-  try { await confirmation.confirm($('#code').value.trim()); msg(''); }
-  catch (err) { msg('That code is wrong or expired.'); }
-});
-$('#change-number').addEventListener('click', () => {
-  confirmation = null; resetVerifier();
-  $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; msg('');
-});
+/* ---------- sign in happens on /pass (one login for everyone); it sends owners here ---------- */
 $('#signout').addEventListener('click', () => signOut(auth));
 
 let unsub = [];
 onAuthStateChanged(auth, async (user) => {
   unsub.forEach((u) => u()); unsub = [];
   $('#signout').hidden = !user; $('#who').textContent = user ? (user.phoneNumber || '') : '';
-  if (!user) return show('login');
+  if (!user) { show('login'); location.replace('/pass'); return; }
   const isOwner = (await getDoc(doc(db, 'admins', user.uid)).catch(() => null))?.exists();
   if (!isOwner) { $('#uid').textContent = user.uid; return show('denied'); }
   show('dash'); startDashboard();
