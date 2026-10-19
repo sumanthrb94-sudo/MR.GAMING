@@ -21,12 +21,7 @@
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
     // Advance to book; on cancellation cancelFee is kept and the rest refunded
     birthday: { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 },
-    food: {
-      'none': { name: 'No food', price: 0 },
-      'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
-      'paneer-pizza': { name: 'Paneer Pizza', price: 249 },
-      'sub-combo': { name: 'Mr. Veggie Sub + Salted Fries + Cold Coffee', price: 300 }
-    }
+    // Food add-ons in the booking are the menu's Top Combos (menu-data.js), 10% off (foodPerk) for console bookers
   };
 
   const root = document.documentElement;
@@ -121,6 +116,17 @@
     step('#bday-adults-plus', () => { adults = Math.min(99, adults + 1); });
     [dateIn, startIn, nameIn].forEach((el) => el.addEventListener('input', paint));
     paint();
+    // Upsell card in the booking: slide down to the planner with the booking's date filled in, and light it up
+    const upsell = $('#bday-upsell');
+    if (upsell) upsell.addEventListener('click', (e) => {
+      e.preventDefault();
+      const picked = document.querySelector('#avail-days [aria-pressed="true"]');
+      if (picked && picked.dataset.value >= dateIn.min) { dateIn.value = picked.dataset.value; paint(); }
+      const plan = $('#bday-plan');
+      plan.classList.add('is-lit'); setTimeout(() => plan.classList.remove('is-lit'), 2400);
+      scrollTo({ top: plan.getBoundingClientRect().top + scrollY - $('#topbar').offsetHeight - 12, behavior: reduced ? 'auto' : 'smooth' });
+      if (history.pushState) history.pushState(null, '', '#bday-plan');
+    });
   }
 
   // Links to #birthday-terms open the terms before scrolling to them
@@ -301,7 +307,7 @@
 
     // con: the console filter (any / ps5 / xbox / room); station: what's booked (ps5 / xbox / squad = whole room)
     // live: null while loading, true once the database answered, false if it can't be reached
-    const state = { step: 1, con: 'any', station: 'ps5', players: '1', time: '1', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', week: new Map(), live: null, held: null };
+    const state = { step: 1, con: 'any', station: 'ps5', players: '1', time: '1', plan: 'hourly', food: {}, date: days[0].key, start: null, game: 'any', week: new Map(), live: null, held: null };
     const takenOn = (key) => state.week.get(key) || new Set();
     // Opened from a pass card (/?pass=duo#book): pay with the pass
     const params = new URLSearchParams(location.search), passKind = params.get('pass');
@@ -311,6 +317,11 @@
     }
     const nameInput = $('#book-name');
     try { nameInput.value = localStorage.getItem('mg-name') || ''; } catch (e) {}
+
+    // Food: the menu's Top Combos, each with the gamer price (10% off, rounded to the rupee)
+    const comboSec = window.MENU && window.MENU.sections.find((x) => x.id === 'combos');
+    const COMBOS = comboSec ? comboSec.groups.flatMap((g) => g.items).filter((it) => it.price).map((it, i) => ({ id: 'c' + i, name: it.name, price: it.price, off: Math.round(it.price * CONFIG.foodPerk) })) : [];
+    const foodLines = () => COMBOS.filter((c) => state.food[c.id] > 0).map((c) => ({ ...c, qty: state.food[c.id] }));
 
     // Whole room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
     const squadSplit = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };
@@ -335,7 +346,7 @@
       const rate = squad ? squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0) : CONFIG.rates[kind];
       const memberRate = plan === 'member' ? CONFIG.memberRates[kind] : 0;
       const gaming = plan === 'buy-pass' ? CONFIG.passes[kind] : plan === 'use-pass' ? 0 : (memberRate || rate) * n;
-      const foodPrice = CONFIG.food[state.food].price, perk = Math.round(foodPrice * CONFIG.foodPerk);
+      const lines = foodLines(), foodPrice = lines.reduce((sum, c) => sum + c.price * c.qty, 0), perk = lines.reduce((sum, c) => sum + c.off * c.qty, 0);
       return { kind, rate, memberRate, gaming, foodPrice, perk, total: gaming + foodPrice - perk, passName: kind === 'duo' ? 'Duo pass' : 'Solo pass' };
     };
     const passOk = () => state.station !== 'squad' && +state.players <= 2;
@@ -362,11 +373,12 @@
       const day = days.find((d) => d.key === state.date), n = +state.time, P = price(state.plan), picked = state.start !== null, s0 = +state.start;
       Object.assign(state, { day, hours: n, squad: state.station === 'squad' }, P);
 
-      renderSearch(day); renderTrip(day, P); renderFares(P); renderTicket(day, P); renderHero();
+      renderSearch(day); renderTrip(day, P); renderFares(P); renderCombos(); renderTicket(day, P); renderHero();
       $('#game-pick').textContent = state.game === 'any' ? 'Optional' : state.game;
 
       // Fare summary (laptop) and the bottom bar (phones)
       $('#sum-when').textContent = picked ? `${names[state.station]} · ${dayWord(day)}, ${span(s0, s0 + n)}` : 'Pick a slot';
+      if (state.step === 1 && picked && state.plan === 'buy-pass') { state.plan = 'hourly'; return render(); }   // back on step 1: quote hourly, offer the pass again on step 2
       $('#sum-gaming-label').textContent = state.plan === 'buy-pass' ? `6-hr ${P.passName.toLowerCase()}` : state.plan === 'use-pass' ? `Gaming (from your ${P.passName.toLowerCase()})` : state.plan === 'member' ? `Gaming (member rate ${inr(P.memberRate)}/hr × ${n})` : `Gaming (${inr(P.rate)}/hr × ${n})`;
       $('#sum-gaming').textContent = inr(picked ? P.gaming : 0);
       $('#sum-food-row').hidden = $('#sum-perk-row').hidden = !P.foodPrice;
@@ -375,7 +387,7 @@
       const cta = state.step === 3 ? (state.held ? 'Open WhatsApp' : 'Hold my slot') : 'Continue';
       $('#side-go').textContent = cta; $('#bar-go').textContent = cta;
       $('#side-go').disabled = !picked;
-      $('#bar-price').textContent = picked ? inr(P.total) : '';
+      $('#bar-price').textContent = picked ? inr(state.step === 1 ? price('hourly').total : P.total) : '';
       $('#bar-what').textContent = picked ? `${names[state.station]} · ${dayWord(day)} ${span(s0, s0 + n)}` : '';
       // Step bar: done steps can be revisited
       $$('#steps-bar [data-go]').forEach((b) => { const k = +b.dataset.go; b.disabled = k > state.step && !(k === 2 && picked); if (k === state.step) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); b.classList.toggle('is-done', k < state.step); });
@@ -446,6 +458,17 @@
         : state.plan === 'use-pass' ? `We take ${hrs(n)} off your ${P.passName.toLowerCase()}. Food is still charged.`
         : state.plan === 'member' ? `For ${P.passName.toLowerCase()} holders who have used all 6 hours, until the pass's 30 days end: ${inr(price('member').memberRate)}/hr instead of ${inr(P.rate)}.` : '';
     };
+    // Step 2: combos with the gamer price; Add, then − n +
+    const renderCombos = () => {
+      $('#combos').innerHTML = COMBOS.map((c) => {
+        const q = state.food[c.id] || 0;
+        return `<div class="combo ${q ? 'is-in' : ''}" data-id="${c.id}">
+          <p class="combo-items">${c.name.split(' + ').map((x) => `<span>${x}</span>`).join('<i aria-hidden="true">+</i>')}</p>
+          <p class="combo-price"><s aria-label="was ${inr(c.price)}">${inr(c.price)}</s><b>${inr(c.price - c.off)}</b><span class="tag">10% off</span></p>
+          <div class="combo-qty">${q ? `<button type="button" class="icon-btn press" data-dec aria-label="One less">−</button><output aria-label="Quantity">${q}</output><button type="button" class="icon-btn press" data-inc aria-label="One more" ${q >= 9 ? 'disabled' : ''}>+</button>` : '<button type="button" class="btn btn-sm btn-ghost press" data-inc>Add</button>'}</div>
+        </div>`;
+      }).join('');
+    };
     // Step 3: a boarding-pass style ticket
     const renderTicket = (day, P) => {
       if (state.start === null) { $('#ticket').innerHTML = ''; return; }
@@ -456,7 +479,7 @@
         <dl class="ticket-grid"><div><dt>Date</dt><dd>${dayLabel(day.date)}</dd></div><div><dt>Console</dt><dd>${names[state.station]}</dd></div>
         <div><dt>Players</dt><dd>${state.players}</dd></div><div><dt>Time</dt><dd>${hrs(n)}</dd></div></dl>
         <div class="ticket-cut" aria-hidden="true"></div>
-        <dl class="ticket-bill"><div><dt>${fare}</dt><dd>${inr(P.gaming)}</dd></div>${P.foodPrice ? `<div><dt>${CONFIG.food[state.food].name}</dt><dd>${inr(P.foodPrice)}</dd></div><div><dt>Gamer perk −10%</dt><dd>−${inr(P.perk)}</dd></div>` : ''}
+        <dl class="ticket-bill"><div><dt>${fare}</dt><dd>${inr(P.gaming)}</dd></div>${foodLines().map((c) => `<div><dt>${c.qty} × ${c.name}</dt><dd>${inr(c.price * c.qty)}</dd></div>`).join('')}${P.perk ? `<div><dt>Gamer perk −10% on food</dt><dd>−${inr(P.perk)}</dd></div>` : ''}
         <div class="ticket-total"><dt>Total</dt><dd>${inr(P.total)}</dd></div></dl>`;
     };
     // Hero: real hours left today (or tomorrow once today is over), any console
@@ -488,16 +511,18 @@
     }
     window.addEventListener('popstate', (e) => { if (e.state && e.state.mgStep) goStep(e.state.mgStep, false); else if (state.step > 1) goStep(1, false); });
     function paintBar() {
-      const show = phone.matches && state.start !== null && (state.step > 1 || bookInView);
+      const show = phone.matches && state.start !== null && bookInView;
       bar.hidden = !show; root.classList.toggle('in-checkout', show && state.step > 1);
     }
-    if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { bookInView = e.isIntersecting; paintBar(); }, { rootMargin: '0px 0px -20% 0px' }).observe($('#book'));
+    if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { bookInView = e.isIntersecting; paintBar(); }, { rootMargin: '-25% 0px -35% 0px' }).observe($('#book .wrap'));
+    else bookInView = true;
     phone.addEventListener('change', paintBar);
 
     // Choices
     $('#results').addEventListener('click', (e) => {
       const b = e.target.closest('.slot-card[data-hour]'); if (!b) return;
-      Object.assign(state, { start: b.dataset.hour, station: b.dataset.console, held: null });
+      // A fresh pick starts on the hourly fare; the pass is offered on the fare step (keep "use my pass" / member from My pass)
+      Object.assign(state, { start: b.dataset.hour, station: b.dataset.console, held: null, plan: state.plan === 'buy-pass' ? 'hourly' : state.plan });
       $('#book-status').textContent = '';
       goStep(2);
     });
@@ -506,6 +531,13 @@
       if (e.target.closest('[data-go]')) goStep(1);
     });
     $('#fares').addEventListener('click', (e) => { const f = e.target.closest('.fare'); if (f) { state.plan = f.dataset.plan; render(); } });
+    $('#combos').addEventListener('click', (e) => {
+      const card = e.target.closest('.combo'), b = e.target.closest('[data-inc], [data-dec]'); if (!card || !b) return;
+      const id = card.dataset.id, q = (state.food[id] || 0) + (b.hasAttribute('data-inc') ? 1 : -1);
+      if (q > 0) state.food[id] = Math.min(q, 9); else delete state.food[id];
+      render();
+      const again = $(`.combo[data-id="${id}"] ${q > 0 ? '[data-inc]' : '[data-inc]'}`); if (again) again.focus({ preventScroll: true });
+    });
     $('#steps-bar').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b && !b.disabled) goStep(+b.dataset.go); });
     availDays.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (state.date !== b.dataset.value) state.start = null; state.date = b.dataset.value; select(availDays, state.date); render(); });
     Object.entries(segs).forEach(([key, seg]) => {
@@ -568,7 +600,7 @@
         '',
         '*Bill*',
         gamingLine,
-        st.foodPrice ? `Food: ${CONFIG.food[st.food].name} = ${inr(st.foodPrice)}` : null,
+        ...foodLines().map((c) => `Food: ${c.qty} × ${c.name} = ${inr(c.price * c.qty)}`),
         st.perk ? `Gamer perk (10% off food): −${inr(st.perk)}` : null,
         `*Total: ${inr(st.total)}*`,
         '',
@@ -582,7 +614,7 @@
       $('#bar-go').disabled = $('#side-go').disabled = true; statusEl.textContent = 'Holding your slot…';
       const res = await window.MGDB.reserve({
         id, name, date: st.date, start: s0, hours: st.hours, station: st.station, players: p, plan: st.plan,
-        game: st.game === 'any' ? '' : st.game, food: st.foodPrice ? CONFIG.food[st.food].name : '', total: st.total
+        game: st.game === 'any' ? '' : st.game, food: foodLines().map((c) => `${c.qty} × ${c.name}`).join('; ').slice(0, 300), total: st.total
       });
       $('#bar-go').disabled = $('#side-go').disabled = false;
       if (res.reason === 'taken') {

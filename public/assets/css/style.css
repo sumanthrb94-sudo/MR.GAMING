@@ -362,6 +362,28 @@ em { font-style: normal; color: var(--accent-text); }
 .fare-lines { grid-column: 1 / -1; display: grid; gap: 2px; font-size: 14px; color: var(--muted); }
 .fare-lines em { color: var(--accent-text); font-weight: 600; }
 .fare-note { font-size: 14px; color: var(--muted); }
+.combos { display: grid; gap: var(--s2); }
+@media (min-width: 720px) { .combos { grid-template-columns: 1fr 1fr; } }
+.combo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s2) var(--s3); align-items: end; padding: var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); transition: border-color .25s, box-shadow .25s; }
+.combo.is-in { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.combo-items { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s2); font-weight: 700; font-size: 15px; line-height: 1.3; }
+.combo-items i { font-style: normal; font-weight: 900; color: var(--accent-text); }
+.combo-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--s2); }
+.combo-price s { font-size: 14px; color: var(--muted); }
+.combo-price b { font-weight: 900; font-stretch: 115%; font-size: 20px; letter-spacing: -.02em; }
+.combo-qty { display: flex; align-items: center; gap: var(--s2); }
+.combo-qty .icon-btn { width: 36px; height: 36px; font-size: 20px; font-weight: 700; }
+.combo-qty output { min-width: 2ch; text-align: center; font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; }
+.combo-qty .btn { min-height: 36px; }
+.upsell { margin-top: var(--s4); display: flex; align-items: center; gap: var(--s3); padding: var(--s4); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); transition: transform .45s var(--ease-spring), border-color .25s; }
+@media (hover: hover) { .upsell:hover { border-color: var(--accent); transform: translateY(-2px); } }
+.upsell-ic { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-text); }
+.upsell-text { display: grid; gap: 2px; min-width: 0; }
+.upsell-text b { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.upsell-text span { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.upsell-go { flex: none; margin-left: auto; color: var(--accent-text); }
+.bday-plan { transition: box-shadow .4s; }
+.bday-plan.is-lit { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent), var(--shadow); }
 .ticket { position: relative; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); padding: var(--s5); display: grid; gap: var(--s4); overflow: hidden; }
 .ticket-top { display: flex; justify-content: space-between; gap: var(--s3); font: 500 12px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .ticket-brand { color: var(--accent-text); font-weight: 700; }

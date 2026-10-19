@@ -348,14 +348,9 @@
                   <p class="step-hint" id="plan-hint"></p>
                 </div>
               </details>
-              <p class="field-label step-label">Food to your seat <span class="field-note">10% off with your booking</span></p>
-              <div class="seg seg-wrap" data-key="food">
-                <button type="button" data-value="none" aria-pressed="true">No food</button>
-                <button type="button" data-value="paneer-sub" aria-pressed="false">Paneer Sub ₹129</button>
-                <button type="button" data-value="paneer-pizza" aria-pressed="false">Paneer Pizza ₹249</button>
-                <button type="button" data-value="sub-combo" aria-pressed="false">Sub combo ₹300</button>
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
+              <p class="field-label step-label">Combos to your seat <span class="field-note">10% off for gamers</span></p>
+              <!-- The Top Combos from menu-data.js (same as the printed menu), filled by main.js -->
+              <div class="combos" id="combos"></div>
             </div>
 
             <!-- Step 3: the ticket, your name, hold -->
@@ -379,6 +374,13 @@
               <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. Pay the advance by UPI to lock it in.</p>
             </div>
           </div>
+
+          <!-- Birthday upsell: slides down to the planner with the date filled in -->
+          <a class="upsell card" id="bday-upsell" href="#bday-plan">
+            <span class="upsell-ic"><svg class="i"><use href="#i-cake"/></svg></span>
+            <span class="upsell-text"><b>Birthday coming up?</b><span>3 hrs of games, food included · ₹600/child · min 10 guests</span></span>
+            <span class="upsell-go"><svg class="i"><use href="#i-arrow"/></svg></span>
+          </a>
 
           <!-- Laptop: fare summary beside the steps -->
           <aside class="summary card checkout" id="checkout" aria-live="polite">
@@ -440,7 +442,7 @@
             </ul>
           </article>
 
-          <div class="card bday-plan" data-reveal>
+          <div class="card bday-plan" id="bday-plan" data-reveal>
             <p class="summary-title">Plan the party</p>
             <div class="bday-grid">
               <div class="bday-field">
