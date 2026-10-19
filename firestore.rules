@@ -51,7 +51,7 @@ service cloud.firestore {
         && request.resource.data.start + request.resource.data.hours <= 23
         && request.resource.data.station in ['ps5', 'xbox', 'squad']
         && request.resource.data.players is int && request.resource.data.players >= 1 && request.resource.data.players <= 4
-        && request.resource.data.plan in ['hourly', 'buy-pass', 'use-pass']
+        && request.resource.data.plan in ['hourly', 'buy-pass', 'use-pass', 'member']
         && request.resource.data.game is string && request.resource.data.game.size() <= 30
         && request.resource.data.food is string && request.resource.data.food.size() <= 60
         && request.resource.data.total is int && request.resource.data.total >= 0 && request.resource.data.total <= 20000

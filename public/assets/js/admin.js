@@ -16,6 +16,7 @@ const inr = (n) => '₹' + Math.round(n || 0).toLocaleString('en-IN');
 const pad = (n) => String(n).padStart(2, '0');
 const clock = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
 const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, duo: { price: 1499, label: 'Duo pass' } };
+const MEMBER = { solo: 169, duo: 279 };   // member rate once a pass's hours are used (CONFIG.memberRates in main.js)
 const RATES = { solo: 199, duo: 320, trio: 420, quad: 499 }, KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room', party: 'Birthday party' };
@@ -143,7 +144,7 @@ function renderRequests() {
         <span class="pill">${esc(r.status)}</span>
       </div>
       <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(r.id)}</span></p>
-      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.adults ? ` (${r.players - r.adults} children + ${r.adults} adults)` : ''}${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
+      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.adults ? ` (${r.players - r.adults} children + ${r.adults} adults)` : ''}${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : r.plan === 'member' ? 'member rate' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
       ${r.phone ? `<p class="admin-item-meta"><a class="admin-tel" href="${esc(telHref(r.phone))}">${esc(r.phone)}</a></p>` : ''}
       <p class="admin-item-total">${inr(r.total)}</p>
       <div class="admin-actions">
@@ -201,7 +202,7 @@ function bookingDraft() {
   const hours = +hoursSel.value, plan = squad || players >= 3 ? 'hourly' : bk('plan').value;   // passes are for 1-2 players
   const kind = squad ? 'solo' : KIND[players];
   const rate = squad ? SQUAD[players].reduce((sum, k) => sum + RATES[k], 0) : RATES[kind];
-  const total = plan === 'buy-pass' ? PASS[kind].price : plan === 'use-pass' ? 0 : rate * hours;
+  const total = plan === 'buy-pass' ? PASS[kind].price : plan === 'use-pass' ? 0 : (plan === 'member' ? MEMBER[kind] : rate) * hours;
   return { station, players, start, hours, plan, total };
 }
 function bookingTotal() {

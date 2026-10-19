@@ -13,6 +13,7 @@ import { firebaseConfig } from '/assets/js/firebase-config.js';
 const $ = (s, r = document) => r.querySelector(s);
 const WA = '917337230311';
 const LABEL = { solo: 'Solo pass', duo: 'Duo pass' };
+const MEMBER = { solo: 169, duo: 279 };   // member rate per hour once the hours are used, until the pass's 30 days end (CONFIG.memberRates in main.js)
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const app = initializeApp(firebaseConfig), db = getFirestore(app);
 const linkId = new URLSearchParams(location.search).get('id');
@@ -62,10 +63,13 @@ function renderPasses(passes) {
     countTo(f('left'), left);
     f('of').textContent = `${left === 1 ? 'hr' : 'hrs'} left of ${total}`;
     f('fill').style.width = total ? `${(left / total) * 100}%` : '0%';
-    f('meta').textContent = expired ? `Expired on ${date}. Ask us about topping up.` : left === 0 ? 'All hours used. Ask us about topping up.' : exp ? `Valid till ${date}` : '';
-    card.classList.toggle('is-dim', expired || left === 0);
-    f('book').hidden = expired || left === 0;
-    f('book').href = `/?pass=${p.type === 'duo' ? 'duo' : 'solo'}#book`;
+    const member = !expired && left === 0, kind = p.type === 'duo' ? 'duo' : 'solo';
+    f('meta').textContent = expired ? `Expired on ${date}. Ask us about topping up.`
+      : member ? `All hours used. Until ${date} you play at the member rate: ₹${MEMBER[kind]}/hr.` : exp ? `Valid till ${date}` : '';
+    card.classList.toggle('is-dim', expired);
+    f('book').hidden = expired;
+    f('book').href = `/?pass=${kind}${member ? '&rate=member' : ''}#book`;
+    f('book').firstChild.textContent = member ? 'Book at member rate ' : 'Book with my pass ';
     f('wa').href = waLink(`Hi MR. GAMING! About my ${label.toLowerCase()} (${left} hrs left).`);
   });
 }

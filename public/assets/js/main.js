@@ -10,6 +10,8 @@
     rates: { solo: 199, duo: 320, trio: 420, quad: 499 },
     // 6-hour passes, valid 30 days
     passes: { solo: 899, duo: 1499 },
+    // Member rate: once a pass's 6 hours are used, until its 30 days end. Between the pass and the regular rate.
+    memberRates: { solo: 169, duo: 279 },
     passHours: 6,
     squadMinHours: 2,   // squad room: whole room, 2-4 players at the same per-person rate
     open: 11,           // opening hour, 24h clock (11 am)
@@ -278,7 +280,9 @@
     // Opened from a pass card (/?pass=duo#book): pay with the pass
     const passKind = new URLSearchParams(location.search).get('pass');
     if (passKind === 'solo' || passKind === 'duo') {
-      Object.assign(state, { plan: 'use-pass', players: passKind === 'duo' ? '2' : '1' });
+      // From My pass: "Use my pass", or the member rate once the hours are used (?rate=member)
+      const member = new URLSearchParams(location.search).get('rate') === 'member';
+      Object.assign(state, { plan: member ? 'member' : 'use-pass', players: passKind === 'duo' ? '2' : '1' });
       select(segs.plan, state.plan); select(segs.players, state.players);
     }
     const nameInput = $('#book-name'), sendBtn = $('#send-booking');
@@ -305,7 +309,8 @@
       const hours = +state.time, players = +state.players;
       const kind = squad ? 'solo' : KIND[players];
       const rate = squad ? squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0) : CONFIG.rates[kind];
-      const gaming = state.plan === 'buy-pass' ? CONFIG.passes[kind] : state.plan === 'use-pass' ? 0 : rate * hours;
+      const memberRate = state.plan === 'member' ? CONFIG.memberRates[kind] : 0;
+      const gaming = state.plan === 'buy-pass' ? CONFIG.passes[kind] : state.plan === 'use-pass' ? 0 : (memberRate || rate) * hours;
       const foodPrice = CONFIG.food[state.food].price, perk = Math.round(foodPrice * CONFIG.foodPerk), total = gaming + foodPrice - perk;
 
       // Start times: inside opening hours for the whole session, and not already past today
@@ -337,18 +342,19 @@
       $('#plan-hint').textContent = squad ? 'Passes are for one console. The squad room is paid by the hour.'
         : group ? 'Passes are for 1 or 2 players. Groups of 3 or 4 on one console pay by the hour.'
         : state.plan === 'buy-pass' ? `${passName} ${inr(CONFIG.passes[kind])}: ${CONFIG.passHours} hours within 30 days. This visit uses ${hours} of them.`
-        : state.plan === 'use-pass' ? `We take ${hours} hour${hours > 1 ? 's' : ''} off your ${passName.toLowerCase()}. Food is still charged.` : '';
+        : state.plan === 'use-pass' ? `We take ${hours} hour${hours > 1 ? 's' : ''} off your ${passName.toLowerCase()}. Food is still charged.`
+        : state.plan === 'member' ? `Member rate for ${passName.toLowerCase()} holders who have used all 6 hours, until the pass's 30 days end: ${inr(memberRate)}/hr instead of ${inr(rate)}. We check your pass when we confirm.` : '';
 
       $('#sum-title').textContent = `${names[state.station]} · ${hours} hr${hours > 1 ? 's' : ''} · ${players} player${players > 1 ? 's' : ''}${kind === 'duo' ? ' (duo)' : ''}`;
       const s0 = +state.start;
       $('#sum-when').textContent = state.start ? `${day.today ? 'Today, ' : ''}${dayLabel(day.date)} · ${clock(s0)} – ${clock(s0 + hours)}` : 'Pick a start time';
-      $('#sum-gaming-label').textContent = state.plan === 'buy-pass' ? `${passName} (${CONFIG.passHours} hrs)` : state.plan === 'use-pass' ? `Gaming (from your ${passName.toLowerCase()})` : `Gaming (${inr(rate)}/hr)`;
+      $('#sum-gaming-label').textContent = state.plan === 'buy-pass' ? `${passName} (${CONFIG.passHours} hrs)` : state.plan === 'use-pass' ? `Gaming (from your ${passName.toLowerCase()})` : state.plan === 'member' ? `Gaming (member rate ${inr(memberRate)}/hr)` : `Gaming (${inr(rate)}/hr)`;
       $('#sum-gaming').textContent = inr(gaming);
       $('#sum-food').textContent = inr(foodPrice);
       $('#sum-perk').textContent = '−' + inr(perk);
       setRoll($('#sum-total'), total);
       sendBtn.disabled = !state.start;
-      Object.assign(state, { total, gaming, foodPrice, perk, hours, squad, day, rate, kind, passName });
+      Object.assign(state, { total, gaming, foodPrice, perk, hours, squad, day, rate, kind, passName, memberRate });
       renderBoard(day, earliest, consoles);
       $$('.seg', builder).forEach(placeInd); placeInd(availDays);
     };
@@ -440,6 +446,7 @@
       const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
       const gamingLine = st.plan === 'buy-pass' ? `${st.passName} (${CONFIG.passHours} hrs, valid 30 days) = ${inr(st.gaming)}\nThis visit uses ${st.hours} of ${CONFIG.passHours} hrs`
         : st.plan === 'use-pass' ? `Gaming: ${hrs} from my ${st.passName.toLowerCase()} = ₹0`
+        : st.plan === 'member' ? `Gaming at member rate (my ${st.passName.toLowerCase()} hours are used up): ${inr(st.memberRate)}/hr × ${hrs} = ${inr(st.gaming)}`
         : `Gaming: ${inr(st.rate)}/hr × ${hrs} = ${inr(st.gaming)}`;
       const lines = [
         `Hi MR. GAMING! Booking request ${id}`,
