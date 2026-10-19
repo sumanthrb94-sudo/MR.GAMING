@@ -20,7 +20,7 @@ Home sections: hero → stations (PS5 / Xbox) + installed games → prices → a
 
 **Pricing:** per console per hour, solo ₹199, duo (2 players on one console) ₹320. Squad room adds up both consoles: 2 players ₹398, 3 ₹519, 4 ₹640 (min 2 hours). Passes, 6 hours within 30 days: solo ₹899, duo ₹1,499. 10% off food for console bookers.
 
-**Birthday package** (from the owner's flyer): 3 hours, ₹600 per child, food included per child (2 pizza slices, 1 snack of choice, French fries, 1 scoop of ice cream), PS5 & Xbox, board games. The planner on the home page (`#birthday`) takes children, date, time (ends by 11 pm) and name, shows children × ₹600, and sends the enquiry on WhatsApp. Not held in the database; the owner adds it with "Add a booking" once agreed. The menu page links to it.
+**Birthday package** (from the owner's flyer): 3 hours, ₹600 per child, food included per child (2 pizza slices, 1 snack of choice, French fries, 1 scoop of ice cream), PS5 & Xbox, board games. The owner's flyer (real photos from the venue) is shown in the section (`public/assets/images/birthday-flyer*`). The planner (`#birthday`) takes children, date, time (ends by 11 pm) and name, shows children × ₹600, and sends the enquiry on WhatsApp. Not held in the database; the owner adds it with "Add a booking" once agreed. The menu page links to it.
 
 **Availability:** the Book section opens with a live board, PS5 and Xbox by hour for any of the next 7 days. Booked hours (website requests, the owner's phone / walk-in bookings, blocked hours) show as Booked; tapping an open hour fills the form. It re-reads every minute and when the tab comes back. If the database can't be reached it says so instead of showing anything as open.
 

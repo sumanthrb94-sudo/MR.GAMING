@@ -319,7 +319,14 @@ em { font-style: normal; color: var(--accent-text); }
 
 /* birthdays */
 .bday { display: grid; gap: var(--s4); align-items: start; }
-@media (min-width: 900px) { .bday { grid-template-columns: 1fr 1fr; gap: var(--s5); } }
+.bday-flyer { order: 3; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.bday-flyer a { display: block; }
+.bday-flyer img { width: 100%; height: auto; transition: transform .8s var(--ease-out); }
+@media (hover: hover) { .bday-flyer a:hover img { transform: scale(1.02); } }
+@media (min-width: 900px) {
+  .bday { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s5); }
+  .bday-flyer { order: 0; grid-row: span 2; position: sticky; top: calc(var(--topbar) + var(--s5)); }
+}
 .bday-deal { gap: var(--s4); }
 .bday-deal .plan-price { margin-top: var(--s4); }
 .bday-food { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
