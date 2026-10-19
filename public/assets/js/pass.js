@@ -6,9 +6,10 @@
                    The same login serves the owner: a number listed in /admins is sent to /admin.
    Hours are re-read every 30 seconds and when the page comes back into view. */
 import {
-  initializeApp, getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
+  initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
+  RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, getDocs, getDoc, doc
-} from '/assets/vendor/firebase-account.js';
+} from '/assets/vendor/firebase-account.582e56a7.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -92,10 +93,11 @@ let user = null, verifier = null, confirmation = null;
 const msg = (t) => { $('#login-msg').textContent = t; };
 const resetVerifier = () => { if (verifier) { verifier.clear(); verifier = null; } };
 
-async function loadMine() {
+const myPasses = () => getDocs(query(collection(db, 'passes'), where('phoneE164', '==', user.phoneNumber)));
+async function loadMine(started) {
   if (!user) return;
   try {
-    const snap = await getDocs(query(collection(db, 'passes'), where('phoneE164', '==', user.phoneNumber)));
+    const snap = await (started || myPasses());
     const passes = snap.docs.map((d) => { const p = d.data(); return { id: d.id, first: firstName(p.name), type: p.type, hoursTotal: p.hoursTotal, hoursUsed: p.hoursUsed, expires: p.expires }; })
       .sort((a, b) => (active(b) - active(a)) || ((b.expires?.toMillis?.() || 0) - (a.expires?.toMillis?.() || 0)));
     if (!passes.length) {
@@ -107,7 +109,8 @@ async function loadMine() {
 }
 
 function startAccount() {
-  const auth = getAuth(app); auth.languageCode = 'en';
+  // Same persistence list as getAuth(), so existing sign-ins carry over
+  const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] }); auth.languageCode = 'en';
   $('#phone-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const digits = $('#phone').value.replace(/\D/g, '').replace(/^0/, '').replace(/^91(?=\d{10}$)/, '');
@@ -146,10 +149,12 @@ function startAccount() {
     $('#login').hidden = !!user;
     if (!user) { $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
     showStatus('Loading your hours…', false);
-    // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead
+    // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead.
+    // The owner check and the passes read go out together (one wait, not two).
+    const passes = myPasses(); passes.catch(() => {});
     getDoc(doc(db, 'admins', u.uid)).then((a) => {
-      if (a.exists()) { showStatus('Opening the owner dashboard…', false); location.replace('/admin'); } else loadMine();
-    }).catch(() => loadMine());
+      if (a.exists()) { try { localStorage.setItem('mg-owner', u.uid); } catch (e) {} showStatus('Opening the owner dashboard…', false); location.replace('/admin'); } else loadMine(passes);
+    }).catch(() => loadMine(passes));
   });
 }
 

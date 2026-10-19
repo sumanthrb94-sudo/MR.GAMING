@@ -3,7 +3,7 @@
 
 @font-face { font-family: "Playfair"; src: url("/assets/fonts/playfair.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
 @font-face { font-family: "Playfair"; src: url("/assets/fonts/playfair-italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; font-display: swap; }
-@font-face { font-family: "Archivo"; src: url("/assets/fonts/archivo.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
+@font-face { font-family: "Archivo"; src: url("/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; font-display: swap; }
 @font-face { font-family: "Fraktur"; src: url("/assets/fonts/unifraktur.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 
 :root {

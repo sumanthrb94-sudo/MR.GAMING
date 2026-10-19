@@ -12,7 +12,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 - `public/pass.html`, `public/assets/js/pass.js` — "My pass": customer sign-in by mobile number, or the owner's link `/pass?id=…` (styles in style.css)
 - `public/assets/images/games/` — original game-card artwork (never official game art); cards in index.html `#game-cards`, `data-pick-game` feeds the booking form
 - Phones: bottom `.tabbar` (index.html and pass.html), open-now status (`CONFIG.open`/`close` in main.js), `public/manifest.webmanifest` for "Add to Home screen"
-- `public/assets/js/booking-db.js`, `firebase-config.js`, `public/assets/vendor/firebase-*.js` — Firestore (bundled SDK)
+- `public/assets/js/booking-db.js`, `firebase-config.js`, `public/assets/vendor/firebase-{public,account}.<hash>.js` — Firestore Lite + phone sign-in (bundled SDK; rebuild with `scripts/build-firebase.mjs`, which renames by content hash and updates references — never rename by hand)
 - `firestore.rules`, `scripts/firebase_admin.py` — database access rules and one-off admin tasks
 
 ## Rules
@@ -25,3 +25,4 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 7. Availability must come from the database. Never show an hour as open when the database didn't answer.
 8. Escape anything that came from the public form before putting it in HTML (admin.js `esc`).
 9. Before committing: screenshot `/` and `/menu` at 390px and 1440px (light + dark for home), check no horizontal overflow and no console errors.
+10. Keep every screen under 1 s on 4G: no new third-party scripts or CDNs, no live Firestore listeners (Lite + re-read), images as sized WebP with `loading="lazy"` below the fold, nothing above the fold waiting on JavaScript to become visible.

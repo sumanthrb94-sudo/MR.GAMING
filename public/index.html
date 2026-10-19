@@ -18,6 +18,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css">
+  <!-- Availability: fetch the database code with the page (not after main.js runs) and open the database connection early -->
+  <link rel="modulepreload" href="/assets/js/booking-db.js">
+  <link rel="modulepreload" href="/assets/vendor/firebase-public.2b1547c7.js">
+  <link rel="modulepreload" href="/assets/js/firebase-config.js">
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <script>
     // Apply the saved theme before first paint to avoid a flash
     try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}

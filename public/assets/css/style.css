@@ -2,8 +2,8 @@
    One accent (lime, from the logo). Black/white/greys do the rest.
    PS blue / Xbox green only mark which console a card is about. */
 
-@font-face { font-family: "Archivo"; src: url("/assets/fonts/archivo.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
-@font-face { font-family: "JB Mono"; src: url("/assets/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+@font-face { font-family: "Archivo"; src: url("/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; font-display: swap; }
+@font-face { font-family: "JB Mono"; src: url("/assets/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
 
 /* ---------- tokens ---------- */
 :root {
@@ -436,6 +436,10 @@ em { font-style: normal; color: var(--accent-text); }
 /* ---------- reveal motion (fade-in-blur, once) ---------- */
 .js [data-reveal] { opacity: 0; transform: translateY(24px); filter: blur(10px); transition: opacity .9s var(--ease-out), transform .9s var(--ease-out), filter .9s var(--ease-out); transition-delay: calc(var(--i, 0) * 90ms); }
 .js [data-reveal].is-in { opacity: 1; transform: none; filter: none; }
+/* Hero: a CSS fade that starts with the first paint instead of waiting for main.js, so the top of the page is never held back.
+   Starts at opacity .001, not 0, so the browser treats the text as painted (largest-paint timing) from the first frame. */
+.hero [data-reveal], .js .hero [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; animation: hero-in .7s var(--ease-out) both; }
+@keyframes hero-in { from { opacity: .001; transform: translateY(14px); } }
 .js .display .w { display: inline-block; opacity: 0; transform: translateY(.35em); filter: blur(14px); }
 .js .display.is-in .w { opacity: 1; transform: none; filter: none; transition: opacity .9s var(--ease-out), transform 1s var(--ease-out), filter .9s var(--ease-out); transition-delay: calc(var(--w) * 70ms + 80ms); }
 

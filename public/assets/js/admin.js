@@ -1,16 +1,18 @@
 /* MR. GAMING owner page: upcoming bookings, each day's requests, adding phone / walk-in bookings,
    schedule (block / free hours) and passes (add or use hours, send the customer their pass link).
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
-   Owners log in on /pass like everyone else; it sees their /admins entry and opens this page. */
+   Owners log in on /pass like everyone else; it sees their /admins entry and opens this page.
+   Reads use Firestore Lite (small, plain HTTPS): bookings re-read every 20 s and passes every minute while the
+   page is on screen, everything re-reads when it comes back into view and right after any change made here. */
 import {
-  initializeApp, getAuth, signOut, onAuthStateChanged,
-  getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, deleteDoc, writeBatch,
+  initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, signOut, onAuthStateChanged,
+  getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch,
   runTransaction, serverTimestamp, Timestamp, increment
-} from '/assets/vendor/firebase-admin.js';
+} from '/assets/vendor/firebase-account.582e56a7.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app), db = getFirestore(app);
+const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] }), db = getFirestore(app);
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const inr = (n) => '₹' + Math.round(n || 0).toLocaleString('en-IN');
@@ -31,14 +33,35 @@ const show = (id) => ['login', 'denied', 'dash'].forEach((x) => { $('#' + x).hid
 /* ---------- sign in happens on /pass (one login for everyone); it sends owners here ---------- */
 $('#signout').addEventListener('click', () => signOut(auth));
 
-let unsub = [];
+/* ---------- reads: Firestore Lite has no live listeners, so each list re-reads on a timer ---------- */
+const watchers = new Set();
+// Runs the query now, then every `every` ms while the page is on screen, and on refreshAll();
+// a reply that arrives after a newer one, or after unwatching, is ignored
+function watch(q, cb, every = 20000) {
+  const w = { seq: 0, done: 0, at: 0, every, run() { const n = ++w.seq; w.at = Date.now(); getDocs(q).then((s) => { if (watchers.has(w) && n > w.done) { w.done = n; cb(s); } }).catch((e) => console.warn('read failed', e.code || e)); } };
+  watchers.add(w); w.run();
+  return () => watchers.delete(w);
+}
+const refreshAll = () => watchers.forEach((w) => w.run());
+setInterval(() => { if (document.visibilityState === 'visible') watchers.forEach((w) => { if (Date.now() - w.at >= w.every - 1000) w.run(); }); }, 5000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAll(); });
+
+// This device signed in as an owner before: show the dashboard straight away (data follows; the rules still decide)
+const OWNER_KEY = 'mg-owner';
+let knownOwner = null; try { knownOwner = localStorage.getItem(OWNER_KEY); } catch (e) {}
+let unsub = [], started = false;
+const stopAll = () => { unsub.forEach((u) => u()); unsub = []; watchers.clear(); started = false; };
+const begin = () => { if (!started) { started = true; show('dash'); startDashboard(); } };
+if (knownOwner) queueMicrotask(begin);   // after this file has finished setting up (the dashboard code is further down)
 onAuthStateChanged(auth, async (user) => {
-  unsub.forEach((u) => u()); unsub = [];
   $('#signout').hidden = !user; $('#who').textContent = user ? (user.phoneNumber || '') : '';
-  if (!user) { show('login'); location.replace('/pass'); return; }
-  const isOwner = (await getDoc(doc(db, 'admins', user.uid)).catch(() => null))?.exists();
-  if (!isOwner) { $('#uid').textContent = user.uid; return show('denied'); }
-  show('dash'); startDashboard();
+  if (!user) { stopAll(); try { localStorage.removeItem(OWNER_KEY); } catch (e) {} show('login'); location.replace('/pass'); return; }
+  if (knownOwner && knownOwner !== user.uid) stopAll();
+  const owner = getDoc(doc(db, 'admins', user.uid)).then((a) => a.exists()).catch(() => false);
+  if (knownOwner === user.uid) begin();   // reads go out alongside the owner check (Firestore waits for the sign-in itself)
+  if (!(await owner)) { stopAll(); try { localStorage.removeItem(OWNER_KEY); } catch (e) {} $('#uid').textContent = user.uid; return show('denied'); }
+  try { localStorage.setItem(OWNER_KEY, user.uid); } catch (e) {}
+  begin();
 });
 
 /* ---------- dashboard ---------- */
@@ -71,15 +94,15 @@ let dayUnsub = [];
 function watchDay() {
   dayUnsub.forEach((u) => u());
   dayUnsub = [
-    onSnapshot(query(collection(db, 'requests'), where('date', '==', day)), (s) => { requests = s.docs.map((d) => d.data()); renderRequests(); renderSched(); }),
-    onSnapshot(query(collection(db, 'holds'), where('date', '==', day)), (s) => { holds = s.docs.map((d) => ({ id: d.id, ...d.data() })); renderSched(); })
+    watch(query(collection(db, 'requests'), where('date', '==', day)), (s) => { requests = s.docs.map((d) => d.data()); renderRequests(); renderSched(); }),
+    watch(query(collection(db, 'holds'), where('date', '==', day)), (s) => { holds = s.docs.map((d) => ({ id: d.id, ...d.data() })); renderSched(); })
   ];
   unsub.push(...dayUnsub);
 }
 
 /* upcoming: every live booking from today on, all days */
 function watchUpcoming() {
-  unsub.push(onSnapshot(query(collection(db, 'requests'), where('date', '>=', keyOf(nowIst()))), (s) => {
+  unsub.push(watch(query(collection(db, 'requests'), where('date', '>=', keyOf(nowIst()))), (s) => {
     const rows = s.docs.map((d) => d.data()).filter((r) => ['pending', 'confirmed'].includes(r.status))
       .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start);
     $('#up-count').textContent = rows.length ? `(${rows.length})` : '';
@@ -138,6 +161,7 @@ $('#requests').addEventListener('click', async (e) => {
       if (act === 'noshow' || act === 'cancel') mine.forEach((ref) => tx.delete(ref));
     });
   } catch (err) { alert('Could not save. Check your connection.'); b.disabled = false; }
+  refreshAll();
 });
 
 /* add a booking (phone or walk-in): confirmed straight away, shows as booked on the website */
@@ -207,6 +231,7 @@ $('#book-form').addEventListener('submit', async (e) => {
   } catch (err) {
     msgEl.textContent = err.slot ? `${err.slot} is already taken that day. Pick another time.` : 'Could not save. Check your connection.';
   }
+  refreshAll();
 });
 
 /* schedule */
@@ -230,6 +255,7 @@ $('#sched').addEventListener('click', async (e) => {
     else if (hold.status === 'blocked') await deleteDoc(doc(db, 'holds', id));
     else alert('This hour belongs to a booking. Cancel the booking to free it.');
   } catch (err) { alert('Could not save. Check your connection.'); }
+  refreshAll();
 });
 
 /* passes: /passes holds the owner's record (name, phone, price); /passCards is what the customer's link shows
@@ -239,7 +265,7 @@ const passLink = (id) => `${location.origin}/pass?id=${id}`;
 const toE164 = (p) => { let d = String(p || '').replace(/\D/g, '').replace(/^0/, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return /^[6-9]\d{9}$/.test(d) ? '+91' + d : ''; };
 const firstName = (n) => String(n).trim().split(/\s+/)[0].slice(0, 20);
 function watchPasses() {
-  unsub.push(onSnapshot(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
+  unsub.push(watch(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
     const list = $('#passes');
     passData = Object.fromEntries(s.docs.map((d) => [d.id, d.data()]));
     if (s.empty) { list.innerHTML = '<li class="admin-empty">No passes yet.</li>'; return; }
@@ -259,7 +285,7 @@ function watchPasses() {
         </div>
       </li>`;
     }).join('');
-  }));
+  }, 60000));
 }
 $('#pass-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -273,6 +299,7 @@ $('#pass-form').addEventListener('submit', async (e) => {
   batch.set(ref, { name, phone, phoneE164, type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires, createdAt: serverTimestamp() });
   batch.set(doc(db, 'passCards', ref.id), { first: firstName(name), type, hoursTotal: hours, hoursUsed: 0, expires, updatedAt: serverTimestamp() });
   try { await batch.commit(); e.target.reset(); } catch (err) { alert('Could not save the pass.'); }
+  refreshAll();
 });
 $('#passes').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-pass]'); if (!b) return;
@@ -296,6 +323,7 @@ $('#passes').addEventListener('click', async (e) => {
   }
   b.disabled = true;
   try { await batch.commit(); } catch (err) { alert('Could not save.'); b.disabled = false; }
+  refreshAll();
 });
 function sendPass(pid, p) {
   const left = (p.hoursTotal || 0) - (p.hoursUsed || 0), link = passLink(pid);

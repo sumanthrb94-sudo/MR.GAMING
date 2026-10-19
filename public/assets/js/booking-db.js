@@ -1,7 +1,7 @@
 /* Booking database for the public form (Firestore Lite).
    Loaded on demand by main.js as window.MGDB. If Firestore is unreachable the form still works
    as a plain WhatsApp request; it just cannot show or reserve taken slots. */
-import { initializeApp, getFirestore, collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from '/assets/vendor/firebase-public.js';
+import { initializeApp, getFirestore, collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from '/assets/vendor/firebase-public.2b1547c7.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const db = getFirestore(initializeApp(firebaseConfig));
