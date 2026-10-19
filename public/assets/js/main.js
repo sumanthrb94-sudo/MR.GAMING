@@ -6,7 +6,8 @@
   const CONFIG = {
     whatsapp: '917337230311',
     // Per console, per hour: 1 player = solo, 2 players on one console = duo
-    rates: { solo: 199, duo: 320 },
+    // 3 or 4 players can also share one console (games with couch play); passes stay for 1-2 players
+    rates: { solo: 199, duo: 320, trio: 420, quad: 499 },
     // 6-hour passes, valid 30 days
     passes: { solo: 899, duo: 1499 },
     passHours: 6,
@@ -285,21 +286,24 @@
     // Squad room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
     const squadSplit = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };
     const splitLabel = { 2: '2 solos', 3: 'duo + solo', 4: '2 duos' };
+    // Players on one console -> rate
+    const KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' };
+    const KIND_LABEL = { solo: 'Solo, 1 player', duo: 'Duo, 2 players on one console', trio: '3 players on one console', quad: '4 players on one console' };
 
     const render = () => {
       const squad = state.station === 'squad';
-      // Squad room takes 2-4 players; a single console takes 1-2
-      $$('button', segs.players).forEach((b) => { const n = +b.dataset.value; b.hidden = squad ? n < 2 : n > 2; });
+      // Squad room takes 2-4 players; a single console takes 1-4
+      $$('button', segs.players).forEach((b) => { const n = +b.dataset.value; b.hidden = squad && n < 2; });
       if (squad && +state.players < 2) { state.players = '2'; select(segs.players, '2'); }
-      if (!squad && +state.players > 2) { state.players = '2'; select(segs.players, '2'); }
+      const group = !squad && +state.players >= 3;
       $$('button', segs.time).forEach((b) => { b.disabled = squad && +b.dataset.value < CONFIG.squadMinHours; });
       if (squad && +state.time < CONFIG.squadMinHours) { state.time = String(CONFIG.squadMinHours); select(segs.time, state.time); }
-      // Passes are per console, so the squad room is hourly only
-      $$('button', segs.plan).forEach((b) => { b.disabled = squad && b.dataset.value !== 'hourly'; });
-      if (squad && state.plan !== 'hourly') { state.plan = 'hourly'; select(segs.plan, 'hourly'); }
+      // Passes are for 1-2 players on one console, so the squad room and groups of 3-4 pay by the hour
+      $$('button', segs.plan).forEach((b) => { b.disabled = (squad || group) && b.dataset.value !== 'hourly'; });
+      if ((squad || group) && state.plan !== 'hourly') { state.plan = 'hourly'; select(segs.plan, 'hourly'); }
 
       const hours = +state.time, players = +state.players;
-      const kind = players === 2 && !squad ? 'duo' : 'solo';
+      const kind = squad ? 'solo' : KIND[players];
       const rate = squad ? squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0) : CONFIG.rates[kind];
       const gaming = state.plan === 'buy-pass' ? CONFIG.passes[kind] : state.plan === 'use-pass' ? 0 : rate * hours;
       const foodPrice = CONFIG.food[state.food].price, perk = Math.round(foodPrice * CONFIG.foodPerk), total = gaming + foodPrice - perk;
@@ -328,8 +332,10 @@
 
       const passName = kind === 'duo' ? 'Duo pass' : 'Solo pass';
       $('#time-hint').textContent = squad ? `Squad room for ${players}: ${splitLabel[players]}, ${inr(rate)}/hr. Minimum ${CONFIG.squadMinHours} hours.`
-        : kind === 'duo' ? `Duo: two players on one console, ${inr(CONFIG.rates.duo)}/hr.` : '';
+        : kind === 'duo' ? `Duo: two players on one console, ${inr(CONFIG.rates.duo)}/hr.`
+        : group ? `${players} players on one console, ${inr(rate)}/hr. Needs a game that supports ${players} players on one screen; ask us on WhatsApp what's on.` : '';
       $('#plan-hint').textContent = squad ? 'Passes are for one console. The squad room is paid by the hour.'
+        : group ? 'Passes are for 1 or 2 players. Groups of 3 or 4 on one console pay by the hour.'
         : state.plan === 'buy-pass' ? `${passName} ${inr(CONFIG.passes[kind])}: ${CONFIG.passHours} hours within 30 days. This visit uses ${hours} of them.`
         : state.plan === 'use-pass' ? `We take ${hours} hour${hours > 1 ? 's' : ''} off your ${passName.toLowerCase()}. Food is still charged.` : '';
 
@@ -431,7 +437,7 @@
       nameInput.removeAttribute('aria-invalid');
       const st = state, s0 = +st.start, d = st.day.date, p = +st.players, hrs = `${st.hours} hr${st.hours > 1 ? 's' : ''}`;
       const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${st.kind === 'duo' ? 'Duo, 2 players on one console' : 'Solo, 1 player'}`;
+      const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
       const gamingLine = st.plan === 'buy-pass' ? `${st.passName} (${CONFIG.passHours} hrs, valid 30 days) = ${inr(st.gaming)}\nThis visit uses ${st.hours} of ${CONFIG.passHours} hrs`
         : st.plan === 'use-pass' ? `Gaming: ${hrs} from my ${st.passName.toLowerCase()} = ₹0`
         : `Gaming: ${inr(st.rate)}/hr × ${hrs} = ${inr(st.gaming)}`;

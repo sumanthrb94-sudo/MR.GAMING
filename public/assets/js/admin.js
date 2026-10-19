@@ -16,7 +16,7 @@ const inr = (n) => '₹' + Math.round(n || 0).toLocaleString('en-IN');
 const pad = (n) => String(n).padStart(2, '0');
 const clock = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
 const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, duo: { price: 1499, label: 'Duo pass' } };
-const RATES = { solo: 199, duo: 320 }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
+const RATES = { solo: 199, duo: 320, trio: 420, quad: 499 }, KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room', party: 'Birthday party' };
 const BDAY = { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 };   // same as CONFIG.birthday in main.js
@@ -193,13 +193,13 @@ function bookingDraft() {
     return { station, players: kids + adults, kids, adults, start, hours: BDAY.hours, plan: 'party', total: kids * BDAY.perChild + adults * BDAY.perAdult };
   }
   let players = +bk('players').value;
-  players = squad ? Math.max(2, players) : Math.min(2, players);
+  if (squad) players = Math.max(2, players);
   const start = +bk('start').value, maxHours = CLOSE - start;
   const hoursSel = bk('hours'), keep = +hoursSel.value || 2;
   hoursSel.innerHTML = Array.from({ length: Math.min(6, maxHours) }, (_, i) => `<option value="${i + 1}">${i + 1} hr${i ? 's' : ''}</option>`).join('');
   hoursSel.value = String(Math.min(keep, maxHours));
-  const hours = +hoursSel.value, plan = squad ? 'hourly' : bk('plan').value;
-  const kind = players === 2 && !squad ? 'duo' : 'solo';
+  const hours = +hoursSel.value, plan = squad || players >= 3 ? 'hourly' : bk('plan').value;   // passes are for 1-2 players
+  const kind = squad ? 'solo' : KIND[players];
   const rate = squad ? SQUAD[players].reduce((sum, k) => sum + RATES[k], 0) : RATES[kind];
   const total = plan === 'buy-pass' ? PASS[kind].price : plan === 'use-pass' ? 0 : rate * hours;
   return { station, players, start, hours, plan, total };
