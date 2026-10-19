@@ -42,9 +42,10 @@ service cloud.firestore {
 
     match /requests/{requestId} {
       // The owner adds phone and walk-in bookings from /admin
-      allow create: if isAdmin() || request.resource.data.keys().hasOnly(['id', 'name', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
+      allow create: if isAdmin() || request.resource.data.keys().hasOnly(['id', 'name', 'phone', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
         && request.resource.data.id == requestId
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
+        && (!('phone' in request.resource.data) || (request.resource.data.phone is string && request.resource.data.phone.size() <= 15))
         && isDate(request.resource.data.date)
         && isOpenHour(request.resource.data.start)
         && request.resource.data.hours in [1, 2, 3]
@@ -82,6 +83,59 @@ service cloud.firestore {
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
+    }
+
+    // ---- Members' board (/pass after sign-in): threads with a photo, replies, and the leaderboard the owner keeps.
+    // A member is anyone signed in with their mobile number. Posts carry a first name the member typed, never a phone.
+    // Images live in Firestore: a small thumbnail on the post, the full picture in postImages/{postId} (no Storage bucket needed).
+    function isMember() { return request.auth != null && request.auth.token.phone_number != null; }
+    function validPost() {
+      let p = request.resource.data;
+      return p.keys().hasOnly(['uid', 'first', 'text', 'thumb', 'hasImage', 'replies', 'hidden', 'createdAt'])
+        && p.uid == request.auth.uid
+        && p.first is string && p.first.size() > 0 && p.first.size() <= 20
+        && p.text is string && p.text.size() <= 500
+        && p.thumb is string && p.thumb.size() <= 60000          // data: URL of a JPEG thumbnail, up to ~320px, or ''
+        && p.hasImage is bool
+        && (p.text.size() > 0 || p.hasImage)
+        && p.replies == 0 && p.hidden == false
+        && p.createdAt == request.time;
+    }
+    match /posts/{postId} {
+      // Members read what the owner hasn't hidden (list queries must filter hidden == false); the owner reads everything
+      allow read: if isAdmin() || (isMember() && resource.data.hidden == false);
+      allow create: if isMember() && validPost();
+      // The owner hides/unhides; a member may only bump the reply count by one when they reply
+      allow update: if isAdmin()
+        || (isMember() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replies']) && request.resource.data.replies == resource.data.replies + 1);
+      allow delete: if isAdmin() || (isMember() && resource.data.uid == request.auth.uid);
+
+      match /replies/{replyId} {
+        allow read: if isAdmin() || isMember();
+        allow create: if isMember() && request.resource.data.keys().hasOnly(['uid', 'first', 'text', 'createdAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.first is string && request.resource.data.first.size() > 0 && request.resource.data.first.size() <= 20
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
+          && request.resource.data.createdAt == request.time;
+        allow delete: if isAdmin() || (isMember() && resource.data.uid == request.auth.uid);
+        allow update: if false;
+      }
+    }
+    // The full-size picture for a post, opened on tap. One per post, written by the post's author.
+    match /postImages/{postId} {
+      allow get: if isAdmin() || isMember();
+      allow list: if false;
+      allow create: if isMember() && request.resource.data.keys().hasOnly(['uid', 'image'])
+        && request.resource.data.uid == request.auth.uid
+        && get(/databases/$(database)/documents/posts/$(postId)).data.uid == request.auth.uid
+        && request.resource.data.image is string && request.resource.data.image.size() <= 700000;   // data: URL of a JPEG, up to ~1200px
+      allow update: if false;
+      allow delete: if isAdmin() || (isMember() && resource.data.uid == request.auth.uid);
+    }
+    // Leaderboard: gamer tag, game, wins and points, typed in by the owner (never made up by the site)
+    match /leaderboard/{entryId} {
+      allow read: if isAdmin() || isMember();
+      allow write: if isAdmin();
     }
   }
 }

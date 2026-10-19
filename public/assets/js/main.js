@@ -17,10 +17,10 @@
     open: 11,           // opening hour, 24h clock (11 am)
     close: 23,          // closing hour (11 pm); sessions must end by then
     foodPerk: 0.10,     // 10% off food for console bookers
-    // Birthday package: 3 hours, food included, ₹600 a child, ₹299 an adult. Minimum 10 guests (adults count towards it).
+    // Birthday package: 3 hours, food included, ₹599 a child, ₹299 an adult. Minimum 10 guests (adults count towards it).
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
     // Advance to book; on cancellation cancelFee is kept and the rest refunded
-    birthday: { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 },
+    birthday: { perChild: 599, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 },
     // Food add-ons in the booking are the menu's Top Combos (menu-data.js), 10% off (foodPerk) for console bookers
   };
 
@@ -70,7 +70,7 @@
     el.setAttribute('aria-label', text);
   }
 
-  /* ---------- birthday package: children × ₹600 + adults × ₹299, enquiry goes to WhatsApp ---------- */
+  /* ---------- birthday package: children × ₹599 + adults × ₹299, enquiry goes to WhatsApp ---------- */
   const bday = $('#bday-send');
   if (bday) {
     const pad2 = (n) => String(n).padStart(2, '0');
@@ -315,6 +315,9 @@
       Object.assign(state, { plan: params.get('rate') === 'member' ? 'member' : 'use-pass', players: passKind === 'duo' ? '2' : '1' });
       select(segs.plan, state.plan); select(segs.players, state.players); $('#sum-pass').open = true;
     }
+    // A slot link from the members' board (/?slot=2026-10-20_ps5_18&hrs=1#book): opens the fare step on that slot once live slots have loaded
+    const slotParam = (params.get('slot') || '').match(/^(\d{4}-\d{2}-\d{2})_(ps5|xbox|squad)_(\d{1,2})$/);
+    let pendingSlot = slotParam ? { date: slotParam[1], station: slotParam[2], hour: +slotParam[3], hours: Math.min(MAX_ONLINE_HOURS, Math.max(1, +(params.get('hrs') || 1))) } : null;
     const nameInput = $('#book-name');
     try { nameInput.value = localStorage.getItem('mg-name') || ''; } catch (e) {}
 
@@ -562,8 +565,17 @@
       render();
       const read = window.MGDB.takenRange ? window.MGDB.takenRange(days[0].key, days[days.length - 1].key)
         : window.MGDB.takenFor(state.date).then((t) => new Map([[state.date, t]]));
-      read.then((week) => { Object.assign(state, { week, live: true }); render(); })
+      read.then((week) => { Object.assign(state, { week, live: true }); render(); openPendingSlot(); })
         .catch(() => { state.live = false; render(); });
+    };
+    // The board's "next free slot" link: pick that slot and go to the fare step, if it is still free
+    const openPendingSlot = () => {
+      const q = pendingSlot; if (!q) return; pendingSlot = null;
+      if (!days.some((d) => d.key === q.date)) return;
+      if (q.station === 'squad') { state.con = 'room'; select(segs.con, 'room'); if (+state.players < 2) { state.players = '2'; select(segs.players, '2'); } }
+      state.date = q.date; select(availDays, q.date); state.time = String(Math.max(q.hours, q.station === 'squad' ? CONFIG.squadMinHours : 1)); select(segs.time, state.time);
+      if (fits(q.date, q.station, q.hour, +state.time)) { Object.assign(state, { start: String(q.hour), station: q.station, held: null, plan: state.plan === 'buy-pass' ? 'hourly' : state.plan }); goStep(2); }
+      else { render(); availNote.textContent = 'That slot just went. Here are the ones still open.'; }
     };
     window.addEventListener('mgdb-ready', () => refreshTaken());
     import('/assets/js/booking-db.js').catch(() => { dbFailed = true; refreshTaken(); });   // offline or blocked: WhatsApp-only requests
