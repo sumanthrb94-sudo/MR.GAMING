@@ -18,7 +18,8 @@ const clock = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
 const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, duo: { price: 1499, label: 'Duo pass' } };
 const RATES = { solo: 199, duo: 320 }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
-const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room' };
+const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room', party: 'Birthday party' };
+const BDAY = { perGuest: 600, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 };   // same as CONFIG.birthday in main.js
 const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -126,7 +127,7 @@ function watchUpcoming() {
 $('#upcoming').addEventListener('click', (e) => { const b = e.target.closest('[data-day]'); if (b) setDay(b.dataset.day); });
 
 /* requests */
-const holdIds = (r) => (r.station === 'squad' ? ['ps5', 'xbox'] : [r.station])
+const holdIds = (r) => (r.station === 'squad' || r.station === 'party' ? ['ps5', 'xbox'] : [r.station])
   .flatMap((c) => Array.from({ length: r.hours }, (_, i) => `${r.date}_${c}_${r.start + i}`));
 const telHref = (p) => 'tel:' + String(p).replace(/[^\d+]/g, '');
 
@@ -142,7 +143,7 @@ function renderRequests() {
         <span class="pill">${esc(r.status)}</span>
       </div>
       <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(r.id)}</span></p>
-      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : 'hourly')}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
+      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
       ${r.phone ? `<p class="admin-item-meta"><a class="admin-tel" href="${esc(telHref(r.phone))}">${esc(r.phone)}</a></p>` : ''}
       <p class="admin-item-total">${inr(r.total)}</p>
       <div class="admin-actions">
@@ -178,11 +179,18 @@ function fillBookingForm() {
   const hrs = []; for (let h = OPEN; h < CLOSE; h++) hrs.push(h);
   bk('start').innerHTML = hrs.map((h) => `<option value="${h}">${clock(h)}</option>`).join('');
   bk('start').value = '18';
-  ['station', 'players', 'start', 'hours', 'plan'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
+  ['station', 'players', 'start', 'hours', 'plan', 'guests'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
+  bk('guests').addEventListener('input', bookingTotal);
   bookingTotal();
 }
 function bookingDraft() {
   const station = bk('station').value, squad = station === 'squad';
+  if (station === 'party') {
+    // Birthday package: fixed 3 hours, whole game room, priced per guest
+    const guests = Math.max(BDAY.minGuests, Math.min(99, Math.round(+bk('guests').value) || BDAY.minGuests));
+    const start = Math.min(+bk('start').value, CLOSE - BDAY.hours);
+    return { station, players: guests, start, hours: BDAY.hours, plan: 'party', total: guests * BDAY.perGuest };
+  }
   let players = +bk('players').value;
   players = squad ? Math.max(2, players) : Math.min(2, players);
   const start = +bk('start').value, maxHours = CLOSE - start;
@@ -196,7 +204,15 @@ function bookingDraft() {
   return { station, players, start, hours, plan, total };
 }
 function bookingTotal() {
-  const b = bookingDraft();
+  const b = bookingDraft(), party = b.station === 'party';
+  bk('players').hidden = bk('plan').hidden = party; bk('guests').hidden = !party;
+  bk('hours').disabled = party;
+  if (party) {
+    bk('start').value = String(b.start);
+    bk('hours').innerHTML = `<option value="${BDAY.hours}">${BDAY.hours} hrs</option>`;
+    bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${b.players} guests · ${inr(b.total)} · ${b.players > BDAY.roomMax ? 'whole restaurant' : 'game room'} · ${inr(BDAY.advance)} advance`;
+    return;
+  }
   bk('players').value = String(b.players); bk('plan').value = b.plan;
   bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${inr(b.total)}`;
 }
@@ -207,7 +223,6 @@ $('#book-form').addEventListener('submit', async (e) => {
   const d = dateOf(day);
   const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(b.start)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
   const r = { id, name, phone, date: day, start: b.start, hours: b.hours, station: b.station, players: b.players, plan: b.plan, game: '', food: '', total: b.total, status: 'confirmed', source: 'owner' };
-  const consoles = b.station === 'squad' ? ['ps5', 'xbox'] : [b.station];
   msgEl.textContent = 'Saving…';
   try {
     await runTransaction(db, async (tx) => {
@@ -215,7 +230,8 @@ $('#book-form').addEventListener('submit', async (e) => {
       const clash = snaps.find((x) => x.exists() && !(x.data().status === 'pending' && Date.now() - (x.data().createdAt?.toMillis?.() || Date.now()) > STALE_MS));
       if (clash) { const [, c, h] = clash.id.split('_'); throw Object.assign(new Error('taken'), { slot: `${NAMES[c]} ${clock(+h)}` }); }
       tx.set(doc(db, 'requests', id), { ...r, createdAt: serverTimestamp() });
-      consoles.forEach((c) => { for (let h = b.start; h < b.start + b.hours; h++) tx.set(doc(db, 'holds', `${day}_${c}_${h}`), { date: day, console: c, hour: h, requestId: id, status: 'confirmed', createdAt: serverTimestamp() }); });
+      // Same hour list as the clash check above: squad rooms and birthday parties take both consoles
+      ids.forEach((hid) => { const [, c, h] = hid.split('_'); tx.set(doc(db, 'holds', hid), { date: day, console: c, hour: +h, requestId: id, status: 'confirmed', createdAt: serverTimestamp() }); });
     });
     msgEl.textContent = `Added. ${name} is booked ${dayName(day)}, ${clock(b.start)} – ${clock(b.start + b.hours)}.`;
     bk('name').value = ''; bk('phone').value = '';

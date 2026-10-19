@@ -337,6 +337,10 @@ em { font-style: normal; color: var(--accent-text); }
 @media (min-width: 520px) { .bday-grid { grid-template-columns: 1fr 1fr; } }
 .bday-field { display: grid; gap: var(--s2); min-width: 0; }
 .bday-field .field { max-width: none; }
+.bday-terms { display: grid; gap: var(--s2); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: 15px; color: var(--muted); }
+.bday-terms strong { color: var(--text); }
+.bday-lines { padding-bottom: 0; border-bottom: 0; }
+.field-note { color: var(--muted); letter-spacing: .02em; text-transform: none; }
 .stepper { display: flex; align-items: center; gap: var(--s3); min-height: 52px; }
 .stepper .icon-btn { width: 44px; height: 44px; font-size: 22px; font-weight: 700; }
 .stepper .icon-btn:disabled { opacity: .35; cursor: not-allowed; }

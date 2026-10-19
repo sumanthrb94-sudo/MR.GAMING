@@ -69,8 +69,9 @@
             <form class="admin-book-form" id="book-form">
               <input class="field" id="bk-name" placeholder="Name" required maxlength="40" autocomplete="off">
               <input class="field" id="bk-phone" placeholder="Phone (optional)" inputmode="tel" maxlength="15" autocomplete="off">
-              <select class="field" id="bk-station" aria-label="Console"><option value="ps5">PS5</option><option value="xbox">Xbox</option><option value="squad">Squad room (both)</option></select>
+              <select class="field" id="bk-station" aria-label="Console"><option value="ps5">PS5</option><option value="xbox">Xbox</option><option value="squad">Squad room (both)</option><option value="party">Birthday party (game room, 3 hrs)</option></select>
               <select class="field" id="bk-players" aria-label="Players"><option value="1">1 player</option><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>
+              <input class="field" id="bk-guests" type="number" min="10" max="99" value="10" aria-label="Guests (min 10)" hidden>
               <select class="field" id="bk-start" aria-label="Start time"></select>
               <select class="field" id="bk-hours" aria-label="Hours"></select>
               <select class="field" id="bk-plan" aria-label="Pays with"><option value="hourly">Pays hourly</option><option value="use-pass">Uses a pass</option><option value="buy-pass">Buys a pass</option></select>
