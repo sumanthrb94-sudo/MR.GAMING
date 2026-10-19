@@ -14,9 +14,9 @@
     open: 11,           // opening hour, 24h clock (11 am)
     close: 23,          // closing hour (11 pm); sessions must end by then
     foodPerk: 0.10,     // 10% off food for console bookers
-    // Birthday package: 3 hours, food included, ₹600 a child, ₹200 an adult. Minimum 10 guests (adults count towards it).
+    // Birthday package: 3 hours, food included, ₹600 a child, ₹299 an adult. Minimum 10 guests (adults count towards it).
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
-    birthday: { perChild: 600, perAdult: 200, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 },
+    birthday: { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 },
     food: {
       'none': { name: 'No food', price: 0 },
       'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
@@ -71,7 +71,7 @@
     el.setAttribute('aria-label', text);
   }
 
-  /* ---------- birthday package: children × ₹600 + adults × ₹200, enquiry goes to WhatsApp ---------- */
+  /* ---------- birthday package: children × ₹600 + adults × ₹299, enquiry goes to WhatsApp ---------- */
   const bday = $('#bday-send');
   if (bday) {
     const pad2 = (n) => String(n).padStart(2, '0');
