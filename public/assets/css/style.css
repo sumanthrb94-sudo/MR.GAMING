@@ -338,6 +338,19 @@ em { font-style: normal; color: var(--accent-text); }
 @media (min-width: 520px) { .bday-grid { grid-template-columns: 1fr 1fr; } }
 .bday-field { display: grid; gap: var(--s2); min-width: 0; }
 .bday-field .field { max-width: none; }
+.bday-tc { margin-top: var(--s5); box-shadow: none; }
+.bday-tc summary { list-style: none; cursor: pointer; padding: var(--s5) clamp(20px, 3vw, 32px); display: grid; grid-template-columns: 1fr auto; gap: var(--s1) var(--s4); align-items: center; }
+.bday-tc summary::-webkit-details-marker { display: none; }
+.bday-tc summary::after { content: "+"; grid-column: 2; grid-row: 1 / span 2; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: 22px; font-weight: 700; transition: transform .45s var(--ease-spring); }
+.bday-tc[open] summary::after { transform: rotate(45deg); }
+.bday-tc-title { font-weight: 850; font-stretch: 115%; font-size: 22px; letter-spacing: -.02em; }
+.bday-tc-sub { grid-column: 1; color: var(--muted); font-size: 15px; }
+.bday-tc-body { padding: 0 clamp(20px, 3vw, 32px) clamp(20px, 3vw, 32px); display: grid; gap: var(--s5); border-top: 1px solid var(--line); padding-top: var(--s5); }
+@media (min-width: 900px) { .bday-tc-body { grid-template-columns: 1fr 1fr; column-gap: var(--s7); } }
+.bday-tc-body h3 { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s3); }
+.bday-tc-body ol { padding-left: var(--s5); display: grid; gap: var(--s2); font-size: 15px; line-height: 1.5; }
+.bday-tc-body li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.bday-tc-cancel { grid-column: 1 / -1; padding: var(--s5); border-radius: var(--r-md); background: var(--surface-2); }
 .bday-terms { display: grid; gap: var(--s2); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: 15px; color: var(--muted); }
 .bday-terms strong { color: var(--text); }
 .bday-lines { padding-bottom: 0; border-bottom: 0; }

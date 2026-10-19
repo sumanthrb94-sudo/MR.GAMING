@@ -120,6 +120,14 @@
     paint();
   }
 
+  // Links to #birthday-terms open the terms before scrolling to them
+  const terms = $('#birthday-terms');
+  if (terms) {
+    const openTerms = () => { if (location.hash === '#birthday-terms') terms.open = true; };
+    $$('a[href="#birthday-terms"]').forEach((l) => l.addEventListener('click', () => { terms.open = true; }));
+    window.addEventListener('hashchange', openTerms); openTerms();
+  }
+
   /* ---------- hero headline: word-by-word fade-in-blur ---------- */
   const title = $('#hero-title');
   if (title) {
