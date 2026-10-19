@@ -65,6 +65,7 @@
         <a href="#stations">Stations</a>
         <a href="#prices">Prices</a>
         <a href="#book">Book</a>
+        <a href="#birthday">Birthdays</a>
         <a href="/menu">Food menu</a>
         <a href="#visit">Visit</a>
         <span class="nav-ind" aria-hidden="true"></span>
@@ -120,8 +121,8 @@
 
     <div class="marquee" aria-hidden="true">
       <div class="marquee-track">
-        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
-        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
+        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>Birthday parties</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
+        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>Birthday parties</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
       </div>
     </div>
 
@@ -356,11 +357,60 @@
       </div>
     </section>
 
-    <!-- 04 FOOD -->
+    <!-- 04 BIRTHDAYS -->
+    <section class="section" id="birthday">
+      <div class="wrap">
+        <header class="sec-head" data-reveal>
+          <p class="eyebrow"><span class="num">04</span> Birthdays</p>
+          <h2 class="h2">Birthday package. <span class="dim">Good food, great games.</span></h2>
+        </header>
+
+        <div class="bday" data-stagger>
+          <article class="card plan plan-hot bday-deal" data-reveal>
+            <p class="plan-name">3 hours, food included <span class="tag">Per child</span></p>
+            <p class="plan-price">₹600<small>/child</small></p>
+            <ul class="bday-food" aria-label="Food included for each child">
+              <li><b>2</b> pizza slices</li>
+              <li><b>1</b> snack of their choice</li>
+              <li><b>+</b> French fries</li>
+              <li><b>1</b> scoop of ice cream</li>
+            </ul>
+            <ul class="specs"><li>Play PS5 &amp; Xbox</li><li>Board games</li><li>Celebrate together</li></ul>
+          </article>
+
+          <div class="card bday-plan" data-reveal>
+            <p class="summary-title">Plan the party</p>
+            <div class="bday-grid">
+              <div class="bday-field">
+                <span class="field-label" id="bday-kids-label">Children</span>
+                <div class="stepper" role="group" aria-labelledby="bday-kids-label">
+                  <button class="icon-btn press" type="button" id="bday-minus" aria-label="One fewer child">−</button>
+                  <output id="bday-kids" aria-live="polite">10</output>
+                  <button class="icon-btn press" type="button" id="bday-plus" aria-label="One more child">+</button>
+                </div>
+              </div>
+              <label class="bday-field"><span class="field-label">Date</span><input class="field" id="bday-date" type="date"></label>
+              <label class="bday-field"><span class="field-label">Time</span><select class="field" id="bday-start"></select></label>
+              <label class="bday-field"><span class="field-label">Your name</span><input class="field" id="bday-name" type="text" autocomplete="given-name" placeholder="Parent's name" maxlength="40"></label>
+            </div>
+            <div class="summary-total">
+              <span id="bday-sum">10 children × ₹600</span>
+              <span class="total"><span class="roll" id="bday-total" data-prefix="₹"></span></span>
+            </div>
+            <a class="btn btn-accent btn-block press" id="bday-send" href="https://wa.me/917337230311" target="_blank" rel="noopener">
+              <svg class="i"><use href="#i-wa"/></svg> Enquire on WhatsApp
+            </a>
+            <p class="summary-note">We confirm the date and details on WhatsApp. Bookings &amp; enquiries: <a class="text-link" href="tel:+917337230311">73372 30311</a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 FOOD -->
     <section class="section" id="food">
       <div class="wrap">
         <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">04</span> Food from MR. Sandwich</p>
+          <p class="eyebrow"><span class="num">05</span> Food from MR. Sandwich</p>
           <h2 class="h2">Fuel between matches. <span class="dim">100% pure veg.</span></h2>
         </header>
 
@@ -378,7 +428,7 @@
     <!-- 05 FIFA -->
     <section class="cup" id="fifa">
       <div class="wrap cup-in" data-reveal>
-        <p class="eyebrow"><span class="num">05</span> Coming soon</p>
+        <p class="eyebrow"><span class="num">06</span> Coming soon</p>
         <h2 class="cup-title">FIFA Cup</h2>
         <p class="cup-copy">Our first FIFA tournament, played 1v1 on the PS5 and Xbox. Date, entry fee and prizes coming soon. Join the waitlist to hear first.</p>
         <a class="btn btn-dark press" data-wa="Hi MR. GAMING! Please add me to the FIFA Cup waitlist. My name / gamer tag is:" href="https://wa.me/917337230311" target="_blank" rel="noopener">
@@ -391,7 +441,7 @@
     <section class="section" id="visit">
       <div class="wrap">
         <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">06</span> Visit</p>
+          <p class="eyebrow"><span class="num">07</span> Visit</p>
           <h2 class="h2">Inside MR. Sandwich, <span class="dim">Gachibowli.</span></h2>
         </header>
 

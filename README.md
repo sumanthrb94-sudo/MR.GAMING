@@ -16,9 +16,11 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 | Owner | `public/admin.html` | "Owner login" in the footer. Not indexed |
 | 404 | `public/404.html` | |
 
-Home sections: hero → stations (PS5 / Xbox) + installed games → prices → availability board + booking request → food highlights → FIFA Cup waitlist → visit.
+Home sections: hero → stations (PS5 / Xbox) + installed games → prices → availability board + booking request → birthday package → food highlights → FIFA Cup waitlist → visit.
 
 **Pricing:** per console per hour, solo ₹199, duo (2 players on one console) ₹320. Squad room adds up both consoles: 2 players ₹398, 3 ₹519, 4 ₹640 (min 2 hours). Passes, 6 hours within 30 days: solo ₹899, duo ₹1,499. 10% off food for console bookers.
+
+**Birthday package** (from the owner's flyer): 3 hours, ₹600 per child, food included per child (2 pizza slices, 1 snack of choice, French fries, 1 scoop of ice cream), PS5 & Xbox, board games. The planner on the home page (`#birthday`) takes children, date, time (ends by 11 pm) and name, shows children × ₹600, and sends the enquiry on WhatsApp. Not held in the database; the owner adds it with "Add a booking" once agreed. The menu page links to it.
 
 **Availability:** the Book section opens with a live board, PS5 and Xbox by hour for any of the next 7 days. Booked hours (website requests, the owner's phone / walk-in bookings, blocked hours) show as Booked; tapping an open hour fills the form. It re-reads every minute and when the tab comes back. If the database can't be reached it says so instead of showing anything as open.
 
@@ -36,7 +38,7 @@ Plain HTML/CSS/JS. No build step and no dependencies. Fonts and images are self-
 
 | What | Where |
 |---|---|
-| Phone / WhatsApp number, solo and duo rates, solo and duo pass prices, squad-room minimum hours, opening and closing hour, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
+| Phone / WhatsApp number, birthday price per child and hours, solo and duo rates, solo and duo pass prices, squad-room minimum hours, opening and closing hour, food perk %, booking food options | `CONFIG` at the top of `public/assets/js/main.js` (prices also appear as text in `public/index.html`) |
 | Full food menu and prices | `public/assets/js/menu-data.js`. Items marked `featured: true` also show on the homepage. |
 | Installed games | The "Installed" list in `public/index.html`; the booking form copies its game choices from it |
 | Address, Maps link | `public/index.html` (Visit section + JSON-LD), `public/menu.html` footer |

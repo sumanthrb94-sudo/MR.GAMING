@@ -14,6 +14,7 @@
     open: 11,           // opening hour, 24h clock (11 am)
     close: 23,          // closing hour (11 pm); sessions must end by then
     foodPerk: 0.10,     // 10% off food for console bookers
+    birthday: { perChild: 600, hours: 3 },   // birthday package: 3 hours, food included
     food: {
       'none': { name: 'No food', price: 0 },
       'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
@@ -68,6 +69,43 @@
     el.setAttribute('aria-label', text);
   }
 
+  /* ---------- birthday package: children × price, enquiry goes to WhatsApp ---------- */
+  const bday = $('#bday-send');
+  if (bday) {
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
+    const ist = (() => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); })();
+    const dateIn = $('#bday-date'), startIn = $('#bday-start'), nameIn = $('#bday-name');
+    const { perChild, hours } = CONFIG.birthday;
+    let kids = 10;
+    dateIn.min = `${ist.getFullYear()}-${pad2(ist.getMonth() + 1)}-${pad2(ist.getDate())}`;
+    // Start times so the 3 hours end by closing time
+    for (let h = CONFIG.open; h + hours <= CONFIG.close; h++) startIn.insertAdjacentHTML('beforeend', `<option value="${h}">${clock12(h)} – ${clock12(h + hours)}</option>`);
+    startIn.value = '16';
+    const paint = () => {
+      $('#bday-kids').textContent = kids;
+      $('#bday-minus').disabled = kids <= 1;
+      $('#bday-sum').textContent = `${kids} ${kids === 1 ? 'child' : 'children'} × ${inr(perChild)}`;
+      setRoll($('#bday-total'), kids * perChild);
+      const h = +startIn.value, day = dateIn.value ? new Date(dateIn.value + 'T00:00') : null;
+      const time = `${clock12(h)} – ${clock12(h + hours)}`;
+      bday.href = waUrl([
+        "Hi MR. GAMING! I'd like to book the birthday package.",
+        '',
+        nameIn.value.trim() ? `Name: ${nameIn.value.trim()}` : null,
+        `When: ${day ? day.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'date to be decided'}, ${time}`,
+        `Children: ${kids}`,
+        `Package: ${hours} hours, ${inr(perChild)} per child = ${inr(kids * perChild)}`,
+        '',
+        'Please confirm the date and details.'
+      ].filter((l) => l !== null).join('\n'));
+    };
+    $('#bday-minus').addEventListener('click', () => { kids = Math.max(1, kids - 1); paint(); });
+    $('#bday-plus').addEventListener('click', () => { kids = Math.min(99, kids + 1); paint(); });
+    [dateIn, startIn, nameIn].forEach((el) => el.addEventListener('input', paint));
+    paint();
+  }
+
   /* ---------- hero headline: word-by-word fade-in-blur ---------- */
   const title = $('#hero-title');
   if (title) {
@@ -100,13 +138,17 @@
   const topbar = $('#topbar'), dock = $('#dock'), heroActions = $('.hero .actions');
   const onScroll = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-  // Mobile dock: show once past the hero buttons, hide while the booking form is on screen
+  // Mobile dock: show once past the hero buttons, hide while the booking form or the birthday planner is on screen
   if (dock && heroActions && 'IntersectionObserver' in window) {
-    let pastHero = false, inBook = false;
-    const paint = () => dock.classList.toggle('is-visible', pastHero && !inBook);
+    let pastHero = false;
+    const covering = new Set();
+    const paint = () => dock.classList.toggle('is-visible', pastHero && !covering.size);
     new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting && e.boundingClientRect.top < 0; paint(); }).observe(heroActions);
-    const book = $('#book');
-    if (book) new IntersectionObserver(([e]) => { inBook = e.isIntersecting; paint(); }, { rootMargin: '-20% 0px -20% 0px' }).observe(book);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) covering.add(e.target); else covering.delete(e.target); });
+      paint();
+    }, { rootMargin: '-20% 0px -20% 0px' });
+    ['#book', '#birthday'].forEach((sel) => { const el = $(sel); if (el) io.observe(el); });
   }
 
   const nav = $('.nav'), navInd = $('.nav-ind');

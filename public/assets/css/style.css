@@ -317,6 +317,24 @@ em { font-style: normal; color: var(--accent-text); }
 .key-picked { background: var(--accent); border-color: var(--accent); }
 .key-booked { background: var(--surface-2); }
 
+/* birthdays */
+.bday { display: grid; gap: var(--s4); align-items: start; }
+@media (min-width: 900px) { .bday { grid-template-columns: 1fr 1fr; gap: var(--s5); } }
+.bday-deal { gap: var(--s4); }
+.bday-deal .plan-price { margin-top: var(--s4); }
+.bday-food { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.bday-food li { display: flex; align-items: baseline; gap: var(--s2); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-weight: 700; font-size: 15px; line-height: 1.25; }
+.bday-food b { font-weight: 900; font-stretch: 120%; color: var(--accent-text); }
+.bday-plan { padding: clamp(24px, 3vw, 32px); display: grid; gap: var(--s5); }
+.bday-grid { display: grid; gap: var(--s4); }
+@media (min-width: 520px) { .bday-grid { grid-template-columns: 1fr 1fr; } }
+.bday-field { display: grid; gap: var(--s2); min-width: 0; }
+.bday-field .field { max-width: none; }
+.stepper { display: flex; align-items: center; gap: var(--s3); min-height: 52px; }
+.stepper .icon-btn { width: 44px; height: 44px; font-size: 22px; font-weight: 700; }
+.stepper .icon-btn:disabled { opacity: .35; cursor: not-allowed; }
+.stepper output { min-width: 2.2ch; text-align: center; font-weight: 900; font-stretch: 120%; font-size: 28px; font-variant-numeric: tabular-nums; }
+
 /* food */
 .food-list { display: grid; border-top: 1px solid var(--line); }
 @media (min-width: 900px) { .food-list { grid-template-columns: 1fr 1fr; column-gap: var(--s7); } }
