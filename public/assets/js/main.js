@@ -159,21 +159,35 @@
     $$('[data-reveal]').forEach(onReveal);
   }
 
-  /* ---------- top bar, dock, active nav ---------- */
-  const topbar = $('#topbar'), dock = $('#dock'), heroActions = $('.hero .actions');
+  /* ---------- top bar, phone tab bar, active nav ---------- */
+  const topbar = $('#topbar');
   const onScroll = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-  // Mobile dock: show once past the hero buttons, hide while the booking form or the birthday planner is on screen
-  if (dock && heroActions && 'IntersectionObserver' in window) {
-    let pastHero = false;
-    const covering = new Set();
-    const paint = () => dock.classList.toggle('is-visible', pastHero && !covering.size);
-    new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting && e.boundingClientRect.top < 0; paint(); }).observe(heroActions);
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) covering.add(e.target); else covering.delete(e.target); });
-      paint();
-    }, { rootMargin: '-20% 0px -20% 0px' });
-    ['#book', '#birthday'].forEach((sel) => { const el = $(sel); if (el) io.observe(el); });
+  // Phone tab bar: the tab for the section under the middle of the screen lights up
+  const tabbar = $('#tabbar');
+  if (tabbar && 'IntersectionObserver' in window) {
+    const TAB_FOR = { top: 'top', stations: 'top', prices: 'top', book: 'book', birthday: 'birthday', food: 'food', fifa: 'food' };
+    const tabs = $$('[data-tab]', tabbar);
+    const light = (id) => tabs.forEach((t) => {
+      const on = t.dataset.tab === TAB_FOR[id];
+      t.classList.toggle('is-active', on);
+      if (on) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current');
+    });
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) light(e.target.id); }), { rootMargin: '-50% 0px -50% 0px' });
+    $$('main > section[id]').forEach((sec) => io.observe(sec));
+  }
+
+  /* ---------- open now? (Hyderabad time, from CONFIG.open/close) ---------- */
+  const statuses = $$('#open-status, [data-open-status]');
+  if (statuses.length) {
+    const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
+    const paintOpen = () => {
+      const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000), h = ist.getHours();
+      const open = h >= CONFIG.open && h < CONFIG.close;
+      const text = open ? `Open now · till ${clock12(CONFIG.close)}` : h < CONFIG.open ? `Opens today at ${clock12(CONFIG.open)}` : `Closed now · opens ${clock12(CONFIG.open)} tomorrow`;
+      statuses.forEach((el) => { el.classList.toggle('is-open', open); $('.open-text', el).textContent = text; });
+    };
+    paintOpen(); setInterval(paintOpen, 60000);
   }
 
   const nav = $('.nav'), navInd = $('.nav-ind');
@@ -235,6 +249,12 @@
     ind.style.width = on.offsetWidth + 'px';
     ind.style.height = on.offsetHeight + 'px';
     ind.style.transform = `translate(${on.offsetLeft}px, ${on.offsetTop}px)`;
+    // Day chips scroll sideways on phones: keep the picked one in view
+    if (seg.scrollWidth > seg.clientWidth) {
+      const left = on.offsetLeft - 4, right = on.offsetLeft + on.offsetWidth + 4 - seg.clientWidth;
+      if (left < seg.scrollLeft) seg.scrollTo({ left, behavior: reduced ? 'auto' : 'smooth' });
+      else if (right > seg.scrollLeft) seg.scrollTo({ left: right, behavior: reduced ? 'auto' : 'smooth' });
+    }
   }
   function select(seg, value) {
     $$('button', seg).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === value)));

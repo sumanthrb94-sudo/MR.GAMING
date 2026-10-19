@@ -1,0 +1,20 @@
+{
+  "name": "MR. GAMING",
+  "short_name": "MR. GAMING",
+  "description": "Private PS5 & Xbox gaming room inside MR. Sandwich, Gachibowli. Book a slot, plan a birthday, see your pass hours.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0B0A",
+  "theme_color": "#0B0B0A",
+  "icons": [
+    { "src": "/assets/images/logo-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/images/logo-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "shortcuts": [
+    { "name": "Book a slot", "url": "/#book", "icons": [{ "src": "/assets/images/logo-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "My pass", "url": "/pass", "icons": [{ "src": "/assets/images/logo-96.png", "sizes": "96x96", "type": "image/png" }] },
+    { "name": "Food menu", "url": "/menu", "icons": [{ "src": "/assets/images/logo-96.png", "sizes": "96x96", "type": "image/png" }] }
+  ]
+}

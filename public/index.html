@@ -12,6 +12,10 @@
   <meta property="og:image" content="/assets/images/og.jpg">
   <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
   <link rel="apple-touch-icon" href="/assets/images/logo-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-title" content="MR. GAMING">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css">
   <script>
@@ -51,6 +55,14 @@
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
     <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4M8 3v4M4 11h16M10 16h4M12 14v4"/></symbol>
+    <symbol id="i-cake" viewBox="0 0 24 24"><path d="M3 20h18v-8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3z"/><path d="M3 14.8c.3.13.65.2 1 .2a2.4 2.4 0 0 0 2-1 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 2 1c.35 0 .7-.07 1-.2"/><path d="M12 4l1.47 1.64a2 2 0 1 1-3.02.1z"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.02-3.68.18-7.4 5-12zm0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 21c.5-4.5 2.5-8 7-10"/><path d="M9 18c6.22 0 10.5-3.29 11-12V4h-4.01C7 4 4 8 4 13c0 1 0 3 2 5z"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 10h18M7 15h.01M11 15h2"/></symbol>
+    <symbol id="i-door" viewBox="0 0 24 24"><path d="M14 12v.01M3 21h18M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol>
   </svg>
 
   <a class="skip" href="#main">Skip to content</a>
@@ -75,8 +87,9 @@
           <svg class="i i-sun"><use href="#i-sun"/></svg>
           <svg class="i i-moon"><use href="#i-moon"/></svg>
         </button>
+        <a class="icon-btn press topbar-call" href="tel:+917337230311" aria-label="Call MR. GAMING"><svg class="i"><use href="#i-phone"/></svg></a>
         <a class="btn btn-sm btn-ghost press my-pass" href="/pass" aria-label="My pass: sign in to see your hours"><svg class="i"><use href="#i-user"/></svg><span>My pass</span></a>
-        <a class="btn btn-sm btn-accent press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">Book</a>
+        <a class="btn btn-sm btn-accent press topbar-book" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">Book</a>
       </div>
     </div>
   </header>
@@ -86,6 +99,7 @@
     <section class="hero" id="top">
       <div class="hero-glow" aria-hidden="true"></div>
       <div class="wrap">
+        <p class="open-status" id="open-status" data-reveal><span class="open-dot" aria-hidden="true"></span><span class="open-text">Open 11 am – 11 pm, every day</span></p>
         <p class="eyebrow" data-reveal>Inside MR. Sandwich · Gachibowli</p>
         <h1 class="display" id="hero-title">
           <span class="line">Private room.</span>
@@ -95,12 +109,19 @@
         <p class="lede" data-reveal>Your own gaming room inside MR. Sandwich, Gachibowli. ₹199 an hour solo, ₹320 for two on one console, plus 10% off food while you play.</p>
         <div class="actions" data-reveal>
           <a class="btn btn-accent press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">
-            <svg class="i"><use href="#i-wa"/></svg> Book on WhatsApp
+            <svg class="i"><use href="#i-wa"/></svg> <span><span class="wide-only">Book on </span>WhatsApp</span>
           </a>
           <a class="btn btn-ghost press" href="tel:+917337230311">
-            <svg class="i"><use href="#i-phone"/></svg> Call 73372 30311
+            <svg class="i"><use href="#i-phone"/></svg> <span>Call<span class="wide-only"> 73372 30311</span></span>
           </a>
         </div>
+
+        <nav class="quick" aria-label="Quick links" data-stagger>
+          <a class="quick-tile press" href="#book" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-calendar"/></svg></span><b>Book a slot</b><small>Live availability</small></a>
+          <a class="quick-tile press" href="#birthday" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthday party</b><small>₹600 per child</small></a>
+          <a class="quick-tile press" href="/menu" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-food"/></svg></span><b>Food menu</b><small>10% off while you play</small></a>
+          <a class="quick-tile press" href="/pass" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-ticket"/></svg></span><b>My pass</b><small>See your hours</small></a>
+        </nav>
 
         <dl class="facts" data-stagger>
           <div class="fact" data-reveal>
@@ -116,6 +137,12 @@
             <dd><span class="roll" data-roll="10"></span><small>% off</small></dd>
           </div>
         </dl>
+
+        <ul class="trust" data-reveal>
+          <li><svg class="i"><use href="#i-door"/></svg>Private room</li>
+          <li><svg class="i"><use href="#i-leaf"/></svg>100% pure veg</li>
+          <li><svg class="i"><use href="#i-card"/></svg>UPI, cash or card</li>
+        </ul>
       </div>
     </section>
 
@@ -243,7 +270,7 @@
               <h3 class="avail-title">Availability</h3>
               <p class="avail-note" id="avail-note">Loading live availability… or ask us on WhatsApp.</p>
             </div>
-            <div class="seg seg-wrap" id="avail-days">
+            <div class="seg seg-scroll" id="avail-days">
               <!-- Next 7 days, filled by main.js -->
               <span class="seg-ind" aria-hidden="true"></span>
             </div>
@@ -300,7 +327,7 @@
 
             <fieldset class="step">
               <legend>Day</legend>
-              <div class="seg seg-wrap" data-key="date">
+              <div class="seg seg-scroll" data-key="date">
                 <!-- Next 7 days, filled by main.js -->
                 <span class="seg-ind" aria-hidden="true"></span>
               </div>
@@ -557,6 +584,7 @@
             <p class="visit-label">Book or ask</p>
             <p class="visit-phone"><a href="tel:+917337230311">+91 73372 30311</a></p>
             <p class="visit-hours">Open 11 am – 11 pm, every day</p>
+            <p class="open-status" data-open-status><span class="open-dot" aria-hidden="true"></span><span class="open-text"></span></p>
             <p class="visit-note">WhatsApp or call to check a free slot. Pay by UPI, cash or card.</p>
             <div class="actions">
               <a class="btn btn-accent press" data-wa="Hi MR. GAMING! Is there a slot free today?" href="https://wa.me/917337230311" target="_blank" rel="noopener">
@@ -582,11 +610,14 @@
     </div>
   </footer>
 
-  <!-- Mobile action bar -->
-  <div class="dock" id="dock">
-    <a class="icon-btn icon-btn-lg press" href="tel:+917337230311" aria-label="Call MR. GAMING"><svg class="i"><use href="#i-phone"/></svg></a>
-    <a class="btn btn-accent btn-block press" href="#book">Book a slot</a>
-  </div>
+  <!-- Phone tab bar -->
+  <nav class="tabbar" id="tabbar" aria-label="App">
+    <a class="tab" href="#top" data-tab="top"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
+    <a class="tab" href="#book" data-tab="book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
+    <a class="tab" href="#birthday" data-tab="birthday"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
+    <a class="tab" href="#food" data-tab="food"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
+    <a class="tab" href="/pass"><span class="tab-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>My pass</span></a>
+  </nav>
 
   <script src="/assets/js/menu-data.js"></script>
   <script src="/assets/js/main.js"></script>
