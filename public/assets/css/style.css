@@ -224,6 +224,7 @@ em { font-style: normal; color: var(--accent-text); }
 .games { margin-top: var(--s5); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s4); }
 .games-label { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .games-list { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.games-note { flex-basis: 100%; font-size: 15px; color: var(--muted); }
 .games-list li { padding: var(--s2) var(--s4); border-radius: var(--r-pill); background: var(--surface-2); font-weight: 800; font-stretch: 110%; font-size: 15px; letter-spacing: -.01em; }
 .room { margin-top: var(--s5); position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); }
 .room img { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; }

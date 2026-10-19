@@ -62,6 +62,7 @@ To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-ca
 
 - [x] Opening hours: 11 am – 11 pm daily
 - [x] Games: GTA V, Fortnite, Minecraft, Forza, Spider-Man (Call of Duty to be added)
+- [x] PlayStation Plus subscription on the PS5 (tier not stated on the site)
 - [x] Payment: UPI, cash, card · not GST registered
 - [ ] Real photos of the room (replace the representative image)
 - [ ] FIFA Cup date, entry fee and prizes
