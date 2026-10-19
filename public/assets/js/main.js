@@ -16,7 +16,8 @@
     foodPerk: 0.10,     // 10% off food for console bookers
     // Birthday package: 3 hours, food included, ₹600 a child, ₹299 an adult. Minimum 10 guests (adults count towards it).
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
-    birthday: { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 },
+    // Advance to book; on cancellation cancelFee is kept and the rest refunded
+    birthday: { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 },
     food: {
       'none': { name: 'No food', price: 0 },
       'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
@@ -78,7 +79,7 @@
     const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
     const ist = (() => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); })();
     const dateIn = $('#bday-date'), startIn = $('#bday-start'), nameIn = $('#bday-name');
-    const { perChild, perAdult, hours, minGuests, roomMax, advance } = CONFIG.birthday;
+    const { perChild, perAdult, hours, minGuests, roomMax, advance, cancelFee } = CONFIG.birthday;
     let kids = minGuests, adults = 0;
     dateIn.min = `${ist.getFullYear()}-${pad2(ist.getMonth() + 1)}-${pad2(ist.getDate())}`;
     // Start times so the 3 hours end by closing time
@@ -105,7 +106,7 @@
         `Guests: ${kids} ${kids === 1 ? 'child' : 'children'}${adults ? ` + ${adults} ${adults === 1 ? 'adult' : 'adults'}` : ''} (${guests} in total)`,
         `Space: ${space}`,
         `Package (${hours} hours): ${kids} × ${inr(perChild)}${adults ? ` + ${adults} × ${inr(perAdult)}` : ''} = ${inr(total)}`,
-        `Advance to book: ${inr(advance)} (refundable, subject to the game room waitlist)`,
+        `Advance to book: ${inr(advance)} (if cancelled, ${inr(cancelFee)} is kept and ${inr(advance - cancelFee)} refunded)`,
         '',
         'Please confirm the date and details.'
       ].filter((l) => l !== null).join('\n'));

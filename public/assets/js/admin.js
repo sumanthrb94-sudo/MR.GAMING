@@ -19,7 +19,7 @@ const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, 
 const RATES = { solo: 199, duo: 320 }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room', party: 'Birthday party' };
-const BDAY = { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 };   // same as CONFIG.birthday in main.js
+const BDAY = { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 };   // same as CONFIG.birthday in main.js
 const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
