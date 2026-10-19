@@ -10,6 +10,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 - `brand/` — master logo files (not served)
 - `public/admin.html`, `public/assets/js/admin.js`, `public/assets/css/admin.css` — owner page
 - `public/pass.html`, `public/assets/js/pass.js` — "My pass": customer sign-in by mobile number, or the owner's link `/pass?id=…` (styles in style.css)
+- `public/assets/images/games/` — original game-card artwork (never official game art); cards in index.html `#game-cards`, `data-pick-game` feeds the booking form
 - Phones: bottom `.tabbar` (index.html and pass.html), open-now status (`CONFIG.open`/`close` in main.js), `public/manifest.webmanifest` for "Add to Home screen"
 - `public/assets/js/booking-db.js`, `firebase-config.js`, `public/assets/vendor/firebase-*.js` — Firestore (bundled SDK)
 - `firestore.rules`, `scripts/firebase_admin.py` — database access rules and one-off admin tasks

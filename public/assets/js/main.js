@@ -292,7 +292,7 @@
     availDays.insertAdjacentHTML('afterbegin', dayButtons);
     const hoursOpen = []; for (let h = CONFIG.open; h < CONFIG.close; h++) hoursOpen.push(h);
     segStart.insertAdjacentHTML('afterbegin', hoursOpen.map((h) => `<button type="button" data-value="${h}" aria-pressed="false">${clock(h)}</button>`).join(''));
-    $$('.games-list li:not([data-soon])').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
+    $$('[data-pick-game]').forEach((a) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${a.dataset.pickGame}" aria-pressed="false">${a.dataset.pickGame}</button>`));   // bookable games come from the game cards (not GTA VI, a pre-order)
 
     const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
     // live: null while loading a day's slots, true once loaded, false if the database can't be reached
@@ -430,6 +430,7 @@
     availDays.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setDate(b.dataset.value); });
     // "See when it's free" on the console cards
     $$('[data-pick]').forEach((a) => a.addEventListener('click', () => { state.station = a.dataset.pick; select(segs.station, state.station); render(); }));
+    $$('[data-pick-game]').forEach((a) => a.addEventListener('click', () => { state.game = a.dataset.pickGame; select(segs.game, state.game); render(); }));
 
     Object.entries(segs).forEach(([key, seg]) => {
       seg.addEventListener('click', (e) => {

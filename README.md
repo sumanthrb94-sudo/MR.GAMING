@@ -16,7 +16,9 @@ Visitors do one thing here: **book on WhatsApp** (+91 73372 30311). The food men
 | Owner | `public/admin.html` | "Owner login" in the footer. Not indexed |
 | 404 | `public/404.html` | |
 
-Home sections: hero → stations (PS5 / Xbox) + installed games → prices → availability board + booking request → birthday package → food highlights → FIFA Cup waitlist → visit.
+Home sections: hero → stations (PS5 / Xbox) + game cards → prices → availability board + booking request → birthday package → food highlights → FIFA Cup waitlist → visit.
+
+**Game cards** (Stations section): one card per installed game, plus GTA VI (pre-ordered, not bookable), "And more on PS Plus" (asks on WhatsApp) and "3–4 players, one console" (links to those rates). A sideways-scrolling row on phones, five across on desktop. Tapping a game picks it in the booking form and scrolls there; the form's game choices are read from the cards. Artwork is original (made in Manus from our prompt: no official game art, logos or characters) in `public/assets/images/games/` as `{game}-360/600/900.webp`, loaded lazily with `srcset` so each screen downloads one size. To add a game: add a card in `index.html` with `data-pick-game="Name"` and its three images.
 
 **On phones it works like an app:** a bottom tab bar (Home · Book · Birthdays · Food · My pass; the tab for the section on screen lights up, and /pass has the same bar), a slim header with a lime "Log in" button (to My pass) and the theme switch, an "Open now · till 11 pm" status worked out from the opening hours in Indian time, four quick tiles under the hero (Book a slot, Birthday party, Food menu, My pass), a trust row (private room, 100% pure veg, UPI / cash / card), prices as compact list cards and day chips in one sideways-scrolling row. `public/manifest.webmanifest` lets visitors add it to the home screen ("Add to Home screen"), where it opens full-screen with shortcuts to Book, My pass and the food menu. Desktop is unchanged.
 

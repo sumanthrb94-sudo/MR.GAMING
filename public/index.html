@@ -190,23 +190,26 @@
         </div>
 
         <div class="games" data-reveal>
-          <p class="games-label">Installed</p>
-          <ul class="games-list">
-            <li>FC 27</li>
-            <li>Call of Duty</li>
-            <li>GTA V</li>
-            <li>God of War</li>
-            <li>Tekken</li>
-            <li>Rocket League</li>
-            <li>WWE 2K</li>
-            <li>AO Tennis</li>
-            <li>Spider-Man</li>
-            <li>Forza</li>
-            <li>Fortnite</li>
-            <li>Minecraft</li>
-            <li class="games-soon" data-soon>GTA VI <small>pre-ordered</small></li>
+          <p class="games-label">Games</p>
+          <!-- Original artwork (no official game art); tapping a game picks it in the booking form -->
+          <ul class="game-cards" id="game-cards">
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="FC 27" aria-label="FC 27: book a slot"><img src="/assets/images/games/fc27-600.webp" srcset="/assets/images/games/fc27-360.webp 360w, /assets/images/games/fc27-600.webp 600w, /assets/images/games/fc27-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>FC 27</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Call of Duty" aria-label="Call of Duty: book a slot"><img src="/assets/images/games/callofduty-600.webp" srcset="/assets/images/games/callofduty-360.webp 360w, /assets/images/games/callofduty-600.webp 600w, /assets/images/games/callofduty-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Call of Duty</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="GTA V" aria-label="GTA V: book a slot"><img src="/assets/images/games/gta-600.webp" srcset="/assets/images/games/gta-360.webp 360w, /assets/images/games/gta-600.webp 600w, /assets/images/games/gta-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>GTA V</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="God of War" aria-label="God of War: book a slot"><img src="/assets/images/games/godofwar-600.webp" srcset="/assets/images/games/godofwar-360.webp 360w, /assets/images/games/godofwar-600.webp 600w, /assets/images/games/godofwar-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>God of War</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Tekken" aria-label="Tekken: book a slot"><img src="/assets/images/games/tekken-600.webp" srcset="/assets/images/games/tekken-360.webp 360w, /assets/images/games/tekken-600.webp 600w, /assets/images/games/tekken-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Tekken</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Rocket League" aria-label="Rocket League: book a slot"><img src="/assets/images/games/rocketleague-600.webp" srcset="/assets/images/games/rocketleague-360.webp 360w, /assets/images/games/rocketleague-600.webp 600w, /assets/images/games/rocketleague-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Rocket League</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="WWE 2K" aria-label="WWE 2K: book a slot"><img src="/assets/images/games/wwe-600.webp" srcset="/assets/images/games/wwe-360.webp 360w, /assets/images/games/wwe-600.webp 600w, /assets/images/games/wwe-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>WWE 2K</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="AO Tennis" aria-label="AO Tennis: book a slot"><img src="/assets/images/games/aotennis-600.webp" srcset="/assets/images/games/aotennis-360.webp 360w, /assets/images/games/aotennis-600.webp 600w, /assets/images/games/aotennis-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>AO Tennis</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Spider-Man" aria-label="Spider-Man: book a slot"><img src="/assets/images/games/spiderman-600.webp" srcset="/assets/images/games/spiderman-360.webp 360w, /assets/images/games/spiderman-600.webp 600w, /assets/images/games/spiderman-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Spider-Man</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Forza" aria-label="Forza: book a slot"><img src="/assets/images/games/forza-600.webp" srcset="/assets/images/games/forza-360.webp 360w, /assets/images/games/forza-600.webp 600w, /assets/images/games/forza-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Forza</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Fortnite" aria-label="Fortnite: book a slot"><img src="/assets/images/games/fortnite-600.webp" srcset="/assets/images/games/fortnite-360.webp 360w, /assets/images/games/fortnite-600.webp 600w, /assets/images/games/fortnite-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Fortnite</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Minecraft" aria-label="Minecraft: book a slot"><img src="/assets/images/games/minecraft-600.webp" srcset="/assets/images/games/minecraft-360.webp 360w, /assets/images/games/minecraft-600.webp 600w, /assets/images/games/minecraft-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Minecraft</b></span></a></li>
+            <li class="game-card is-soon"><div class="game-link"><img src="/assets/images/games/gta6-600.webp" srcset="/assets/images/games/gta6-360.webp 360w, /assets/images/games/gta6-600.webp 600w, /assets/images/games/gta6-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>Pre-ordered</small><b>GTA VI</b></span></div></li>
+            <li class="game-card"><a class="game-link press" data-wa="Hi MR. GAMING! What's on PlayStation Plus today?" href="https://wa.me/917337230311" target="_blank" rel="noopener"><img src="/assets/images/games/psplus-600.webp" srcset="/assets/images/games/psplus-360.webp 360w, /assets/images/games/psplus-600.webp 600w, /assets/images/games/psplus-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>Ask what's on</small><b>And more on PS Plus</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="#group-rates"><img src="/assets/images/games/coop-600.webp" srcset="/assets/images/games/coop-360.webp 360w, /assets/images/games/coop-600.webp 600w, /assets/images/games/coop-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>₹420 · ₹499/hr</small><b>3–4 players, one console</b></span></a></li>
           </ul>
-          <p class="games-note">GTA VI is pre-ordered: play it here from launch day. More to play on the PS5 with our PlayStation Plus subscription. Ask what's on today.</p>
+          <p class="games-note">Tap a game to book it. GTA VI is pre-ordered: play it here from launch day. More to play on the PS5 with our PlayStation Plus subscription.</p>
         </div>
 
         <figure class="room" data-reveal>
@@ -242,7 +245,7 @@
           </article>
         </div>
 
-        <p class="perk group-rates" data-reveal><strong>3 or 4 on one console</strong> 3 players ₹420/hr · 4 players ₹499/hr, for games that support couch play. Ask us what's on.</p>
+        <p class="perk group-rates" id="group-rates" data-reveal><strong>3 or 4 on one console</strong> 3 players ₹420/hr · 4 players ₹499/hr, for games that support couch play. Ask us what's on.</p>
 
         <div class="grid-2 passes" data-stagger>
           <article class="plan pass card" data-reveal>
