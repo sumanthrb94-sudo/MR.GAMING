@@ -19,7 +19,7 @@ const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, 
 const RATES = { solo: 199, duo: 320 }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room', party: 'Birthday party' };
-const BDAY = { perGuest: 600, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 };   // same as CONFIG.birthday in main.js
+const BDAY = { perChild: 600, perAdult: 200, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 };   // same as CONFIG.birthday in main.js
 const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -143,7 +143,7 @@ function renderRequests() {
         <span class="pill">${esc(r.status)}</span>
       </div>
       <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(r.id)}</span></p>
-      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
+      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.adults ? ` (${r.players - r.adults} children + ${r.adults} adults)` : ''}${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
       ${r.phone ? `<p class="admin-item-meta"><a class="admin-tel" href="${esc(telHref(r.phone))}">${esc(r.phone)}</a></p>` : ''}
       <p class="admin-item-total">${inr(r.total)}</p>
       <div class="admin-actions">
@@ -179,17 +179,18 @@ function fillBookingForm() {
   const hrs = []; for (let h = OPEN; h < CLOSE; h++) hrs.push(h);
   bk('start').innerHTML = hrs.map((h) => `<option value="${h}">${clock(h)}</option>`).join('');
   bk('start').value = '18';
-  ['station', 'players', 'start', 'hours', 'plan', 'guests'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
-  bk('guests').addEventListener('input', bookingTotal);
+  ['station', 'players', 'start', 'hours', 'plan', 'kids', 'adults'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
+  ['kids', 'adults'].forEach((k) => bk(k).addEventListener('input', bookingTotal));
   bookingTotal();
 }
 function bookingDraft() {
   const station = bk('station').value, squad = station === 'squad';
   if (station === 'party') {
-    // Birthday package: fixed 3 hours, whole game room, priced per guest
-    const guests = Math.max(BDAY.minGuests, Math.min(99, Math.round(+bk('guests').value) || BDAY.minGuests));
+    // Birthday package: fixed 3 hours, whole game room, ₹600 a child + ₹200 an adult, at least 10 guests in total
+    const adults = Math.max(0, Math.min(99, Math.round(+bk('adults').value) || 0));
+    const kids = Math.max(1, BDAY.minGuests - adults, Math.min(99, Math.round(+bk('kids').value) || 0));
     const start = Math.min(+bk('start').value, CLOSE - BDAY.hours);
-    return { station, players: guests, start, hours: BDAY.hours, plan: 'party', total: guests * BDAY.perGuest };
+    return { station, players: kids + adults, kids, adults, start, hours: BDAY.hours, plan: 'party', total: kids * BDAY.perChild + adults * BDAY.perAdult };
   }
   let players = +bk('players').value;
   players = squad ? Math.max(2, players) : Math.min(2, players);
@@ -205,12 +206,13 @@ function bookingDraft() {
 }
 function bookingTotal() {
   const b = bookingDraft(), party = b.station === 'party';
-  bk('players').hidden = bk('plan').hidden = party; bk('guests').hidden = !party;
+  bk('players').hidden = bk('plan').hidden = party; $('#bk-kids-wrap').hidden = $('#bk-adults-wrap').hidden = !party;
   bk('hours').disabled = party;
   if (party) {
     bk('start').value = String(b.start);
     bk('hours').innerHTML = `<option value="${BDAY.hours}">${BDAY.hours} hrs</option>`;
-    bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${b.players} guests · ${inr(b.total)} · ${b.players > BDAY.roomMax ? 'whole restaurant' : 'game room'} · ${inr(BDAY.advance)} advance`;
+    const raised = +bk('kids').value !== b.kids ? ` (children raised to ${b.kids} for the 10-guest minimum)` : '';
+    bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${b.players} guests · ${inr(b.total)} · ${b.players > BDAY.roomMax ? 'whole restaurant' : 'game room'} · ${inr(BDAY.advance)} advance${raised}`;
     return;
   }
   bk('players').value = String(b.players); bk('plan').value = b.plan;
@@ -222,7 +224,7 @@ $('#book-form').addEventListener('submit', async (e) => {
   if (day < keyOf(nowIst())) { msgEl.textContent = 'Pick today or a later day.'; return; }
   const d = dateOf(day);
   const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(b.start)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-  const r = { id, name, phone, date: day, start: b.start, hours: b.hours, station: b.station, players: b.players, plan: b.plan, game: '', food: '', total: b.total, status: 'confirmed', source: 'owner' };
+  const r = { id, name, phone, date: day, start: b.start, hours: b.hours, station: b.station, players: b.players, plan: b.plan, game: '', food: '', total: b.total, status: 'confirmed', source: 'owner', ...(b.station === 'party' ? { adults: b.adults } : {}) };
   msgEl.textContent = 'Saving…';
   try {
     await runTransaction(db, async (tx) => {

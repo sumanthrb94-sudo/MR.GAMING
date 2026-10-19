@@ -386,7 +386,7 @@
             </ul>
             <ul class="specs"><li>Play PS5 &amp; Xbox</li><li>Board games</li><li>Celebrate together</li></ul>
             <ul class="bday-terms">
-              <li><strong>Minimum 10 guests.</strong> Adults are welcome and count towards the 10.</li>
+              <li><strong>Minimum 10 guests.</strong> Adults are welcome at ₹200 each and count towards the 10.</li>
               <li><strong>The game room is all yours.</strong> More than 15 guests? You get the whole restaurant.</li>
               <li><strong>₹3,000 refundable advance</strong> to book. If you cancel, the refund depends on us filling your slot from the game room waitlist.</li>
             </ul>
@@ -396,13 +396,22 @@
             <p class="summary-title">Plan the party</p>
             <div class="bday-grid">
               <div class="bday-field">
-                <span class="field-label" id="bday-kids-label">Guests <span class="field-note">min 10, adults count</span></span>
+                <span class="field-label" id="bday-kids-label">Children <span class="field-note">₹600 each</span></span>
                 <div class="stepper" role="group" aria-labelledby="bday-kids-label">
-                  <button class="icon-btn press" type="button" id="bday-minus" aria-label="One fewer guest">−</button>
+                  <button class="icon-btn press" type="button" id="bday-kids-minus" aria-label="One fewer child">−</button>
                   <output id="bday-kids" aria-live="polite">10</output>
-                  <button class="icon-btn press" type="button" id="bday-plus" aria-label="One more guest">+</button>
+                  <button class="icon-btn press" type="button" id="bday-kids-plus" aria-label="One more child">+</button>
                 </div>
               </div>
+              <div class="bday-field">
+                <span class="field-label" id="bday-adults-label">Adults <span class="field-note">₹200 each</span></span>
+                <div class="stepper" role="group" aria-labelledby="bday-adults-label">
+                  <button class="icon-btn press" type="button" id="bday-adults-minus" aria-label="One fewer adult">−</button>
+                  <output id="bday-adults" aria-live="polite">0</output>
+                  <button class="icon-btn press" type="button" id="bday-adults-plus" aria-label="One more adult">+</button>
+                </div>
+              </div>
+              <p class="bday-min" id="bday-min">Minimum 10 guests in total. Adults count towards it.</p>
               <label class="bday-field"><span class="field-label">Date</span><input class="field" id="bday-date" type="date"></label>
               <label class="bday-field"><span class="field-label">Time</span><select class="field" id="bday-start"></select></label>
               <label class="bday-field"><span class="field-label">Your name</span><input class="field" id="bday-name" type="text" autocomplete="given-name" placeholder="Parent's name" maxlength="40"></label>

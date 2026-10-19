@@ -14,9 +14,9 @@
     open: 11,           // opening hour, 24h clock (11 am)
     close: 23,          // closing hour (11 pm); sessions must end by then
     foodPerk: 0.10,     // 10% off food for console bookers
-    // Birthday package: 3 hours, food included, ₹600 a head. Minimum 10 guests (adults count towards it).
+    // Birthday package: 3 hours, food included, ₹600 a child, ₹200 an adult. Minimum 10 guests (adults count towards it).
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
-    birthday: { perChild: 600, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 },
+    birthday: { perChild: 600, perAdult: 200, hours: 3, minGuests: 10, roomMax: 15, advance: 3000 },
     food: {
       'none': { name: 'No food', price: 0 },
       'paneer-sub': { name: 'Mr. Paneer Sub', price: 129 },
@@ -71,26 +71,30 @@
     el.setAttribute('aria-label', text);
   }
 
-  /* ---------- birthday package: children × price, enquiry goes to WhatsApp ---------- */
+  /* ---------- birthday package: children × ₹600 + adults × ₹200, enquiry goes to WhatsApp ---------- */
   const bday = $('#bday-send');
   if (bday) {
     const pad2 = (n) => String(n).padStart(2, '0');
     const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
     const ist = (() => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); })();
     const dateIn = $('#bday-date'), startIn = $('#bday-start'), nameIn = $('#bday-name');
-    const { perChild, hours, minGuests, roomMax, advance } = CONFIG.birthday;
-    let kids = minGuests;
+    const { perChild, perAdult, hours, minGuests, roomMax, advance } = CONFIG.birthday;
+    let kids = minGuests, adults = 0;
     dateIn.min = `${ist.getFullYear()}-${pad2(ist.getMonth() + 1)}-${pad2(ist.getDate())}`;
     // Start times so the 3 hours end by closing time
     for (let h = CONFIG.open; h + hours <= CONFIG.close; h++) startIn.insertAdjacentHTML('beforeend', `<option value="${h}">${clock12(h)} – ${clock12(h + hours)}</option>`);
     startIn.value = '16';
     const paint = () => {
-      $('#bday-kids').textContent = kids;
-      $('#bday-minus').disabled = kids <= minGuests;
-      const space = kids > roomMax ? 'Whole restaurant' : 'Exclusive game room';
+      const guests = kids + adults, total = kids * perChild + adults * perAdult;
+      $('#bday-kids').textContent = kids; $('#bday-adults').textContent = adults;
+      // Never below 10 guests in total, and always at least one child
+      $('#bday-kids-minus').disabled = kids <= 1 || guests <= minGuests;
+      $('#bday-adults-minus').disabled = adults <= 0 || guests <= minGuests;
+      const space = guests > roomMax ? 'Whole restaurant' : 'Exclusive game room';
       $('#bday-space').textContent = space;
-      $('#bday-sum').textContent = `${kids} guests × ${inr(perChild)}`;
-      setRoll($('#bday-total'), kids * perChild);
+      $('#bday-min').textContent = `${guests} guests. Minimum 10 in total; adults count towards it.`;
+      $('#bday-sum').textContent = `${kids} × ${inr(perChild)}${adults ? ` + ${adults} × ${inr(perAdult)}` : ''}`;
+      setRoll($('#bday-total'), total);
       const h = +startIn.value, day = dateIn.value ? new Date(dateIn.value + 'T00:00') : null;
       const time = `${clock12(h)} – ${clock12(h + hours)}`;
       bday.href = waUrl([
@@ -98,16 +102,19 @@
         '',
         nameIn.value.trim() ? `Name: ${nameIn.value.trim()}` : null,
         `When: ${day ? day.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'date to be decided'}, ${time}`,
-        `Guests: ${kids} (children and adults)`,
+        `Guests: ${kids} ${kids === 1 ? 'child' : 'children'}${adults ? ` + ${adults} ${adults === 1 ? 'adult' : 'adults'}` : ''} (${guests} in total)`,
         `Space: ${space}`,
-        `Package: ${hours} hours, ${inr(perChild)} per guest = ${inr(kids * perChild)}`,
+        `Package (${hours} hours): ${kids} × ${inr(perChild)}${adults ? ` + ${adults} × ${inr(perAdult)}` : ''} = ${inr(total)}`,
         `Advance to book: ${inr(advance)} (refundable, subject to the game room waitlist)`,
         '',
         'Please confirm the date and details.'
       ].filter((l) => l !== null).join('\n'));
     };
-    $('#bday-minus').addEventListener('click', () => { kids = Math.max(minGuests, kids - 1); paint(); });
-    $('#bday-plus').addEventListener('click', () => { kids = Math.min(99, kids + 1); paint(); });
+    const step = (id, fn) => $(id).addEventListener('click', () => { fn(); paint(); });
+    step('#bday-kids-minus', () => { if (kids > 1 && kids + adults > minGuests) kids--; });
+    step('#bday-kids-plus', () => { kids = Math.min(99, kids + 1); });
+    step('#bday-adults-minus', () => { if (adults > 0 && kids + adults > minGuests) adults--; });
+    step('#bday-adults-plus', () => { adults = Math.min(99, adults + 1); });
     [dateIn, startIn, nameIn].forEach((el) => el.addEventListener('input', paint));
     paint();
   }
