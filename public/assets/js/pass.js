@@ -9,7 +9,7 @@ import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, getDocs, getDoc, doc
-} from '/assets/vendor/firebase-account.582e56a7.js';
+} from '/assets/vendor/firebase-account.0e285128.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const $ = (s, r = document) => r.querySelector(s);

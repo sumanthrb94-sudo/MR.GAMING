@@ -5,6 +5,6 @@
 import { getApp, _getProvider } from 'firebase/app';
 export { initializeApp } from 'firebase/app';
 export { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged } from 'firebase/auth';
-export { getFirestore, collection, query, where, orderBy, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction, serverTimestamp, Timestamp, increment } from 'firebase/firestore/lite';
+export { getFirestore, collection, query, where, orderBy, limit, startAfter, getDocs, getDoc, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction, serverTimestamp, Timestamp, increment } from 'firebase/firestore/lite';
 // The page's auth instance (after the page called initializeAuth); used by the test scripts
 export const currentAuth = () => _getProvider(getApp(), 'auth').getImmediate();

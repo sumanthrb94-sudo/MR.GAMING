@@ -8,7 +8,7 @@ import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch,
   runTransaction, serverTimestamp, Timestamp, increment
-} from '/assets/vendor/firebase-account.582e56a7.js';
+} from '/assets/vendor/firebase-account.0e285128.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const app = initializeApp(firebaseConfig);
