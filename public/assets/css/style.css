@@ -290,11 +290,11 @@ em { font-style: normal; color: var(--accent-text); }
 @media (min-width: 900px) { .avail-head { grid-template-columns: 1fr auto; align-items: end; } }
 .avail-title { font-weight: 850; font-stretch: 115%; font-size: 24px; letter-spacing: -.02em; line-height: 1.1; }
 .avail-note { color: var(--muted); font-size: 15px; margin-top: var(--s1); }
-.avail-grid { display: grid; grid-template-columns: 56px 1fr 1fr; gap: var(--s1); align-items: center; }
+.avail-grid { display: grid; grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr); gap: var(--s1) var(--s2); align-items: center; }
 .avail-grid > * { grid-row: var(--r); grid-column: var(--c); min-width: 0; }
 .avail-con, .avail-time { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .avail-con { padding-bottom: var(--s2); }
-.avail-time { letter-spacing: 0; font-size: 13px; }
+.avail-time { letter-spacing: 0; font-size: 13px; white-space: nowrap; }
 .avail-cell { min-height: 40px; padding: 0 var(--s3); border-radius: var(--r-sm); border: 1px solid var(--line); font-size: 13px; font-weight: 700; text-align: left; white-space: nowrap; transition: transform .45s var(--ease-spring), background-color .25s, border-color .25s, color .25s; }
 .avail-cell.is-open { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); color: var(--accent-text); }
 .avail-cell.is-open:hover { border-color: var(--accent); }
@@ -305,10 +305,10 @@ em { font-style: normal; color: var(--accent-text); }
 .avail-cell.is-loading { background: var(--surface-2); animation: avail-pulse 1.2s ease-in-out infinite alternate; }
 @keyframes avail-pulse { to { opacity: .45; } }
 @media (min-width: 900px) {
-  .avail-grid { grid-template-columns: 56px repeat(12, 1fr); }
+  .avail-grid { grid-template-columns: max-content; grid-auto-columns: minmax(0, 1fr); column-gap: var(--s1); }
   .avail-grid > * { grid-row: var(--c); grid-column: var(--r); }
   .avail-con { padding: 0; }
-  .avail-time { text-align: center; padding-bottom: var(--s2); }
+  .avail-time { text-align: center; padding-bottom: var(--s2); font-size: 11px; white-space: normal; line-height: 1.25; }
   .avail-cell { padding: 0; text-align: center; }
 }
 .avail-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); font-size: 13px; color: var(--muted); }

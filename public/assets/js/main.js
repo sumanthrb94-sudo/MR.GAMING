@@ -246,6 +246,9 @@
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const pad = (n) => String(n).padStart(2, '0');
     const clock = (h) => `${h % 12 || 12}${h < 12 ? ' am' : ' pm'}`;
+    // "8–9 pm", "11 am–12 pm": an hour range, with am/pm once when both ends share it
+    const span = (a, b) => { const ap = (h) => (h < 12 || h === 24 ? 'am' : 'pm'); return ap(a) === ap(b) ? `${a % 12 || 12}–${b % 12 || 12} ${ap(b)}` : `${clock(a)}–${clock(b)}`; };
+    const MAX_ONLINE_HOURS = 3;   // the longest session the form and firestore.rules accept
     // "Now" in Hyderabad, whatever the visitor's phone timezone is
     const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
     const dayLabel = (d) => `${DAY[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
@@ -311,6 +314,7 @@
       let anyTaken = false;
       $$('button', segs.start).forEach((b) => {
         const h = +b.dataset.value, taken = isTaken(h);
+        b.textContent = span(h, h + hours);
         b.disabled = h < earliest || h > latest || taken;
         b.classList.toggle('is-taken', taken);
         b.title = taken ? 'Taken' : '';
@@ -344,30 +348,50 @@
     };
 
     // Availability board: PS5 and Xbox by hour for the chosen day. Never shows "Open" unless the database answered.
+    // Today, hours that have already started are left off.
     const renderBoard = (day, earliest, consoles) => {
       grid.hidden = $('.avail-legend').hidden = state.live === false;
+      const rows = hoursOpen.filter((h) => h >= earliest);
       availNote.textContent = state.live === false ? "Live availability isn't loading right now. Pick a time below and we'll confirm on WhatsApp."
-        : state.live === null ? 'Checking…' : `${day.label}, live. Tap an open hour to book it.`;
+        : state.live === null ? 'Checking…' : !rows.length ? `No more hours ${day.today ? 'today' : 'that day'}. Pick another day.`
+        : `${day.label}, live. Tap open hours next to each other to book them together (up to ${MAX_ONLINE_HOURS}).`;
       if (state.live === false) return;
       const s0 = state.start === null ? -1 : +state.start, picked = (c, h) => consoles.includes(c) && h >= s0 && h < s0 + state.hours;
       grid.innerHTML = `<span style="--r:1;--c:1"></span><span class="avail-con" style="--r:1;--c:2">PS5</span><span class="avail-con" style="--r:1;--c:3">Xbox</span>`
-        + hoursOpen.map((h, i) => `<span class="avail-time" style="--r:${i + 2};--c:1">${clock(h)}</span>` + ['ps5', 'xbox'].map((c, j) => {
-          const past = h < earliest, booked = state.taken.has(`${c}_${h}`), loading = state.live === null;
-          const cls = loading ? 'is-loading' : past ? 'is-past' : booked ? 'is-booked' : picked(c, h) ? 'is-picked' : 'is-open';
-          const label = loading ? '' : past ? '–' : booked ? 'Booked' : cls === 'is-picked' ? 'Picked' : 'Open';
-          return `<button type="button" class="avail-cell ${cls}" style="--r:${i + 2};--c:${j + 2}" data-console="${c}" data-hour="${h}" ${cls === 'is-open' || cls === 'is-picked' ? '' : 'disabled'} aria-label="${names[c]} ${clock(h)}: ${label || 'loading'}">${label}</button>`;
+        + rows.map((h, i) => `<span class="avail-time" style="--r:${i + 2};--c:1">${span(h, h + 1)}</span>` + ['ps5', 'xbox'].map((c, j) => {
+          const booked = state.taken.has(`${c}_${h}`), loading = state.live === null;
+          const cls = loading ? 'is-loading' : booked ? 'is-booked' : picked(c, h) ? 'is-picked' : 'is-open';
+          const label = loading ? '' : booked ? 'Booked' : cls === 'is-picked' ? 'Picked' : 'Open';
+          return `<button type="button" class="avail-cell ${cls}" style="--r:${i + 2};--c:${j + 2}" data-console="${c}" data-hour="${h}" ${loading || booked ? 'disabled' : ''} aria-pressed="${cls === 'is-picked'}" aria-label="${names[c]} ${span(h, h + 1)}: ${label || 'loading'}">${label}</button>`;
         }).join('')).join('');
     };
 
-    // Tap an open hour: book that console from that hour, shortening the session if it doesn't fit
+    // Tap open hours to build a session: a tap next to the picked hours adds that hour (up to MAX_ONLINE_HOURS),
+    // a tap on the first or last picked hour drops it, any other tap starts again from that hour.
+    const free = (c, h) => !state.taken.has(`${c}_${h}`);
+    const setSession = (station, start, hours) => {
+      state.station = station; select(segs.station, station);
+      state.time = String(hours); select(segs.time, state.time);
+      state.start = String(start); render();
+      return state.start === String(start) && state.time === String(hours);
+    };
     const pickSlot = (c, h) => {
-      const tryAt = () => { state.start = String(h); render(); return state.start === String(h); };
-      const bothFree = ['ps5', 'xbox'].every((k) => !state.taken.has(`${k}_${h}`));
-      if (!(state.station === 'squad' && bothFree)) { state.station = c; select(segs.station, c); }
-      let ok = tryAt();
-      if (!ok && state.station === 'squad') { state.station = c; select(segs.station, c); ok = tryAt(); }
-      for (let t = +state.time - 1; !ok && t >= 1; t--) { state.time = String(t); select(segs.time, state.time); ok = tryAt(); }
-      if (ok) availNote.textContent = `${names[state.station]} from ${clock(h)} picked. Finish your request below.`;
+      const squad = state.station === 'squad', bothFree = free('ps5', h) && free('xbox', h);
+      const onSelection = state.start !== null && (squad ? bothFree : state.station === c);
+      const st = +state.start, len = +state.time, end = st + len - 1;
+      let msg = '';
+      if (onSelection && h === end + 1 && len < MAX_ONLINE_HOURS) setSession(state.station, st, len + 1);
+      else if (onSelection && h === st - 1 && len < MAX_ONLINE_HOURS) setSession(state.station, h, len + 1);
+      else if (onSelection && (h === end + 1 || h === st - 1)) msg = `Up to ${MAX_ONLINE_HOURS} hours can be booked online. For longer, ask us on WhatsApp.`;
+      else if (onSelection && len > 1 && h === st && !(squad && len - 1 < CONFIG.squadMinHours)) setSession(state.station, st + 1, len - 1);
+      else if (onSelection && len > 1 && h === end && !(squad && len - 1 < CONFIG.squadMinHours)) setSession(state.station, st, len - 1);
+      else if (!(onSelection && h >= st && h <= end)) {
+        // Start again from this hour: the squad room needs 2 hours on both consoles, otherwise book this console for 1 hour
+        const ok = squad && bothFree && setSession('squad', h, CONFIG.squadMinHours);
+        if (!ok) setSession(c, h, 1);
+      }
+      const s0 = +state.start, n = +state.time;
+      availNote.textContent = msg || `${names[state.station]} ${span(s0, s0 + n)} picked (${n} hr${n > 1 ? 's' : ''}). ${n < MAX_ONLINE_HOURS ? 'Tap the next hour to add it, or finish' : 'Finish'} your request below.`;
     };
     grid.addEventListener('click', (e) => { const b = e.target.closest('button.avail-cell'); if (b && !b.disabled) pickSlot(b.dataset.console, +b.dataset.hour); });
     const setDate = (key) => { state.date = key; select(segs.date, key); select(availDays, key); refreshTaken(); };
