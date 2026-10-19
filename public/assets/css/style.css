@@ -226,6 +226,8 @@ em { font-style: normal; color: var(--accent-text); }
 .games-label { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .games-list { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .games-note { flex-basis: 100%; font-size: 15px; color: var(--muted); }
+.games-list .games-soon { background: none; border: 1px dashed var(--line-strong); }
+.games-list small { font: 500 11px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-text); margin-left: var(--s1); }
 .games-list li { padding: var(--s2) var(--s4); border-radius: var(--r-pill); background: var(--surface-2); font-weight: 800; font-stretch: 110%; font-size: 15px; letter-spacing: -.01em; }
 .room { margin-top: var(--s5); position: relative; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); }
 .room img { width: 100%; aspect-ratio: 16 / 7; object-fit: cover; }
@@ -535,7 +537,8 @@ select.field { appearance: none; cursor: pointer; }
   /* booking form: every choice row spans the column, buttons share it equally */
   .builder .seg:not(.seg-scroll) { display: grid; width: 100%; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); }
   .builder .seg[data-key="station"], .builder .seg[data-key="players"], .builder .seg[data-key="time"] { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-  .builder .seg[data-key="start"], .builder .seg[data-key="game"] { --cols: 3; }
+  .builder .seg[data-key="start"] { --cols: 3; }
+  .builder .seg[data-key="game"] button[data-value="any"] { grid-column: 1 / -1; }
   .builder .seg:not(.seg-scroll) button { padding: 0 var(--s2); white-space: normal; line-height: 1.2; text-align: center; }
   .pass-main { padding-block: var(--s5) calc(var(--s9) + env(safe-area-inset-bottom)); }
 }

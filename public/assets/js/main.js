@@ -292,7 +292,7 @@
     availDays.insertAdjacentHTML('afterbegin', dayButtons);
     const hoursOpen = []; for (let h = CONFIG.open; h < CONFIG.close; h++) hoursOpen.push(h);
     segStart.insertAdjacentHTML('afterbegin', hoursOpen.map((h) => `<button type="button" data-value="${h}" aria-pressed="false">${clock(h)}</button>`).join(''));
-    $$('.games-list li').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
+    $$('.games-list li:not([data-soon])').forEach((li) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${li.textContent.trim()}" aria-pressed="false">${li.textContent.trim()}</button>`));
 
     const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
     // live: null while loading a day's slots, true once loaded, false if the database can't be reached

@@ -63,7 +63,7 @@ To change the design, edit `print/qr-card.html` and run `node scripts/make-qr-ca
 ## Before launch: owner to confirm
 
 - [x] Opening hours: 11 am – 11 pm daily
-- [x] Games: GTA V, Fortnite, Minecraft, Forza, Spider-Man (Call of Duty to be added)
+- [x] Games: FC 27, Call of Duty (latest), GTA V, God of War, Tekken, Rocket League, WWE 2K, AO Tennis, Spider-Man, Forza, Fortnite, Minecraft; GTA VI pre-ordered (shown, not bookable). Owner to confirm exact editions (FC 27 = "FIFA 27", WWE 2K = "SmackDown")
 - [x] PlayStation Plus subscription on the PS5 (tier not stated on the site)
 - [x] Payment: UPI, cash, card · not GST registered
 - [ ] Real photos of the room (replace the representative image)
