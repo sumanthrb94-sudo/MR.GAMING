@@ -93,8 +93,8 @@ main.paper { padding-block: 8px 24px; }
 .group { padding-top: 14px; }
 .group-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font: 800 19px/1.2 var(--sans); letter-spacing: .01em; padding-bottom: 4px; }
 .group-title small { font: italic 600 14px var(--serif); color: var(--ink-2); }
-.cols { display: flex; justify-content: flex-end; gap: 0; font: 600 10.5px/1 var(--sans); letter-spacing: .02em; white-space: nowrap; text-transform: uppercase; color: var(--ink-2); padding: 8px 0 2px; }
-.cols span { width: 64px; text-align: right; }
+.cols { display: flex; justify-content: flex-end; align-items: flex-end; gap: 0; font: 600 10.5px/1.15 var(--sans); letter-spacing: .02em; text-transform: uppercase; color: var(--ink-2); padding: 8px 0 2px; }
+.cols span { width: 64px; padding-left: 6px; text-align: right; }
 
 .item { padding: 11px 0; border-bottom: 1px dashed rgba(35,31,31,.22); }
 .item-row { display: flex; align-items: baseline; gap: 8px; }

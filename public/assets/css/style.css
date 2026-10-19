@@ -165,7 +165,7 @@ em { font-style: normal; color: var(--accent-text); }
 @media (min-width: 900px) { .nav { display: flex; } }
 
 /* ---------- hero ---------- */
-.hero { position: relative; padding-block: clamp(56px, 9vw, 120px) clamp(56px, 8vw, 96px); overflow: hidden; }
+.hero { position: relative; padding-block: clamp(56px, 8vw, 104px); overflow: hidden; }
 .hero .eyebrow { margin-bottom: var(--s5); }
 .hero .display { margin-bottom: var(--s6); }
 .hero .lede { margin-bottom: var(--s6); }
@@ -177,12 +177,12 @@ em { font-style: normal; color: var(--accent-text); }
 .hero.has-glow .hero-glow { opacity: 1; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--s3); }
 
-.facts { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line); }
-.fact { padding: var(--s5) var(--s4) 0 0; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(48px, 7vw, 96px); border-top: 1px solid var(--line); }
+.fact { padding: var(--s5) var(--s4) 0 0; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .fact + .fact { padding-left: var(--s4); border-left: 1px solid var(--line); }
 .fact dt { font: 500 12px/1.3 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s3); }
 .fact dd { font-weight: 900; font-stretch: 120%; font-size: clamp(28px, 4.6vw, 56px); line-height: 1; letter-spacing: -.03em; display: flex; align-items: baseline; gap: 2px; }
-.fact small { font-size: .38em; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--muted); }
+.fact small { white-space: nowrap; font-size: .38em; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--muted); }
 
 /* rolling digits */
 .roll { display: inline-flex; overflow: hidden; line-height: 1; height: 1em; }
@@ -464,7 +464,7 @@ select.field { appearance: none; cursor: pointer; }
 .my-pass { gap: var(--s2); }
 
 /* ---------- phones: an app shell ---------- */
-.open-status { display: inline-flex; align-items: center; gap: var(--s2); min-height: 32px; padding: 0 var(--s3) 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 600; }
+.open-status { display: inline-flex; align-items: center; gap: var(--s2); min-height: 32px; padding: 0 var(--s3); border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 600; }
 .open-status:has(.open-text:empty) { display: none; }
 .open-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .open-status.is-open .open-dot { background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 24%, transparent); animation: open-pulse 2.4s var(--ease-out) infinite; }
@@ -489,11 +489,10 @@ select.field { appearance: none; cursor: pointer; }
   .my-pass { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .brand { gap: var(--s2); } .brand-name { font-size: 17px; }
 
-  .hero { padding-block: var(--s6) var(--s7); }
+  .hero { padding-block: var(--s6); }
   .hero .eyebrow { margin-bottom: var(--s4); }
   .hero .display { font-size: clamp(34px, 11.2vw, 60px); margin-bottom: var(--s5); }
   .hero .lede { font-size: 17px; margin-bottom: var(--s5); }
-  .hero .actions { display: grid; grid-template-columns: 1fr 1fr; }
   .hero .actions .btn { padding-inline: var(--s3); }
   .wide-only { display: none; }
 
@@ -506,7 +505,9 @@ select.field { appearance: none; cursor: pointer; }
 
   .facts { margin-top: var(--s6); }
   .fact { padding-top: var(--s4); }
-  .fact dd { font-size: 30px; }
+  .fact + .fact { padding-left: var(--s3); }
+  .fact { padding-right: var(--s3); }
+  .fact dd { font-size: clamp(22px, 7vw, 30px); }
   .trust { display: grid; gap: var(--s3); margin-top: var(--s5); padding: var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); font-size: 15px; color: var(--text); }
 
   .marquee-track { padding-block: var(--s3); }
@@ -528,6 +529,14 @@ select.field { appearance: none; cursor: pointer; }
   .seg-scroll { width: 100%; }
   .avail { padding: var(--s5) var(--s4); }
   .visit-card { padding: var(--s5); }
+  .hero .actions, .visit .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .visit .btn { justify-self: stretch; }
+
+  /* booking form: every choice row spans the column, buttons share it equally */
+  .builder .seg:not(.seg-scroll) { display: grid; width: 100%; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); }
+  .builder .seg[data-key="station"], .builder .seg[data-key="players"], .builder .seg[data-key="time"] { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .builder .seg[data-key="start"], .builder .seg[data-key="game"] { --cols: 3; }
+  .builder .seg:not(.seg-scroll) button { padding: 0 var(--s2); white-space: normal; line-height: 1.2; text-align: center; }
   .pass-main { padding-block: var(--s5) calc(var(--s9) + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 379px) { #theme-toggle { display: none; } }
