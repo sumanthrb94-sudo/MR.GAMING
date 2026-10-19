@@ -338,7 +338,7 @@
     };
     const openOn = (day, c) => hoursOpen.filter((h) => h >= earliestOf(day) && !takenOn(day.key).has(`${c}_${h}`)).length;
     const anyFree = (day) => hoursOpen.filter((h) => fits(day.key, 'ps5', h, 1) || fits(day.key, 'xbox', h, 1)).length;
-    const startsIn = (day, h) => { if (!day.today) return ''; const t = nowIst(), m = h * 60 - (t.getHours() * 60 + t.getMinutes()); return m > 0 && m <= 180 ? `Starts in ${m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60 ? (m % 60) + ' min' : ''}`.trim() : m + ' min'}` : ''; };
+    const startsIn = (day, h) => { if (!day.today) return ''; const t = nowIst(), m = h * 60 - (t.getHours() * 60 + t.getMinutes()); return m > 0 && m <= 180 ? `Starts in ${m >= 60 ? `${hrs(Math.floor(m / 60))} ${m % 60 ? (m % 60) + ' min' : ''}`.trim() : m + ' min'}` : ''; };
     // What a fare costs for the current pick: plan = hourly / buy-pass / use-pass / member
     const price = (plan) => {
       const players = +state.players, squad = state.station === 'squad', n = +state.time;
@@ -408,7 +408,6 @@
       else if (state.live === false) availNote.textContent = "Live slots aren't loading right now. Pick a time and we'll confirm it on WhatsApp.";
       else if (!open.length) availNote.textContent = `${dayWord(day)} is fully booked for ${hrs(+state.time)}${state.con === 'any' ? '' : ' on ' + (state.con === 'room' ? 'the whole room' : names[state.con])}. Try another day or a shorter time.`;
       else availNote.textContent = `${open.length <= 3 ? 'Only ' : ''}${open.length} slot${open.length > 1 ? 's' : ''} left ${day.today ? 'today' : 'on ' + dayWord(day)}${gone ? ` · ${gone} already booked` : ''} · PS5 ${hrs(openOn(day, 'ps5'))}, Xbox ${hrs(openOn(day, 'xbox'))} free`;
-      if (state.live === false) availNote.textContent = "Live slots aren't loading right now. Pick a time and we'll confirm it on WhatsApp.";
       const band = (h) => (h < 17 ? 'Afternoon · 11 am – 5 pm' : h < 21 ? 'Evening · 5 – 9 pm' : 'Night · 9 – 11 pm');
       let last = '', html = '';
       if (state.live === null) html = '<div class="slot-card is-loading"></div>'.repeat(3);
@@ -425,7 +424,7 @@
           ${tags.length ? `<span class="slot-tags">${tags.join('')}</span>` : ''}
         </button>`;
       });
-      $('#results').innerHTML = html || (state.live === true ? '' : '');
+      $('#results').innerHTML = html;
     };
 
     // Step 2: the chosen slot (with a console switch) and the fares
@@ -585,7 +584,7 @@
       try { localStorage.setItem('mg-name', name); } catch (e) {}
       const st = state, s0 = +st.start, d = st.day.date, p = +st.players, hh = hrs(st.hours);
       const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-      const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
+      const who = st.squad ? `Whole room (PS5 + Xbox) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
       const gamingLine = st.plan === 'buy-pass' ? `${st.passName} (${CONFIG.passHours} hrs, valid 30 days) = ${inr(st.gaming)}\nThis visit uses ${st.hours} of ${CONFIG.passHours} hrs`
         : st.plan === 'use-pass' ? `Gaming: ${hh} from my ${st.passName.toLowerCase()} = ₹0`
         : st.plan === 'member' ? `Gaming at member rate (my ${st.passName.toLowerCase()} hours are used up): ${inr(st.memberRate)}/hr × ${hh} = ${inr(st.gaming)}`
