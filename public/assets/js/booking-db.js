@@ -20,6 +20,20 @@ async function takenFor(date) {
   return taken;
 }
 
+// The whole week in one read: Map of date -> Set of taken "console_hour" keys (dates as YYYY-MM-DD, inclusive)
+async function takenRange(from, to) {
+  const snap = await getDocs(query(collection(db, 'holds'), where('date', '>=', from), where('date', '<=', to)));
+  const week = new Map();
+  snap.forEach((d) => {
+    const h = d.data();
+    const created = h.createdAt && h.createdAt.toMillis ? h.createdAt.toMillis() : Date.now();
+    if (h.status === 'pending' && Date.now() - created > STALE_MS) return;
+    if (!week.has(h.date)) week.set(h.date, new Set());
+    week.get(h.date).add(`${h.console}_${h.hour}`);
+  });
+  return week;
+}
+
 // Saves the request and one hold per console per hour in one batch. A slot someone already holds fails the batch.
 async function reserve(b) {
   const consoles = b.station === 'squad' ? ['ps5', 'xbox'] : [b.station];
@@ -47,5 +61,5 @@ async function reserve(b) {
   }
 }
 
-window.MGDB = { takenFor, reserve };
+window.MGDB = { takenFor, takenRange, reserve };
 window.dispatchEvent(new Event('mgdb-ready'));

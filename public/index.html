@@ -93,7 +93,7 @@
           <svg class="i i-moon"><use href="#i-moon"/></svg>
         </button>
         <a class="btn btn-sm btn-ghost press my-pass" href="/pass" aria-label="Log in to see your pass hours"><svg class="i"><use href="#i-user"/></svg><span>Log in</span></a>
-        <a class="btn btn-sm btn-accent press topbar-book" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">Book</a>
+        <a class="btn btn-sm btn-accent press topbar-book" href="#book">Book</a>
       </div>
     </div>
   </header>
@@ -112,13 +112,15 @@
         </h1>
         <p class="lede" data-reveal>Your own gaming room inside MR. Sandwich, Gachibowli. ₹199 an hour solo, ₹320 for two on one console, plus 10% off food while you play.</p>
         <div class="actions" data-reveal>
-          <a class="btn btn-accent press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">
-            <svg class="i"><use href="#i-wa"/></svg> <span><span class="wide-only">Book on </span>WhatsApp</span>
+          <a class="btn btn-accent press" href="#book">
+            <svg class="i"><use href="#i-calendar"/></svg> <span>Book a slot</span>
           </a>
-          <a class="btn btn-ghost press" href="tel:+917337230311">
-            <svg class="i"><use href="#i-phone"/></svg> <span>Call<span class="wide-only"> 73372 30311</span></span>
+          <a class="btn btn-ghost press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">
+            <svg class="i"><use href="#i-wa"/></svg> <span>WhatsApp</span>
           </a>
         </div>
+        <!-- Real hours left today, from the booking database (main.js); hidden until it answers -->
+        <p class="hero-live" id="hero-live" hidden><span class="live-dot" aria-hidden="true"></span><a href="#book" id="hero-live-text"></a></p>
 
         <nav class="quick" aria-label="Quick links" data-stagger>
           <a class="quick-tile press" href="#book" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-calendar"/></svg></span><b>Book a slot</b><small>Live availability</small></a>
@@ -271,137 +273,130 @@
       </div>
     </section>
 
-    <!-- 03 BOOK -->
+    <!-- 03 BOOK: a short funnel. Tap a live slot, add your name, hold it. Everything urgent here comes from the database or the clock. -->
     <section class="section" id="book">
       <div class="wrap">
         <header class="sec-head" data-reveal>
           <p class="eyebrow"><span class="num">03</span> Book</p>
-          <h2 class="h2">Pick a slot. <span class="dim">Request it on WhatsApp.</span></h2>
+          <h2 class="h2">Grab your slot. <span class="dim">Live, and gone once it's booked.</span></h2>
         </header>
 
-        <div class="avail card" id="availability" data-reveal>
-          <div class="avail-head">
-            <div>
-              <h3 class="avail-title">Availability</h3>
-              <p class="avail-note" id="avail-note">Loading live availability… or ask us on WhatsApp.</p>
-            </div>
-            <div class="seg seg-scroll" id="avail-days">
-              <!-- Next 7 days, filled by main.js -->
-              <span class="seg-ind" aria-hidden="true"></span>
+        <div class="builder" data-reveal>
+          <div class="funnel">
+            <div class="avail card" id="availability">
+              <!-- Live status: hours left and the next free slot, from the booking database -->
+              <p class="live-strip" id="live-strip"><span class="live-dot" aria-hidden="true"></span><span id="avail-note">Loading live slots… or ask us on WhatsApp.</span></p>
+
+              <div class="quick-slots" id="quick-slots" hidden>
+                <p class="field-label">Next free</p>
+                <div class="quick-row" id="quick-row"></div>
+              </div>
+
+              <div class="funnel-step">
+                <p class="field-label">Who's playing</p>
+                <div class="seg seg-players" data-key="players">
+                  <button type="button" data-value="1" aria-pressed="true"><b>Solo</b><small>₹199/hr</small></button>
+                  <button type="button" data-value="2" aria-pressed="false"><b>Duo</b><small>₹320/hr</small></button>
+                  <button type="button" data-value="3" aria-pressed="false"><b>3</b><small>₹420/hr</small></button>
+                  <button type="button" data-value="4" aria-pressed="false"><b>4</b><small>₹499/hr</small></button>
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+                <label class="room-toggle" id="room-toggle" hidden><input type="checkbox" id="room-check"> <span>Take the whole room (PS5 &amp; Xbox, from 2 hrs) <b id="room-price"></b></span></label>
+              </div>
+
+              <div class="funnel-step">
+                <p class="field-label">When</p>
+                <div class="seg seg-scroll seg-days" id="avail-days">
+                  <!-- Next 7 days with real "hours left" from the database, filled by main.js -->
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+              </div>
+
+              <div class="avail-grid" id="avail-grid"></div>
+              <p class="avail-legend" aria-hidden="true"><span class="key key-open"></span>Open <span class="key key-picked"></span>Your pick <span class="key key-booked"></span>Booked</p>
             </div>
           </div>
-          <div class="avail-grid" id="avail-grid"></div>
-          <p class="avail-legend" aria-hidden="true"><span class="key key-open"></span>Open <span class="key key-picked"></span>Your pick <span class="key key-booked"></span>Booked</p>
-        </div>
 
-        <div class="builder" data-reveal>
-          <div class="builder-steps">
-            <fieldset class="step">
-              <legend>Console</legend>
-              <div class="seg" data-key="station">
-                <button type="button" data-value="ps5" aria-pressed="true">PS5</button>
-                <button type="button" data-value="xbox" aria-pressed="false">Xbox</button>
-                <button type="button" data-value="squad" aria-pressed="false">Squad room</button>
-                <span class="seg-ind" aria-hidden="true"></span>
+          <!-- Checkout: beside the board on desktop, a bottom sheet on phones -->
+          <div class="sheet-scrim" id="sheet-scrim" hidden></div>
+          <aside class="summary card checkout" id="checkout" aria-live="polite" aria-labelledby="sum-title">
+            <button class="icon-btn sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
+            <div class="sum-head">
+              <p class="summary-title" id="sum-title">Pick a slot</p>
+              <p class="summary-when" id="sum-when">Tap an open hour on the board</p>
+              <p class="sum-soon" id="sum-soon" hidden></p>
+            </div>
+            <div class="sum-hours" id="sum-hours" hidden>
+              <span class="field-label">Hours</span>
+              <div class="stepper">
+                <button class="icon-btn press" type="button" id="hrs-minus" aria-label="One hour less">−</button>
+                <output id="hrs-out">1</output>
+                <button class="icon-btn press" type="button" id="hrs-plus" aria-label="One hour more">+</button>
               </div>
-            </fieldset>
+              <span class="sum-hint" id="sel-hint"></span>
+            </div>
 
-            <fieldset class="step" id="step-players">
-              <legend>Players</legend>
-              <div class="seg" data-key="players">
-                <button type="button" data-value="1" aria-pressed="true">1</button>
-                <button type="button" data-value="2" aria-pressed="false">2</button>
-                <button type="button" data-value="3" aria-pressed="false" hidden>3</button>
-                <button type="button" data-value="4" aria-pressed="false" hidden>4</button>
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>How long</legend>
-              <div class="seg" data-key="time">
-                <button type="button" data-value="1" aria-pressed="false">1 hr</button>
-                <button type="button" data-value="2" aria-pressed="true">2 hrs</button>
-                <button type="button" data-value="3" aria-pressed="false">3 hrs</button>
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-              <p class="step-hint" id="time-hint"></p>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>Pay with</legend>
-              <div class="seg seg-wrap" data-key="plan">
-                <button type="button" data-value="hourly" aria-pressed="true">Hourly rate</button>
-                <button type="button" data-value="buy-pass" aria-pressed="false">Buy a 6-hr pass</button>
-                <button type="button" data-value="use-pass" aria-pressed="false">Use my pass</button>
-                <button type="button" data-value="member" aria-pressed="false">Pass used up</button>
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-              <p class="step-hint" id="plan-hint"></p>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>Day</legend>
-              <div class="seg seg-scroll" data-key="date">
-                <!-- Next 7 days, filled by main.js -->
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>Start time <span class="legend-note">Open 11 am – 11 pm</span></legend>
-              <div class="seg seg-wrap" data-key="start">
-                <!-- 11 am to 10 pm, filled by main.js -->
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-              <p class="step-hint" id="start-hint"></p>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>Game <span class="legend-note">Optional</span></legend>
-              <div class="seg seg-wrap" data-key="game">
-                <button type="button" data-value="any" aria-pressed="true">Any</button>
-                <!-- Installed games, copied from the list above by main.js -->
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-            </fieldset>
-
-            <fieldset class="step">
-              <legend>Food <span class="legend-note">10% off with your booking</span></legend>
-              <div class="seg seg-wrap" data-key="food">
-                <button type="button" data-value="none" aria-pressed="true">No food</button>
-                <button type="button" data-value="paneer-sub" aria-pressed="false">Paneer Sub ₹129</button>
-                <button type="button" data-value="paneer-pizza" aria-pressed="false">Paneer Pizza ₹249</button>
-                <button type="button" data-value="sub-combo" aria-pressed="false">Sub combo ₹300</button>
-                <span class="seg-ind" aria-hidden="true"></span>
-              </div>
-            </fieldset>
-
-            <div class="step">
+            <div class="sum-name">
               <label class="field-label" for="book-name">Your name</label>
               <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40">
             </div>
-          </div>
 
-          <aside class="summary card" aria-live="polite">
-            <p class="summary-title" id="sum-title">PS5 · 2 hrs · 1 player</p>
-            <p class="summary-when" id="sum-when"></p>
+            <details class="sum-extras" id="sum-extras">
+              <summary>Add a game or food <span class="dim">· 10% off food</span></summary>
+              <div class="extras-body">
+                <p class="field-label">Game</p>
+                <div class="seg seg-wrap" data-key="game">
+                  <button type="button" data-value="any" aria-pressed="true">Any</button>
+                  <!-- Installed games, from the game cards (main.js) -->
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+                <p class="field-label">Food <span class="field-note">10% off with your booking</span></p>
+                <div class="seg seg-wrap" data-key="food">
+                  <button type="button" data-value="none" aria-pressed="true">No food</button>
+                  <button type="button" data-value="paneer-sub" aria-pressed="false">Paneer Sub ₹129</button>
+                  <button type="button" data-value="paneer-pizza" aria-pressed="false">Paneer Pizza ₹249</button>
+                  <button type="button" data-value="sub-combo" aria-pressed="false">Sub combo ₹300</button>
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+              </div>
+            </details>
+
+            <details class="sum-extras" id="sum-pass">
+              <summary>Paying with a pass? <span class="dim">· 6 hrs from ₹899</span></summary>
+              <div class="extras-body">
+                <div class="seg seg-wrap" data-key="plan">
+                  <button type="button" data-value="hourly" aria-pressed="true">Hourly rate</button>
+                  <button type="button" data-value="buy-pass" aria-pressed="false">Buy a 6-hr pass</button>
+                  <button type="button" data-value="use-pass" aria-pressed="false">Use my pass</button>
+                  <button type="button" data-value="member" aria-pressed="false">Pass used up</button>
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+                <p class="step-hint" id="plan-hint"></p>
+              </div>
+            </details>
+
             <dl class="summary-lines">
-              <div><dt id="sum-gaming-label">Gaming</dt><dd id="sum-gaming">₹398</dd></div>
-              <div><dt>Food</dt><dd id="sum-food">₹0</dd></div>
-              <div><dt>Gamer perk (10% off food)</dt><dd id="sum-perk">−₹0</dd></div>
+              <div><dt id="sum-gaming-label">Gaming</dt><dd id="sum-gaming">₹0</dd></div>
+              <div id="sum-food-row" hidden><dt>Food</dt><dd id="sum-food">₹0</dd></div>
+              <div id="sum-perk-row" hidden><dt>Gamer perk (10% off food)</dt><dd id="sum-perk">−₹0</dd></div>
             </dl>
             <div class="summary-total">
               <span>Total</span>
               <span class="total"><span class="roll" id="sum-total" data-prefix="₹"></span></span>
             </div>
-            <button class="btn btn-accent btn-block press" id="send-booking" type="button">
-              <svg class="i"><use href="#i-wa"/></svg> Request on WhatsApp
+            <button class="btn btn-accent btn-block press" id="send-booking" type="button" disabled>
+              <svg class="i"><use href="#i-wa"/></svg> Hold my slot
             </button>
             <p class="book-status" id="book-status" role="status"></p>
-            <p class="summary-note">This sends a booking request with your bill. We confirm on WhatsApp and send a UPI QR for the advance.</p>
+            <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. Pay the advance by UPI to lock it in.</p>
           </aside>
         </div>
+      </div>
+
+      <!-- Phones: a bar that follows you once you've picked a slot -->
+      <div class="book-bar" id="book-bar" hidden>
+        <div class="book-bar-text"><b id="bar-what"></b><span id="bar-when"></span></div>
+        <button class="btn btn-accent press" id="bar-go" type="button">Hold · <span id="bar-price"></span></button>
       </div>
     </section>
 

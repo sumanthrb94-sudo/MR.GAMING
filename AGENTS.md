@@ -22,7 +22,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 4. Colours/spacing via CSS variables only. One accent per page.
 5. Keep `prefers-reduced-motion` working; drop `filter` after reveals (final state `filter: none`).
 6. Never commit a service-account key or print its contents. Public visitors must never be able to read names (`requests` stay owner-only). `passCards` carry first name and hours only; keep phones in `passes`. A signed-in customer may read only passes whose `phoneE164` equals their sign-in number.
-7. Availability must come from the database. Never show an hour as open when the database didn't answer.
+7. Availability must come from the database. Never show an hour as open when the database didn't answer. Booking urgency (hours left, "Full", "next free", "starts in", the 3-hour hold) must come from the database, the clock or firestore.rules: no viewer counts, fake countdowns or invented scarcity.
 8. Escape anything that came from the public form before putting it in HTML (admin.js `esc`).
 9. Before committing: screenshot `/` and `/menu` at 390px and 1440px (light + dark for home), check no horizontal overflow and no console errors.
 10. Keep every screen under 1 s on 4G: no new third-party scripts or CDNs, no live Firestore listeners (Lite + re-read), images as sized WebP with `loading="lazy"` below the fold, nothing above the fold waiting on JavaScript to become visible.

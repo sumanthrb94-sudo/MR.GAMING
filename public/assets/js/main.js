@@ -261,10 +261,12 @@
     placeInd(seg);
   }
 
-  /* ---------- booking request builder + availability board (bill goes to WhatsApp, slots held in Firestore) ---------- */
+  /* ---------- booking funnel: tap a live slot, add a name, hold it (bill goes to WhatsApp, slots held in Firestore) ----------
+     Everything that sounds urgent comes from real data: hours left and "next free" from the database, "starts in" from
+     the clock, and the 3-hour hold from firestore.rules (an unconfirmed hold stops blocking its slot after 3 hours). */
   const builder = $('.builder');
   if (builder) {
-    const names = { ps5: 'PS5', xbox: 'Xbox', squad: 'Squad room' };
+    const names = { ps5: 'PS5', xbox: 'Xbox', squad: 'Whole room' };
     const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const pad = (n) => String(n).padStart(2, '0');
@@ -276,180 +278,265 @@
     const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
     const dayLabel = (d) => `${DAY[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
 
-    // Fill the day, start-time and game choices
+    // The next 7 days (today drops off once its last 1-hour slot has started)
     const now = nowIst();
     const days = [];
     for (let i = 0; i < 8 && days.length < 7; i++) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      // Skip today once the last 1-hour slot has started
       if (i === 0 && now.getHours() * 60 + now.getMinutes() > (CONFIG.close - 1) * 60 - 15) continue;
       days.push({ key: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d), date: d, today: i === 0 });
     }
-    const segDate = $('.seg[data-key="date"]', builder), segStart = $('.seg[data-key="start"]', builder), segGame = $('.seg[data-key="game"]', builder);
-    const dayButtons = days.map((d, i) => `<button type="button" data-value="${d.key}" aria-pressed="${i === 0}">${d.label}</button>`).join('');
-    segDate.insertAdjacentHTML('afterbegin', dayButtons);
-    const availDays = $('#avail-days'), grid = $('#avail-grid'), availNote = $('#avail-note');
-    availDays.insertAdjacentHTML('afterbegin', dayButtons);
     const hoursOpen = []; for (let h = CONFIG.open; h < CONFIG.close; h++) hoursOpen.push(h);
-    segStart.insertAdjacentHTML('afterbegin', hoursOpen.map((h) => `<button type="button" data-value="${h}" aria-pressed="false">${clock(h)}</button>`).join(''));
-    $$('[data-pick-game]').forEach((a) => $('.seg-ind', segGame).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${a.dataset.pickGame}" aria-pressed="false">${a.dataset.pickGame}</button>`));   // bookable games come from the game cards (not GTA VI, a pre-order)
+    // Today, hours that have already started (or start within 15 min) can't be booked
+    const earliestOf = (day) => { if (!day.today) return CONFIG.open; const t = nowIst(); return Math.max(CONFIG.open, Math.ceil((t.getHours() * 60 + t.getMinutes() + 15) / 60)); };
 
-    const segs = Object.fromEntries($$('.seg', builder).map((s) => [s.dataset.key, s]));
-    // live: null while loading a day's slots, true once loaded, false if the database can't be reached
-    const state = { station: 'ps5', players: '1', time: '2', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', taken: new Set(), live: null };
+    const availDays = $('#avail-days'), grid = $('#avail-grid'), availNote = $('#avail-note'), liveStrip = $('#live-strip');
+    availDays.insertAdjacentHTML('afterbegin', days.map((d, i) => `<button type="button" data-value="${d.key}" aria-pressed="${i === 0}"><b>${d.label}</b><small></small></button>`).join(''));
+    const segs = Object.fromEntries($$('.seg[data-key]', builder).map((s) => [s.dataset.key, s]));
+    $$('[data-pick-game]').forEach((a) => $('.seg-ind', segs.game).insertAdjacentHTML('beforebegin', `<button type="button" data-value="${a.dataset.pickGame}" aria-pressed="false">${a.dataset.pickGame}</button>`));   // bookable games come from the game cards (not GTA VI, a pre-order)
+
+    // live: null while loading, true once the database answered, false if it can't be reached
+    const state = { station: 'ps5', players: '1', time: '1', plan: 'hourly', food: 'none', date: days[0].key, start: null, game: 'any', week: new Map(), live: null };
+    const takenOn = (key) => state.week.get(key) || new Set();
     // Opened from a pass card (/?pass=duo#book): pay with the pass
-    const passKind = new URLSearchParams(location.search).get('pass');
+    const params = new URLSearchParams(location.search), passKind = params.get('pass');
     if (passKind === 'solo' || passKind === 'duo') {
-      // From My pass: "Use my pass", or the member rate once the hours are used (?rate=member)
-      const member = new URLSearchParams(location.search).get('rate') === 'member';
-      Object.assign(state, { plan: member ? 'member' : 'use-pass', players: passKind === 'duo' ? '2' : '1' });
-      select(segs.plan, state.plan); select(segs.players, state.players);
+      Object.assign(state, { plan: params.get('rate') === 'member' ? 'member' : 'use-pass', players: passKind === 'duo' ? '2' : '1' });
+      select(segs.plan, state.plan); select(segs.players, state.players); $('#sum-pass').open = true;
     }
     const nameInput = $('#book-name'), sendBtn = $('#send-booking');
+    try { nameInput.value = localStorage.getItem('mg-name') || ''; } catch (e) {}
 
-    // Squad room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
+    // Whole room splits players across both consoles: 2 = two solos, 3 = duo + solo, 4 = two duos
     const squadSplit = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };
     const splitLabel = { 2: '2 solos', 3: 'duo + solo', 4: '2 duos' };
-    // Players on one console -> rate
     const KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' };
     const KIND_LABEL = { solo: 'Solo, 1 player', duo: 'Duo, 2 players on one console', trio: '3 players on one console', quad: '4 players on one console' };
+    const minHours = () => (state.station === 'squad' ? CONFIG.squadMinHours : 1);
+    const consolesOf = (station) => (station === 'squad' ? ['ps5', 'xbox'] : [station]);
+    // Can this session be booked? Inside opening hours, not started, and every hour free on every console it needs
+    const fits = (key, station, h0, n) => {
+      const day = days.find((d) => d.key === key), taken = takenOn(key);
+      if (!day || h0 < earliestOf(day) || h0 + n > CONFIG.close || n > MAX_ONLINE_HOURS) return false;
+      return consolesOf(station).every((c) => Array.from({ length: n }, (_, i) => h0 + i).every((h) => !taken.has(`${c}_${h}`)));
+    };
+    // Hours still open on a console that day, and hours with room for this group (either console, or both for the whole room)
+    const openOn = (day, c) => hoursOpen.filter((h) => h >= earliestOf(day) && !takenOn(day.key).has(`${c}_${h}`)).length;
+    const roomyHours = (day) => hoursOpen.filter((h) => h >= earliestOf(day) && (state.station === 'squad' ? fits(day.key, 'squad', h, 1) : fits(day.key, 'ps5', h, 1) || fits(day.key, 'xbox', h, 1))).length;
+    const startsIn = (day, h) => { if (!day.today) return ''; const t = nowIst(), m = h * 60 - (t.getHours() * 60 + t.getMinutes()); return m > 0 && m <= 180 ? `Starts in ${m >= 60 ? `${Math.floor(m / 60)} hr ${m % 60 ? (m % 60) + ' min' : ''}`.trim() : m + ' min'}` : ''; };
 
     const render = () => {
-      const squad = state.station === 'squad';
-      // Squad room takes 2-4 players; a single console takes 1-4
-      $$('button', segs.players).forEach((b) => { const n = +b.dataset.value; b.hidden = squad && n < 2; });
-      if (squad && +state.players < 2) { state.players = '2'; select(segs.players, '2'); }
-      const group = !squad && +state.players >= 3;
-      $$('button', segs.time).forEach((b) => { b.disabled = squad && +b.dataset.value < CONFIG.squadMinHours; });
-      if (squad && +state.time < CONFIG.squadMinHours) { state.time = String(CONFIG.squadMinHours); select(segs.time, state.time); }
-      // Passes are for 1-2 players on one console, so the squad room and groups of 3-4 pay by the hour
-      $$('button', segs.plan).forEach((b) => { b.disabled = (squad || group) && b.dataset.value !== 'hourly'; });
-      if ((squad || group) && state.plan !== 'hourly') { state.plan = 'hourly'; select(segs.plan, 'hourly'); }
+      const players = +state.players, squad = state.station === 'squad';
+      // The whole room is for 2-4 players; groups of 3-4 on one console and the whole room pay by the hour
+      if (squad && players < 2) state.station = 'ps5';
+      const group = state.station !== 'squad' && players >= 3;
+      $('#room-toggle').hidden = players < 2;
+      $('#room-check').checked = state.station === 'squad';
+      $('#room-price').textContent = players >= 2 ? `${inr(squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0))}/hr` : '';
+      $$('button', segs.plan).forEach((b) => { b.disabled = (state.station === 'squad' || group) && b.dataset.value !== 'hourly'; });
+      if ((state.station === 'squad' || group) && state.plan !== 'hourly') { state.plan = 'hourly'; select(segs.plan, 'hourly'); }
+      if (+state.time < minHours()) state.time = String(minHours());
 
-      const hours = +state.time, players = +state.players;
-      const kind = squad ? 'solo' : KIND[players];
-      const rate = squad ? squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0) : CONFIG.rates[kind];
+      const day = days.find((d) => d.key === state.date), hours = +state.time;
+      // Keep the pick only while it can still be booked (the database may have changed, or the group size)
+      if (state.start !== null && !(state.live === false ? +state.start >= earliestOf(day) && +state.start + hours <= CONFIG.close : fits(state.date, state.station, +state.start, hours))) state.start = null;
+
+      const kind = state.station === 'squad' ? 'solo' : KIND[players];
+      const rate = state.station === 'squad' ? squadSplit[players].reduce((sum, k) => sum + CONFIG.rates[k], 0) : CONFIG.rates[kind];
       const memberRate = state.plan === 'member' ? CONFIG.memberRates[kind] : 0;
       const gaming = state.plan === 'buy-pass' ? CONFIG.passes[kind] : state.plan === 'use-pass' ? 0 : (memberRate || rate) * hours;
       const foodPrice = CONFIG.food[state.food].price, perk = Math.round(foodPrice * CONFIG.foodPerk), total = gaming + foodPrice - perk;
-
-      // Start times: inside opening hours for the whole session, and not already past today
-      const day = days.find((d) => d.key === state.date), t = nowIst();
-      const earliest = day.today ? Math.ceil((t.getHours() * 60 + t.getMinutes() + 15) / 60) : CONFIG.open;
-      const latest = CONFIG.close - hours;
-      // Taken: any hour of the session already held on a console this booking needs
-      const consoles = squad ? ['ps5', 'xbox'] : [state.station];
-      const isTaken = (h0) => consoles.some((c) => Array.from({ length: hours }, (_, i) => h0 + i).some((h) => state.taken.has(`${c}_${h}`)));
-      let anyTaken = false;
-      $$('button', segs.start).forEach((b) => {
-        const h = +b.dataset.value, taken = isTaken(h);
-        b.textContent = span(h, h + hours);
-        b.disabled = h < earliest || h > latest || taken;
-        b.classList.toggle('is-taken', taken);
-        b.title = taken ? 'Taken' : '';
-        if (taken) anyTaken = true;
-      });
-      const valid = $$('button:not(:disabled)', segs.start).map((b) => b.dataset.value);
-      if (!valid.includes(state.start)) state.start = valid[0] || null;
-      select(segs.start, state.start);
-      $('#start-hint').textContent = !state.start ? 'No slots left that day for this length. Pick another day or a shorter session.'
-        : anyTaken ? 'Crossed-out times are already booked.' : '';
-
       const passName = kind === 'duo' ? 'Duo pass' : 'Solo pass';
-      $('#time-hint').textContent = squad ? `Squad room for ${players}: ${splitLabel[players]}, ${inr(rate)}/hr. Minimum ${CONFIG.squadMinHours} hours.`
-        : kind === 'duo' ? `Duo: two players on one console, ${inr(CONFIG.rates.duo)}/hr.`
-        : group ? `${players} players on one console, ${inr(rate)}/hr. Needs a game that supports ${players} players on one screen; ask us on WhatsApp what's on.` : '';
-      $('#plan-hint').textContent = squad ? 'Passes are for one console. The squad room is paid by the hour.'
+      const s0 = state.start === null ? null : +state.start, picked = s0 !== null;
+
+      // Checkout panel
+      const who = state.station === 'squad' ? `Whole room · ${players} players` : `${names[state.station]} · ${players === 1 ? 'Solo' : players === 2 ? 'Duo' : players + ' players'}`;
+      $('#sum-title').textContent = picked ? who : 'Pick a slot';
+      $('#sum-when').textContent = picked ? `${day.today ? 'Today, ' : day.label === 'Tomorrow' ? 'Tomorrow, ' : ''}${dayLabel(day.date)} · ${span(s0, s0 + hours)}` : 'Tap an open hour on the board';
+      const soon = picked ? startsIn(day, s0) : '';
+      $('#sum-soon').hidden = !soon; $('#sum-soon').textContent = soon;
+      $('#sum-hours').hidden = !picked;
+      $('#hrs-out').textContent = hours;
+      $('#hrs-minus').disabled = !picked || hours <= minHours();
+      $('#hrs-plus').disabled = !picked || hours >= MAX_ONLINE_HOURS || !(state.live === false ? s0 + hours < CONFIG.close : fits(state.date, state.station, s0, hours + 1));
+      $('#sel-hint').textContent = state.station === 'squad' ? `${splitLabel[players]}, ${inr(rate)}/hr` : group ? `${inr(rate)}/hr · needs a game with ${players}-player couch play` : kind === 'duo' ? `${inr(CONFIG.rates.duo / 2)} each` : `up to ${MAX_ONLINE_HOURS} online`;
+      $('#plan-hint').textContent = state.station === 'squad' ? 'Passes are for one console. The whole room is paid by the hour.'
         : group ? 'Passes are for 1 or 2 players. Groups of 3 or 4 on one console pay by the hour.'
         : state.plan === 'buy-pass' ? `${passName} ${inr(CONFIG.passes[kind])}: ${CONFIG.passHours} hours within 30 days. This visit uses ${hours} of them.`
         : state.plan === 'use-pass' ? `We take ${hours} hour${hours > 1 ? 's' : ''} off your ${passName.toLowerCase()}. Food is still charged.`
         : state.plan === 'member' ? `Member rate for ${passName.toLowerCase()} holders who have used all 6 hours, until the pass's 30 days end: ${inr(memberRate)}/hr instead of ${inr(rate)}. We check your pass when we confirm.` : '';
-
-      $('#sum-title').textContent = `${names[state.station]} · ${hours} hr${hours > 1 ? 's' : ''} · ${players} player${players > 1 ? 's' : ''}${kind === 'duo' ? ' (duo)' : ''}`;
-      const s0 = +state.start;
-      $('#sum-when').textContent = state.start ? `${day.today ? 'Today, ' : ''}${dayLabel(day.date)} · ${clock(s0)} – ${clock(s0 + hours)}` : 'Pick a start time';
-      $('#sum-gaming-label').textContent = state.plan === 'buy-pass' ? `${passName} (${CONFIG.passHours} hrs)` : state.plan === 'use-pass' ? `Gaming (from your ${passName.toLowerCase()})` : state.plan === 'member' ? `Gaming (member rate ${inr(memberRate)}/hr)` : `Gaming (${inr(rate)}/hr)`;
-      $('#sum-gaming').textContent = inr(gaming);
+      $('#sum-gaming-label').textContent = state.plan === 'buy-pass' ? `${passName} (${CONFIG.passHours} hrs)` : state.plan === 'use-pass' ? `Gaming (from your ${passName.toLowerCase()})` : state.plan === 'member' ? `Gaming (member rate ${inr(memberRate)}/hr)` : `Gaming (${inr(rate)}/hr × ${hours})`;
+      $('#sum-gaming').textContent = inr(picked ? gaming : 0);
+      $('#sum-food-row').hidden = $('#sum-perk-row').hidden = !foodPrice;
       $('#sum-food').textContent = inr(foodPrice);
       $('#sum-perk').textContent = '−' + inr(perk);
-      setRoll($('#sum-total'), total);
-      sendBtn.disabled = !state.start;
-      Object.assign(state, { total, gaming, foodPrice, perk, hours, squad, day, rate, kind, passName, memberRate });
-      renderBoard(day, earliest, consoles);
-      $$('.seg', builder).forEach(placeInd); placeInd(availDays);
+      setRoll($('#sum-total'), picked ? total : 0);
+      sendBtn.disabled = !picked;
+
+      // Phone bar
+      $('#bar-what').textContent = picked ? `${names[state.station]} · ${day.label === 'Today' || day.label === 'Tomorrow' ? day.label : dayLabel(day.date)} ${span(s0, s0 + hours)}` : '';
+      $('#bar-when').textContent = picked ? (soon || `${hours} hr${hours > 1 ? 's' : ''} · ${players === 1 ? 'solo' : players + ' players'}`) : '';
+      $('#bar-price').textContent = inr(total);
+      Object.assign(state, { total, gaming, foodPrice, perk, hours, squad: state.station === 'squad', day, rate, kind, passName, memberRate });
+      renderLive(day); renderDays(); renderQuick(); renderBoard(day); renderHero();
+      paintBar();
+      $$('.seg', builder).forEach(placeInd);
     };
 
-    // Availability board: PS5 and Xbox by hour for the chosen day. Never shows "Open" unless the database answered.
-    // Today, hours that have already started are left off.
-    const renderBoard = (day, earliest, consoles) => {
-      grid.hidden = $('.avail-legend').hidden = state.live === false;
-      const rows = hoursOpen.filter((h) => h >= earliest);
-      availNote.textContent = state.live === false ? "Live availability isn't loading right now. Pick a time below and we'll confirm on WhatsApp."
-        : state.live === null ? 'Checking…' : !rows.length ? `No more hours ${day.today ? 'today' : 'that day'}. Pick another day.`
-        : `${day.label}, live. Tap open hours next to each other to book them together (up to ${MAX_ONLINE_HOURS}).`;
-      if (state.live === false) return;
-      const s0 = state.start === null ? -1 : +state.start, picked = (c, h) => consoles.includes(c) && h >= s0 && h < s0 + state.hours;
-      grid.innerHTML = `<span style="--r:1;--c:1"></span><span class="avail-con" style="--r:1;--c:2">PS5</span><span class="avail-con" style="--r:1;--c:3">Xbox</span>`
+    // Live strip: real hours left for the chosen day, and the next free slot today
+    const renderLive = (day) => {
+      liveStrip.classList.toggle('is-live', state.live === true);
+      if (state.live === false) { availNote.textContent = "Live slots aren't loading right now. Tap a time and we'll confirm it on WhatsApp."; return; }
+      if (state.live === null) { availNote.textContent = 'Checking live slots…'; return; }
+      const ps = openOn(day, 'ps5'), xb = openOn(day, 'xbox'), when = day.today ? 'Today' : day.label;
+      if (!ps && !xb) { availNote.textContent = `${when} is fully booked. Pick another day.`; return; }
+      const few = (n) => (n <= 3 ? `only ${n}` : n);
+      let text = `${when}: ${few(ps)} hr${ps === 1 ? '' : 's'} left on PS5 · ${few(xb)} on Xbox`;
+      if (day.today) {
+        const next = hoursOpen.find((h) => h >= earliestOf(day) && (fits(day.key, 'ps5', h, 1) || fits(day.key, 'xbox', h, 1)));
+        const soon = next !== undefined && startsIn(day, next);
+        if (soon) text += ` · next free ${clock(next)}, ${soon.toLowerCase()}`;
+      }
+      availNote.textContent = text;
+    };
+    // Hero: real hours left today (or tomorrow once today is over), any console
+    const anyFree = (day) => hoursOpen.filter((h) => h >= earliestOf(day) && (fits(day.key, 'ps5', h, 1) || fits(day.key, 'xbox', h, 1))).length;
+    const renderHero = () => {
+      const el = $('#hero-live'); if (!el) return;
+      el.hidden = state.live !== true; if (state.live !== true) return;
+      const d0 = days[0], left = anyFree(d0), d1 = days[1], when = d0.today ? 'today' : 'tomorrow';
+      $('#hero-live-text').textContent = left ? `${left <= 3 ? 'Only ' : ''}${left} hour${left > 1 ? 's' : ''} left ${when} · see live slots`
+        : d1 ? `${d0.today ? 'Today' : 'Tomorrow'} is fully booked · ${anyFree(d1)} hours open ${d1.label === 'Tomorrow' ? 'tomorrow' : d1.label}` : '';
+      el.classList.toggle('is-few', left > 0 && left <= 3);
+    };
+    // Day chips: "Full" or "N hrs left" when that's true (from the database), nothing while loading
+    const renderDays = () => {
+      $$('button', availDays).forEach((b) => {
+        const day = days.find((d) => d.key === b.dataset.value), left = state.live === true ? roomyHours(day) : null;
+        const small = $('small', b);
+        small.textContent = left === null ? '' : left === 0 ? 'Full' : left <= 4 ? `${left} hr${left > 1 ? 's' : ''} left` : '';
+        b.classList.toggle('is-full', left === 0); b.classList.toggle('is-few', left > 0 && left <= 4);
+      });
+    };
+    // "Next free": the first three bookable starts from now, across the week (one tap picks it and opens checkout)
+    const renderQuick = () => {
+      const box = $('#quick-slots'), row = $('#quick-row'), out = [];
+      if (state.live === true) {
+        const n = minHours(), order = state.station === 'xbox' ? ['xbox', 'ps5'] : ['ps5', 'xbox'];
+        for (const day of days) {
+          for (const h of hoursOpen) {
+            const c = state.station === 'squad' ? (fits(day.key, 'squad', h, n) ? 'squad' : null) : order.find((x) => fits(day.key, x, h, n));
+            if (c) out.push({ day, h, c, n });
+            if (out.length === 3) break;
+          }
+          if (out.length === 3) break;
+        }
+      }
+      box.hidden = !out.length;
+      row.innerHTML = out.map((q) => `<button type="button" class="quick-slot press" data-date="${q.day.key}" data-hour="${q.h}" data-console="${q.c}" data-hours="${q.n}"><b>${q.day.today ? 'Today' : q.day.label === 'Tomorrow' ? 'Tomorrow' : dayLabel(q.day.date)} ${span(q.h, q.h + q.n)}</b><small>${names[q.c]}${startsIn(q.day, q.h) ? ' · ' + startsIn(q.day, q.h).toLowerCase() : ''}</small></button>`).join('');
+    };
+
+    // Board: PS5 and Xbox by hour for the chosen day. Never shows "Open" unless the database answered;
+    // without it the hours read "Request" and we confirm on WhatsApp.
+    const renderBoard = (day) => {
+      const rows = hoursOpen.filter((h) => h >= earliestOf(day)), taken = takenOn(day.key);
+      $('.avail-legend').hidden = state.live !== true;
+      const s0 = state.start === null ? -1 : +state.start, picked = (c, h) => consolesOf(state.station).includes(c) && h >= s0 && h < s0 + state.hours;
+      grid.innerHTML = !rows.length ? '' : `<span style="--r:1;--c:1"></span><span class="avail-con" style="--r:1;--c:2">PS5</span><span class="avail-con" style="--r:1;--c:3">Xbox</span>`
         + rows.map((h, i) => `<span class="avail-time" style="--r:${i + 2};--c:1">${span(h, h + 1)}</span>` + ['ps5', 'xbox'].map((c, j) => {
-          const booked = state.taken.has(`${c}_${h}`), loading = state.live === null;
-          const cls = loading ? 'is-loading' : booked ? 'is-booked' : picked(c, h) ? 'is-picked' : 'is-open';
-          const label = loading ? '' : booked ? 'Booked' : cls === 'is-picked' ? 'Picked' : 'Open';
+          const loading = state.live === null, unknown = state.live === false, booked = !unknown && taken.has(`${c}_${h}`);
+          const cls = loading ? 'is-loading' : booked ? 'is-booked' : picked(c, h) ? 'is-picked' : unknown ? 'is-unknown' : 'is-open';
+          const label = loading ? '' : booked ? 'Booked' : cls === 'is-picked' ? 'Picked' : unknown ? 'Request' : 'Open';
           return `<button type="button" class="avail-cell ${cls}" style="--r:${i + 2};--c:${j + 2}" data-console="${c}" data-hour="${h}" ${loading || booked ? 'disabled' : ''} aria-pressed="${cls === 'is-picked'}" aria-label="${names[c]} ${span(h, h + 1)}: ${label || 'loading'}">${label}</button>`;
         }).join('')).join('');
     };
 
     // Tap open hours to build a session: a tap next to the picked hours adds that hour (up to MAX_ONLINE_HOURS),
     // a tap on the first or last picked hour drops it, any other tap starts again from that hour.
-    const free = (c, h) => !state.taken.has(`${c}_${h}`);
+    const ok = (station, h0, n) => (state.live === false ? h0 >= earliestOf(state.day) && h0 + n <= CONFIG.close && n <= MAX_ONLINE_HOURS : fits(state.date, station, h0, n));
     const setSession = (station, start, hours) => {
-      state.station = station; select(segs.station, station);
-      state.time = String(hours); select(segs.time, state.time);
-      state.start = String(start); render();
-      return state.start === String(start) && state.time === String(hours);
+      if (!ok(station, start, hours)) return false;
+      Object.assign(state, { station, start: String(start), time: String(hours) }); render(); return true;
     };
+    let note = '';
     const pickSlot = (c, h) => {
-      const squad = state.station === 'squad', bothFree = free('ps5', h) && free('xbox', h);
-      const onSelection = state.start !== null && (squad ? bothFree : state.station === c);
+      const squad = state.station === 'squad', onSel = state.start !== null && (squad || state.station === c);
       const st = +state.start, len = +state.time, end = st + len - 1;
-      let msg = '';
-      if (onSelection && h === end + 1 && len < MAX_ONLINE_HOURS) setSession(state.station, st, len + 1);
-      else if (onSelection && h === st - 1 && len < MAX_ONLINE_HOURS) setSession(state.station, h, len + 1);
-      else if (onSelection && (h === end + 1 || h === st - 1)) msg = `Up to ${MAX_ONLINE_HOURS} hours can be booked online. For longer, ask us on WhatsApp.`;
-      else if (onSelection && len > 1 && h === st && !(squad && len - 1 < CONFIG.squadMinHours)) setSession(state.station, st + 1, len - 1);
-      else if (onSelection && len > 1 && h === end && !(squad && len - 1 < CONFIG.squadMinHours)) setSession(state.station, st, len - 1);
-      else if (!(onSelection && h >= st && h <= end)) {
-        // Start again from this hour: the squad room needs 2 hours on both consoles, otherwise book this console for 1 hour
-        const ok = squad && bothFree && setSession('squad', h, CONFIG.squadMinHours);
-        if (!ok) setSession(c, h, 1);
+      note = '';
+      if (onSel && h === end + 1 && len < MAX_ONLINE_HOURS) setSession(state.station, st, len + 1) || (note = 'That hour is taken.');
+      else if (onSel && h === st - 1 && len < MAX_ONLINE_HOURS) setSession(state.station, h, len + 1) || (note = 'That hour is taken.');
+      else if (onSel && (h === end + 1 || h === st - 1)) note = `Up to ${MAX_ONLINE_HOURS} hours online. For longer, ask us on WhatsApp.`;
+      else if (onSel && len > minHours() && h === st) setSession(state.station, st + 1, len - 1);
+      else if (onSel && len > minHours() && h === end) setSession(state.station, st, len - 1);
+      else if (!(onSel && h >= st && h <= end)) {
+        // Start again from this hour: the whole room needs both consoles for its minimum, otherwise this console for 1 hour
+        if (!(squad && setSession('squad', h, CONFIG.squadMinHours))) {
+          if (squad) note = `The whole room needs both consoles free for ${CONFIG.squadMinHours} hours from ${clock(h)}. Booked ${names[c]} for 1 hour instead.`;
+          setSession(c, h, 1);
+        }
       }
-      const s0 = +state.start, n = +state.time;
-      availNote.textContent = msg || `${names[state.station]} ${span(s0, s0 + n)} picked (${n} hr${n > 1 ? 's' : ''}). ${n < MAX_ONLINE_HOURS ? 'Tap the next hour to add it, or finish' : 'Finish'} your request below.`;
+      if (note) availNote.textContent = note;
     };
     grid.addEventListener('click', (e) => { const b = e.target.closest('button.avail-cell'); if (b && !b.disabled) pickSlot(b.dataset.console, +b.dataset.hour); });
-    const setDate = (key) => { state.date = key; select(segs.date, key); select(availDays, key); refreshTaken(); };
+    const setDate = (key) => { if (state.date !== key) state.start = null; state.date = key; select(availDays, key); render(); };
     availDays.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setDate(b.dataset.value); });
-    // "See when it's free" on the console cards
-    $$('[data-pick]').forEach((a) => a.addEventListener('click', () => { state.station = a.dataset.pick; select(segs.station, state.station); render(); }));
-    $$('[data-pick-game]').forEach((a) => a.addEventListener('click', () => { state.game = a.dataset.pickGame; select(segs.game, state.game); render(); }));
-
+    $('#quick-row').addEventListener('click', (e) => {
+      const b = e.target.closest('.quick-slot'); if (!b) return;
+      state.date = b.dataset.date; select(availDays, state.date);
+      if (setSession(b.dataset.console, +b.dataset.hour, +b.dataset.hours)) openSheet();
+    });
+    $('#hrs-plus').addEventListener('click', () => setSession(state.station, +state.start, +state.time + 1));
+    $('#hrs-minus').addEventListener('click', () => setSession(state.station, +state.start, +state.time - 1));
+    $('#room-check').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        const s0 = state.start === null ? null : +state.start;
+        state.station = 'squad'; state.time = String(Math.max(+state.time, CONFIG.squadMinHours));
+        if (s0 !== null && !ok('squad', s0, +state.time)) { state.start = null; render(); availNote.textContent = 'Both consoles aren\'t free for that time. Pick a new slot.'; return; }
+      } else state.station = 'ps5';
+      render();
+    });
+    // "See when it's free" on the console cards, and the game cards
+    $$('[data-pick]').forEach((a) => a.addEventListener('click', () => { if (state.station !== 'squad') state.station = a.dataset.pick; render(); }));
+    $$('[data-pick-game]').forEach((a) => a.addEventListener('click', () => { state.game = a.dataset.pickGame; select(segs.game, state.game); $('#sum-extras').open = true; render(); }));
     Object.entries(segs).forEach(([key, seg]) => {
       seg.addEventListener('click', (e) => {
         const b = e.target.closest('button');
         if (!b || b.disabled) return;
-        if (key === 'date') { setDate(b.dataset.value); return; }
         state[key] = b.dataset.value; select(seg, b.dataset.value); render();
       });
     });
 
-    // Live availability from the booking database (loaded on demand; the form works without it)
+    // Phones: checkout is a bottom sheet; a bar with the pick and price follows you while the booking section is on screen
+    const sheet = $('#checkout'), scrim = $('#sheet-scrim'), bar = $('#book-bar'), phone = matchMedia('(max-width: 959px)');
+    let bookInView = false;
+    const paintBar = () => { bar.hidden = !(phone.matches && bookInView && state.start !== null && !sheet.classList.contains('is-open')); };
+    function openSheet() {
+      if (!phone.matches) { (nameInput.value ? sendBtn : nameInput).focus({ preventScroll: true }); return; }
+      sheet.classList.add('is-open'); scrim.hidden = false; root.classList.add('sheet-open');
+      sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
+      paintBar(); if (!nameInput.value) setTimeout(() => nameInput.focus(), 350);
+    }
+    const closeSheet = () => {
+      sheet.classList.remove('is-open'); scrim.hidden = true; root.classList.remove('sheet-open');
+      sheet.removeAttribute('role'); sheet.removeAttribute('aria-modal'); paintBar();
+    };
+    $('#bar-go').addEventListener('click', openSheet);
+    $('#sheet-close').addEventListener('click', closeSheet);
+    scrim.addEventListener('click', closeSheet);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet(); });
+    phone.addEventListener('change', () => { if (!phone.matches) closeSheet(); paintBar(); });
+    if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { bookInView = e.isIntersecting; paintBar(); }, { rootMargin: '0px 0px -25% 0px' }).observe($('#book'));
+
+    // Live availability for the whole week in one read (loaded on demand; the form works without it)
     let dbFailed = false;
     const refreshTaken = (quiet) => {
       if (!window.MGDB) { if (dbFailed) state.live = false; render(); return; }
-      const date = state.date;
-      if (!quiet) Object.assign(state, { taken: new Set(), live: null });
+      if (!quiet) state.live = null;
       render();
-      window.MGDB.takenFor(date).then((taken) => { if (state.date === date) { Object.assign(state, { taken, live: true }); render(); } })
-        .catch(() => { if (state.date === date) { state.live = false; render(); } });
+      const read = window.MGDB.takenRange ? window.MGDB.takenRange(days[0].key, days[days.length - 1].key)
+        : window.MGDB.takenFor(state.date).then((t) => new Map([[state.date, t]]));
+      read.then((week) => { Object.assign(state, { week, live: true }); render(); })
+        .catch(() => { state.live = false; render(); });
     };
     window.addEventListener('mgdb-ready', () => refreshTaken());
     import('/assets/js/booking-db.js').catch(() => { dbFailed = true; refreshTaken(); });   // offline or blocked: WhatsApp-only requests
@@ -462,6 +549,7 @@
       const name = nameInput.value.trim();
       if (!name) { nameInput.focus(); nameInput.setAttribute('aria-invalid', 'true'); return; }
       nameInput.removeAttribute('aria-invalid');
+      try { localStorage.setItem('mg-name', name); } catch (e) {}
       const st = state, s0 = +st.start, d = st.day.date, p = +st.players, hrs = `${st.hours} hr${st.hours > 1 ? 's' : ''}`;
       const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
       const who = st.squad ? `Squad room (whole room) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
@@ -490,7 +578,7 @@
       if (!window.MGDB) { window.open(url, '_blank', 'noopener'); return; }
       // Open the tab now (browsers block pop-ups opened after a wait), then fill it once the slot is reserved
       const tab = window.open('', '_blank');
-      sendBtn.disabled = true; statusEl.textContent = 'Reserving your slot…';
+      sendBtn.disabled = true; statusEl.textContent = 'Holding your slot…';
       const res = await window.MGDB.reserve({
         id, name, date: st.date, start: s0, hours: st.hours, station: st.station, players: p, plan: st.plan,
         game: st.game === 'any' ? '' : st.game, food: st.foodPrice ? CONFIG.food[st.food].name : '', total: st.total
@@ -498,11 +586,12 @@
       sendBtn.disabled = false;
       if (res.reason === 'taken') {
         if (tab) tab.close();
-        state.taken = res.taken; render();
+        state.week.set(st.date, res.taken); render();
         statusEl.textContent = 'Someone just booked that time. Pick another slot.';
         return;
       }
-      statusEl.textContent = res.ok ? `Slot held for you (${id}). We'll confirm on WhatsApp.` : '';
+      statusEl.textContent = res.ok ? `Held for you for 3 hours (${id}). Confirm on WhatsApp to lock it in.` : '';
+      if (res.ok) refreshTaken(true);
       if (tab) tab.location.href = url; else window.location.href = url;
     });
 
@@ -510,5 +599,6 @@
     const placeAll = () => { $$('.seg', builder).forEach(placeInd); placeInd(availDays); };
     window.addEventListener('resize', placeAll);
     document.fonts && document.fonts.ready.then(placeAll);
+    $$('.sum-extras').forEach((d) => d.addEventListener('toggle', placeAll));
   }
 })();
