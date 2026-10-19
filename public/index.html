@@ -273,108 +273,117 @@
       </div>
     </section>
 
-    <!-- 03 BOOK: a short funnel. Tap a live slot, add your name, hold it. Everything urgent here comes from the database or the clock. -->
+    <!-- 03 BOOK: three short steps, like booking a flight. 1 pick a live slot, 2 choose your fare (the 6-hr pass is the upgrade),
+         3 confirm and hold. Every "only N left" comes from the booking database or the clock. -->
     <section class="section" id="book">
       <div class="wrap">
         <header class="sec-head" data-reveal>
           <p class="eyebrow"><span class="num">03</span> Book</p>
-          <h2 class="h2">Grab your slot. <span class="dim">Live, and gone once it's booked.</span></h2>
+          <h2 class="h2">Book in 3 taps. <span class="dim">Live slots, held for you instantly.</span></h2>
         </header>
 
-        <div class="builder" data-reveal>
+        <ol class="steps-bar" id="steps-bar" aria-label="Booking steps">
+          <li><button type="button" data-go="1" aria-current="step"><span>1</span>Slot</button></li>
+          <li><button type="button" data-go="2" disabled><span>2</span>Fare</button></li>
+          <li><button type="button" data-go="3" disabled><span>3</span>Confirm</button></li>
+        </ol>
+
+        <div class="builder" id="availability">
           <div class="funnel">
-            <div class="avail card" id="availability">
-              <!-- Live status: hours left and the next free slot, from the booking database -->
+            <!-- Step 1: search card + live results -->
+            <div class="step-panel" data-step="1">
+              <div class="search card">
+                <div class="search-row">
+                  <p class="field-label">Players</p>
+                  <div class="seg seg-players" data-key="players">
+                    <button type="button" data-value="1" aria-pressed="true"><b>Solo</b><small>₹199/hr</small></button>
+                    <button type="button" data-value="2" aria-pressed="false"><b>Duo</b><small>₹320/hr</small></button>
+                    <button type="button" data-value="3" aria-pressed="false"><b>3</b><small>₹420/hr</small></button>
+                    <button type="button" data-value="4" aria-pressed="false"><b>4</b><small>₹499/hr</small></button>
+                    <span class="seg-ind" aria-hidden="true"></span>
+                  </div>
+                </div>
+                <div class="search-row">
+                  <p class="field-label">Date</p>
+                  <div class="seg seg-scroll seg-days" id="avail-days">
+                    <!-- Next 7 days with real "hours left" from the database, filled by main.js -->
+                    <span class="seg-ind" aria-hidden="true"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="filters" aria-label="Filters">
+                <div class="seg seg-chips" data-key="time" aria-label="How long">
+                  <button type="button" data-value="1" aria-pressed="true">1 hr</button>
+                  <button type="button" data-value="2" aria-pressed="false">2 hrs</button>
+                  <button type="button" data-value="3" aria-pressed="false">3 hrs</button>
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+                <div class="seg seg-chips" data-key="con" aria-label="Console">
+                  <button type="button" data-value="any" aria-pressed="true">Any</button>
+                  <button type="button" data-value="ps5" aria-pressed="false">PS5</button>
+                  <button type="button" data-value="xbox" aria-pressed="false">Xbox</button>
+                  <button type="button" data-value="room" aria-pressed="false" hidden>Whole room</button>
+                  <span class="seg-ind" aria-hidden="true"></span>
+                </div>
+              </div>
+
               <p class="live-strip" id="live-strip"><span class="live-dot" aria-hidden="true"></span><span id="avail-note">Loading live slots… or ask us on WhatsApp.</span></p>
+              <div class="results" id="results" aria-live="polite"></div>
+            </div>
 
-              <div class="quick-slots" id="quick-slots" hidden>
-                <p class="field-label">Next free</p>
-                <div class="quick-row" id="quick-row"></div>
-              </div>
-
-              <div class="funnel-step">
-                <p class="field-label">Who's playing</p>
-                <div class="seg seg-players" data-key="players">
-                  <button type="button" data-value="1" aria-pressed="true"><b>Solo</b><small>₹199/hr</small></button>
-                  <button type="button" data-value="2" aria-pressed="false"><b>Duo</b><small>₹320/hr</small></button>
-                  <button type="button" data-value="3" aria-pressed="false"><b>3</b><small>₹420/hr</small></button>
-                  <button type="button" data-value="4" aria-pressed="false"><b>4</b><small>₹499/hr</small></button>
-                  <span class="seg-ind" aria-hidden="true"></span>
+            <!-- Step 2: the chosen slot, fares (the pass is the upgrade) and add-ons -->
+            <div class="step-panel" data-step="2" hidden>
+              <div class="trip card" id="trip"></div>
+              <p class="field-label step-label">Choose your fare</p>
+              <div class="fares" id="fares" role="radiogroup" aria-label="Fare"></div>
+              <details class="sum-extras" id="sum-pass">
+                <summary>Already have a pass?</summary>
+                <div class="extras-body">
+                  <div class="seg seg-wrap" data-key="plan">
+                    <button type="button" data-value="use-pass" aria-pressed="false">Use my pass</button>
+                    <button type="button" data-value="member" aria-pressed="false">Pass used up</button>
+                    <span class="seg-ind" aria-hidden="true"></span>
+                  </div>
+                  <p class="step-hint" id="plan-hint"></p>
                 </div>
-                <label class="room-toggle" id="room-toggle" hidden><input type="checkbox" id="room-check"> <span>Take the whole room (PS5 &amp; Xbox, from 2 hrs) <b id="room-price"></b></span></label>
+              </details>
+              <p class="field-label step-label">Food to your seat <span class="field-note">10% off with your booking</span></p>
+              <div class="seg seg-wrap" data-key="food">
+                <button type="button" data-value="none" aria-pressed="true">No food</button>
+                <button type="button" data-value="paneer-sub" aria-pressed="false">Paneer Sub ₹129</button>
+                <button type="button" data-value="paneer-pizza" aria-pressed="false">Paneer Pizza ₹249</button>
+                <button type="button" data-value="sub-combo" aria-pressed="false">Sub combo ₹300</button>
+                <span class="seg-ind" aria-hidden="true"></span>
               </div>
+            </div>
 
-              <div class="funnel-step">
-                <p class="field-label">When</p>
-                <div class="seg seg-scroll seg-days" id="avail-days">
-                  <!-- Next 7 days with real "hours left" from the database, filled by main.js -->
-                  <span class="seg-ind" aria-hidden="true"></span>
+            <!-- Step 3: the ticket, your name, hold -->
+            <div class="step-panel" data-step="3" hidden>
+              <div class="ticket" id="ticket"></div>
+              <div class="sum-name">
+                <label class="field-label" for="book-name">Your name</label>
+                <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40">
+              </div>
+              <details class="sum-extras" id="sum-game">
+                <summary>Playing something? <span class="dim" id="game-pick">Optional</span></summary>
+                <div class="extras-body">
+                  <div class="seg seg-wrap" data-key="game">
+                    <button type="button" data-value="any" aria-pressed="true">Any</button>
+                    <!-- Installed games, from the game cards (main.js) -->
+                    <span class="seg-ind" aria-hidden="true"></span>
+                  </div>
                 </div>
-              </div>
-
-              <div class="avail-grid" id="avail-grid"></div>
-              <p class="avail-legend" aria-hidden="true"><span class="key key-open"></span>Open <span class="key key-picked"></span>Your pick <span class="key key-booked"></span>Booked</p>
+              </details>
+              <p class="book-status" id="book-status" role="status"></p>
+              <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. Pay the advance by UPI to lock it in.</p>
             </div>
           </div>
 
-          <!-- Checkout: beside the board on desktop, a bottom sheet on phones -->
-          <div class="sheet-scrim" id="sheet-scrim" hidden></div>
-          <aside class="summary card checkout" id="checkout" aria-live="polite" aria-labelledby="sum-title">
-            <button class="icon-btn sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
-            <div class="sum-head">
-              <p class="summary-title" id="sum-title">Pick a slot</p>
-              <p class="summary-when" id="sum-when">Tap an open hour on the board</p>
-              <p class="sum-soon" id="sum-soon" hidden></p>
-            </div>
-            <div class="sum-hours" id="sum-hours" hidden>
-              <span class="field-label">Hours</span>
-              <div class="stepper">
-                <button class="icon-btn press" type="button" id="hrs-minus" aria-label="One hour less">−</button>
-                <output id="hrs-out">1</output>
-                <button class="icon-btn press" type="button" id="hrs-plus" aria-label="One hour more">+</button>
-              </div>
-              <span class="sum-hint" id="sel-hint"></span>
-            </div>
-
-            <div class="sum-name">
-              <label class="field-label" for="book-name">Your name</label>
-              <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40">
-            </div>
-
-            <details class="sum-extras" id="sum-extras">
-              <summary>Add a game or food <span class="dim">· 10% off food</span></summary>
-              <div class="extras-body">
-                <p class="field-label">Game</p>
-                <div class="seg seg-wrap" data-key="game">
-                  <button type="button" data-value="any" aria-pressed="true">Any</button>
-                  <!-- Installed games, from the game cards (main.js) -->
-                  <span class="seg-ind" aria-hidden="true"></span>
-                </div>
-                <p class="field-label">Food <span class="field-note">10% off with your booking</span></p>
-                <div class="seg seg-wrap" data-key="food">
-                  <button type="button" data-value="none" aria-pressed="true">No food</button>
-                  <button type="button" data-value="paneer-sub" aria-pressed="false">Paneer Sub ₹129</button>
-                  <button type="button" data-value="paneer-pizza" aria-pressed="false">Paneer Pizza ₹249</button>
-                  <button type="button" data-value="sub-combo" aria-pressed="false">Sub combo ₹300</button>
-                  <span class="seg-ind" aria-hidden="true"></span>
-                </div>
-              </div>
-            </details>
-
-            <details class="sum-extras" id="sum-pass">
-              <summary>Paying with a pass? <span class="dim">· 6 hrs from ₹899</span></summary>
-              <div class="extras-body">
-                <div class="seg seg-wrap" data-key="plan">
-                  <button type="button" data-value="hourly" aria-pressed="true">Hourly rate</button>
-                  <button type="button" data-value="buy-pass" aria-pressed="false">Buy a 6-hr pass</button>
-                  <button type="button" data-value="use-pass" aria-pressed="false">Use my pass</button>
-                  <button type="button" data-value="member" aria-pressed="false">Pass used up</button>
-                  <span class="seg-ind" aria-hidden="true"></span>
-                </div>
-                <p class="step-hint" id="plan-hint"></p>
-              </div>
-            </details>
-
+          <!-- Laptop: fare summary beside the steps -->
+          <aside class="summary card checkout" id="checkout" aria-live="polite">
+            <p class="summary-title">Fare summary</p>
+            <p class="summary-when" id="sum-when">Pick a slot</p>
             <dl class="summary-lines">
               <div><dt id="sum-gaming-label">Gaming</dt><dd id="sum-gaming">₹0</dd></div>
               <div id="sum-food-row" hidden><dt>Food</dt><dd id="sum-food">₹0</dd></div>
@@ -384,19 +393,15 @@
               <span>Total</span>
               <span class="total"><span class="roll" id="sum-total" data-prefix="₹"></span></span>
             </div>
-            <button class="btn btn-accent btn-block press" id="send-booking" type="button" disabled>
-              <svg class="i"><use href="#i-wa"/></svg> Hold my slot
-            </button>
-            <p class="book-status" id="book-status" role="status"></p>
-            <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. Pay the advance by UPI to lock it in.</p>
+            <button class="btn btn-accent btn-block press" id="side-go" type="button" disabled>Continue</button>
           </aside>
         </div>
       </div>
 
-      <!-- Phones: a bar that follows you once you've picked a slot -->
+      <!-- Phones: price and the next step, pinned to the bottom (replaces the tab bar during checkout) -->
       <div class="book-bar" id="book-bar" hidden>
-        <div class="book-bar-text"><b id="bar-what"></b><span id="bar-when"></span></div>
-        <button class="btn btn-accent press" id="bar-go" type="button">Hold · <span id="bar-price"></span></button>
+        <div class="book-bar-text"><b id="bar-price"></b><span id="bar-what"></span></div>
+        <button class="btn btn-accent press" id="bar-go" type="button">Continue</button>
       </div>
     </section>
 
