@@ -21,3 +21,6 @@ yarn-error.log*
 *firebase-adminsdk*.json
 serviceAccount*.json
 __pycache__/
+
+# Claude Code build worktrees
+.claude/

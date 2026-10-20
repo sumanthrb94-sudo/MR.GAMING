@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en-IN"><head><meta charset="utf-8"><title>MR. GAMING · Flyer (A5)</title>
+<!-- Printable A5 flyer. Every price and claim is the same as the website; change them in both places. Render: node scripts/make-gaming-flyer.mjs -->
+<style>
+@font-face { font-family: "Archivo"; src: url("../public/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; }
+@font-face { font-family: "JB Mono"; src: url("../public/assets/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 400 700; }
+@page { size: 148mm 210mm; margin: 0; }
+:root { --bg: #0B0B0A; --surface: #151514; --surface-2: #1E1E1C; --line: rgba(255,255,255,.13); --text: #F3F2EC; --muted: #A3A299; --lime: #C8F135; --ink: #0B0B0A; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 148mm; height: 210mm; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: "Archivo", sans-serif; font-size: 8pt; line-height: 1.32; padding: 6mm 7mm 5.5mm; display: grid; grid-template-rows: auto auto auto auto auto 1fr; gap: 2.4mm; }
+.mono { font-family: "JB Mono", monospace; letter-spacing: .14em; text-transform: uppercase; }
+/* top */
+.top { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 3mm; }
+.brand img { width: 11mm; height: 11mm; border-radius: 2.4mm; }
+.brand b { display: block; font-weight: 900; font-stretch: 125%; font-size: 15.5pt; letter-spacing: -.02em; line-height: 1; }
+.brand span { display: block; margin-top: 1.2mm; font-size: 6.6pt; font-weight: 500; color: var(--muted); }
+.hours { text-align: right; font-size: 6.4pt; font-weight: 500; color: var(--muted); line-height: 1.6; }
+.hours b { display: block; color: var(--lime); font-weight: 700; font-size: 8pt; letter-spacing: .1em; }
+/* hero */
+.hero { display: grid; grid-template-columns: 1fr 46mm; gap: 4mm; align-items: end; }
+h1 { font-weight: 900; font-stretch: 125%; font-size: 20.5pt; line-height: .9; letter-spacing: -.035em; text-transform: uppercase; }
+h1 em { font-style: normal; color: var(--lime); }
+.lede { margin-top: 2mm; color: var(--muted); font-size: 7.8pt; line-height: 1.38; max-width: 70mm; }
+.lede b { color: var(--text); font-weight: 700; }
+.art { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6mm; }
+.art img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 2mm; border: 1px solid var(--line); }
+.art img:nth-child(even) { transform: translateY(2mm); }
+/* sections */
+.sec { font-size: 6.2pt; font-weight: 600; color: var(--lime); display: flex; align-items: center; gap: 2.4mm; margin-bottom: 1.2mm; }
+.sec::after { content: ""; flex: 1; border-top: 1px dashed var(--line); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 0 3mm; align-items: baseline; padding: .85mm 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row .n { font-weight: 800; font-size: 9pt; letter-spacing: -.01em; }
+.row .d { grid-column: 1; color: var(--muted); font-size: 6.6pt; }
+.row .p { grid-row: 1 / span 2; grid-column: 2; font-weight: 900; font-stretch: 120%; font-size: 13pt; letter-spacing: -.03em; line-height: 1; text-align: right; }
+.row .p small { font-size: 6.8pt; font-weight: 600; font-stretch: 100%; color: var(--muted); letter-spacing: 0; }
+/* passes */
+.passes { display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 2.6mm; }
+.pass { border-radius: 3mm; padding: 2.2mm 3mm; background: var(--surface); border: 1px solid var(--line); }
+.pass.hot { background: var(--lime); color: var(--ink); border-color: var(--lime); }
+.pass .k { font-size: 6.2pt; font-weight: 600; opacity: .75; }
+.pass .pp { font-weight: 900; font-stretch: 125%; font-size: 16.5pt; letter-spacing: -.04em; line-height: 1; margin: 1.2mm 0 1mm; white-space: nowrap; }
+.pass .pp small { font-size: 6.4pt; font-weight: 700; font-stretch: 100%; letter-spacing: 0; opacity: .7; }
+.pass p { font-size: 6.8pt; line-height: 1.32; }
+.pass .save { margin-top: 1.2mm; display: inline-block; font-weight: 800; font-size: 6.4pt; padding: .6mm 2.2mm; border-radius: 99px; background: var(--ink); color: var(--lime); }
+.pass:not(.hot) .save { background: var(--lime); color: var(--ink); }
+.member { display: flex; flex-direction: column; justify-content: center; gap: 1mm; border-style: dashed; border-color: var(--lime); }
+.member b { font-weight: 900; font-stretch: 120%; font-size: 10.5pt; letter-spacing: -.02em; color: var(--lime); line-height: 1.1; }
+.member p { color: var(--muted); }
+/* games + perks */
+.chips { display: flex; flex-wrap: wrap; gap: 1.1mm; }
+.chips span { border: 1px solid var(--line); border-radius: 99px; padding: .5mm 1.9mm; font-size: 6.6pt; font-weight: 700; white-space: nowrap; }
+.chips span.hi { border-color: var(--lime); color: var(--lime); }
+.perks { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; }
+.perk { display: flex; align-items: center; gap: 2.6mm; border-radius: 3mm; padding: 2.2mm 3mm; background: var(--surface); border: 1px solid var(--line); }
+.perk b { flex: none; font-weight: 900; font-stretch: 125%; font-size: 15pt; color: var(--lime); letter-spacing: -.03em; line-height: 1; }
+.perk b small { display: block; font-size: 6.2pt; font-weight: 600; font-stretch: 100%; letter-spacing: .04em; color: var(--muted); margin-top: .8mm; }
+.perk p { font-size: 6.9pt; line-height: 1.32; }
+.perk p strong { font-weight: 800; }
+/* footer */
+.foot { align-self: end; padding-top: 2.4mm; border-top: 2px solid var(--lime); display: grid; grid-template-columns: 21mm 1fr auto; gap: 4mm; align-items: center; }
+.qr { width: 21mm; height: 21mm; padding: 1.4mm; background: #fff; border-radius: 2.4mm; }
+.qr img { width: 100%; height: 100%; display: block; }
+.cta small { display: block; font-size: 6.4pt; font-weight: 600; color: var(--lime); margin-bottom: 1mm; }
+.cta b { display: block; font-weight: 900; font-stretch: 120%; font-size: 13pt; letter-spacing: -.02em; line-height: 1.05; }
+.cta p { margin-top: 1.2mm; font-size: 6.6pt; color: var(--muted); }
+.cta p span { color: var(--text); font-weight: 700; }
+.addr { text-align: right; font-size: 6.4pt; color: var(--muted); line-height: 1.45; display: flex; flex-direction: column; align-items: flex-end; gap: 1.4mm; }
+.addr img { width: 9.5mm; height: 9.5mm; border-radius: 50%; }
+.addr b { color: var(--text); font-weight: 700; }
+</style></head><body>
+
+<div class="top">
+  <div class="brand"><img src="../brand/mr-gaming-logo.png" alt=""><div><b>MR. GAMING</b><span>Private PS5 &amp; Xbox room · inside MR. Sandwich, Gachibowli</span></div></div>
+  <div class="hours"><span class="mono">Open every day</span><b class="mono">11 am – 11 pm</b></div>
+</div>
+
+<div class="hero">
+  <div>
+    <h1>Private room.<br>PS5 &amp; Xbox.<br><em>Game on.</em></h1>
+    <p class="lede">Your own gaming room with beanbag seating, <b>PlayStation Plus</b> on the PS5, and food from MR. Sandwich served to your seat.</p>
+  </div>
+  <div class="art">
+    <img src="../public/assets/images/games/fc27-360.webp" alt=""><img src="../public/assets/images/games/callofduty-360.webp" alt=""><img src="../public/assets/images/games/gta-360.webp" alt=""><img src="../public/assets/images/games/tekken-360.webp" alt="">
+  </div>
+</div>
+
+<div>
+  <div class="cols">
+    <div>
+      <p class="sec mono">One console · per hour</p>
+      <div class="row"><span class="n">Solo</span><span class="d">1 player on PS5 or Xbox</span><span class="p">₹199<small>/hr</small></span></div>
+      <div class="row"><span class="n">Duo</span><span class="d">2 players on one console · ₹160 each</span><span class="p">₹320<small>/hr</small></span></div>
+      <div class="row"><span class="n">3 players</span><span class="d">On one console, couch-play games</span><span class="p">₹420<small>/hr</small></span></div>
+      <div class="row"><span class="n">4 players</span><span class="d">On one console, couch-play games</span><span class="p">₹499<small>/hr</small></span></div>
+    </div>
+    <div>
+      <p class="sec mono">Whole room · both consoles</p>
+      <div class="row"><span class="n">2 players</span><span class="d">One on each console</span><span class="p">₹398<small>/hr</small></span></div>
+      <div class="row"><span class="n">3 players</span><span class="d">Duo + solo</span><span class="p">₹519<small>/hr</small></span></div>
+      <div class="row"><span class="n">4 players</span><span class="d">Two duos · minimum 2 hours</span><span class="p">₹640<small>/hr</small></span></div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="sec mono">6-hour passes · use within 30 days</p>
+  <div class="passes">
+    <div class="pass"><p class="k mono">Solo pass</p><p class="pp">₹899<small> / 6 hrs</small></p><p>₹150 an hour, one player.</p><span class="save">Save ₹295</span></div>
+    <div class="pass hot"><p class="k mono">Duo pass</p><p class="pp">₹1,499<small> / 6 hrs</small></p><p>₹250 an hour for two on one console.</p><span class="save">Save ₹421</span></div>
+    <div class="pass member"><b>Member rate after your pass</b><p>Used all 6 hours? Until your 30 days end, play at <b style="font-size:inherit;color:var(--text)">₹169/hr solo</b> · <b style="font-size:inherit;color:var(--text)">₹279/hr duo</b>.</p></div>
+  </div>
+</div>
+
+<div>
+  <p class="sec mono">On the consoles</p>
+  <div class="chips">
+    <span>FC 27</span><span>Call of Duty</span><span>GTA V</span><span>God of War</span><span>Tekken</span><span>Rocket League</span><span>WWE 2K</span><span>AO Tennis</span><span>Spider-Man</span><span>Forza</span><span>Fortnite</span><span>Minecraft</span><span class="hi">GTA VI pre-ordered</span><span class="hi">More on PlayStation Plus</span>
+  </div>
+  <div class="perks" style="margin-top:2.2mm">
+    <div class="perk"><b>10%<small>OFF FOOD</small></b><p><strong>Book any console</strong> and get 10% off all MR. Sandwich food &amp; drinks, served to your seat. 100% pure veg.</p></div>
+    <div class="perk"><b>₹600<small>PER CHILD</small></b><p><strong>Birthday package:</strong> 3 hours of games, food included. Minimum 10 guests; adults ₹299 each. ₹3,000 advance to book.</p></div>
+  </div>
+</div>
+
+<div class="foot">
+  <div class="qr"><img src="qr-site.svg" alt="QR code to mr-gaming-rho.vercel.app"></div>
+  <div class="cta"><small class="mono">Scan for live slots · book in 3 steps</small><b>WhatsApp or call<br>+91 73372 30311</b><p>Slots are held for you the moment you book<br><span>mr-gaming-rho.vercel.app</span></p></div>
+  <div class="addr"><img src="../brand/mr-sandwich-logo.png" alt=""><div><b>Inside MR. Sandwich</b><br>110, My Home Vihanga Rd<br>Gachibowli, Hyderabad 500032</div></div>
+</div>
+
+</body></html>
