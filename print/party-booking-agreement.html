@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<title>Party Booking Agreement · MR. Sandwich</title>
+<!-- Party agreement, filled from the owner's signed note (31 Oct 2026, 15 kids + 5 adults, ₹12,000). Blank lines are filled by hand.
+     Holds no client name or phone: keep it that way in git. Render: node scripts/make-agreement.mjs → print/party-booking-agreement.pdf (A4) -->
+<style>
+@font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair.woff2") format("woff2"); font-weight: 400 900; }
+@font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair-italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; }
+@font-face { font-family: "Archivo"; src: url("../public/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; }
+/* the meal-plan flyer's palette on white paper; yellow is the one accent. Archivo has no ₹, so Inter draws it */
+:root { --paper: #FFFFFF; --paper-2: #F7F5EC; --ink: #231F1F; --ink-2: #57524C; --rule: #4A4744; --line: rgba(35,31,31,.18); --yellow: #FAC607; --band: #0B0B0A;
+        --serif: "Playfair", Georgia, serif; --sans: "Archivo", "Inter", sans-serif; }
+@page { size: A4; margin: 14mm 15mm 18mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); }
+body { color: var(--ink); font: 400 10pt/1.5 var(--sans); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+b, strong { font-weight: 700; }
+
+.mast { display: flex; align-items: center; gap: 16px; background: var(--band); color: #fff; padding: 12px 18px; border-radius: 4px; }
+.mast img { width: 78px; height: 78px; flex: none; border-radius: 50%; }
+.kicker { font: 700 7.5pt var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--yellow); }
+.mast h1 { font: 800 23pt/1.05 var(--serif); margin: 3px 0 4px; }
+.mast-meta { font-size: 8.5pt; color: #cfcbc2; letter-spacing: .03em; }
+.rule-double { height: 6px; border-top: 2.5px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: 8px; }
+.lede { margin: 9px 0 4px; text-align: center; font: italic 500 10pt/1.45 var(--serif); color: var(--ink-2); }
+
+section { margin-top: 13px; }
+h2 { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px; font: 800 12pt/1 var(--serif); margin-bottom: 7px; break-after: avoid; }
+h2 .n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 7px; background: var(--yellow); border: 1.5px solid var(--ink); font: 800 9pt var(--sans); vertical-align: 1px; }
+h2::after { content: ""; height: 5px; border-top: 2px solid var(--rule); border-bottom: 1px solid var(--rule); }
+p + p, p + ul, ul + p, table + p, p + table { margin-top: 6px; }
+
+/* fill-in lines and the grey hints beside them */
+.blank { display: inline-block; min-width: 130px; height: 1.15em; border-bottom: 1px solid var(--ink); vertical-align: -2px; }
+.blank.s { min-width: 34px; } .blank.m { min-width: 80px; } .blank.l { min-width: 230px; } .blank.xl { min-width: 300px; }
+.hint { font-size: 8pt; color: var(--ink-2); }
+/* filled in from the owner's note */
+.fill { padding: 0 3px; border-bottom: 1px solid var(--ink); font-weight: 700; }
+
+table { width: 100%; border-collapse: collapse; }
+tr, li { break-inside: avoid; }
+.kv td { padding: 6px 0; border-bottom: 1px dashed var(--line); vertical-align: bottom; }
+.kv td:first-child { width: 30%; font-weight: 600; }
+.grid th, .grid td { padding: 6px 9px; text-align: left; border-bottom: 1px solid var(--line); }
+.grid thead th { background: var(--ink); color: var(--paper); font: 700 7.5pt var(--sans); letter-spacing: .1em; text-transform: uppercase; }
+.grid tbody th { width: 18%; font-weight: 700; }
+.grid tbody tr:nth-child(even) > * { background: var(--paper-2); }
+.money td:last-child, .money th:last-child { width: 26%; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.money td:last-child { font-weight: 700; }
+.money tr.total td { background: var(--yellow); font-size: 11pt; font-weight: 800; }
+
+ul.terms { list-style: none; }
+ul.terms > li { position: relative; padding: 4px 0 4px 15px; border-bottom: 1px dashed var(--line); }
+ul.terms > li:last-child { border-bottom: 0; }
+ul.terms > li::before { content: ""; position: absolute; left: 0; top: 10.5px; width: 6px; height: 6px; background: var(--ink); }
+ul.terms ul { list-style: none; margin-top: 3px; }
+ul.terms ul li { position: relative; padding: 2px 0 2px 14px; }
+ul.terms ul li::before { content: "–"; position: absolute; left: 2px; color: var(--ink-2); }
+
+.sign { margin-top: 8px; break-inside: avoid; }
+.sign th { text-align: left; font: 700 7.5pt var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); padding-bottom: 2px; }
+.sign td { padding: 20px 14px 3px 0; vertical-align: bottom; }
+.sign td.label { font-weight: 600; }
+.line { height: 18px; border-bottom: 1px solid var(--ink); }
+
+footer { margin-top: 18px; text-align: center; break-inside: avoid; }
+.quote { padding: 8px 0 3px; font: italic 700 11pt var(--serif); }
+.addr { font-size: 8pt; color: var(--ink-2); }
+</style>
+</head>
+<body>
+  <header class="mast">
+    <img src="../public/assets/images/mr-sandwich-320.png" alt="Mr. Sandwich">
+    <div>
+      <p class="kicker">MR. Sandwich · 100% Pure Veg · Gachibowli</p>
+      <h1>Party Booking Agreement</h1>
+      <p class="mast-meta">110, My Home Vihanga Rd, Gachibowli, Hyderabad 500032 · +91 73372 30311</p>
+    </div>
+  </header>
+  <div class="rule-double"></div>
+  <p class="lede">This agreement is between the service provider and the client named below, for the party described here.<br>Fill in every blank before both sides sign.</p>
+
+  <section>
+    <h2><span><span class="n">1</span>Parties and event</span></h2>
+    <table class="kv">
+      <tr><td>Service provider</td><td><b>MR. Sandwich</b></td></tr>
+      <tr><td>Address</td><td>110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana 500032</td></tr>
+      <tr><td>Contact person and phone</td><td><span class="blank xl"></span></td></tr>
+      <tr><td>Client</td><td><span class="blank l"></span> <span class="hint">(full name)</span></td></tr>
+      <tr><td>Client phone</td><td><span class="blank l"></span></td></tr>
+      <tr><td>Occasion</td><td><span class="fill">Birthday party</span></td></tr>
+      <tr><td>Date</td><td><span class="fill">Saturday, 31 / 10 / 2026</span></td></tr>
+      <tr><td>Time</td><td>From <span class="fill">5 pm</span> to <span class="fill">8 pm</span></td></tr>
+      <tr><td>Venue</td><td><span class="fill">MR. Sandwich, Gachibowli (address above)</span></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span><span class="n">2</span>Guests and menu</span></h2>
+    <p>The booking is for <b>20 guests: 15 children and 5 adults</b>.</p>
+    <table class="grid">
+      <thead><tr><th></th><th>Children (15)</th><th>Adults (5)</th></tr></thead>
+      <tbody>
+        <tr><th>Pizza</th><td>Margherita — 2 slices each (30 slices)</td><td>Paneer — <span class="blank s"></span> slices each</td></tr>
+        <tr><th>Pasta</th><td>White sauce pasta — one serving each</td><td>White sauce pasta — one serving each</td></tr>
+        <tr><th>Snacks</th><td>2 items each</td><td>2 items each</td></tr>
+        <tr><th>Drink</th><td>One each</td><td>One each</td></tr>
+        <tr><th>Water</th><td colspan="2">Small water bottles</td></tr>
+      </tbody>
+    </table>
+    <p>Snack items: <span class="fill">Chilli potato garlic shots</span>, <span class="fill">Cheese corn nuggets</span>. &nbsp;Drink: <span class="fill">Boba mint mojito</span>.</p>
+    <p>The client will tell the service provider about any food allergies or dietary needs in writing, at least <span class="fill">2</span> days before the event.</p>
+  </section>
+
+  <section>
+    <h2><span><span class="n">3</span>Price and payment</span></h2>
+    <table class="grid money">
+      <thead><tr><th></th><th>Amount</th></tr></thead>
+      <tbody>
+        <tr class="total"><td>Total package price</td><td>₹12,000</td></tr>
+        <tr><td>Advance paid on <span class="blank s"></span> / <span class="blank s"></span> / 2026</td><td>₹4,000</td></tr>
+        <tr><td><b>Balance due</b></td><td>₹8,000</td></tr>
+      </tbody>
+    </table>
+    <ul class="terms" style="margin-top:6px">
+      <li>The advance of ₹4,000 has been received and confirms the booking for the date and time above.</li>
+      <li>The balance of ₹8,000 is payable <span class="fill">on the day of the party, at the venue</span>.</li>
+      <li>Payment by UPI, cash or card. Receipts will be given for every payment.</li>
+      <li>The total covers the menu in section 2 for 20 guests <span class="fill">plus small water bottles and birthday decoration</span>. Anything ordered beyond this is charged separately at the menu price.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span><span class="n">4</span>Changes, cancellation and responsibilities</span></h2>
+    <ul class="terms">
+      <li><b>Guest count.</b> The client will confirm the final number of guests at least <span class="fill">2</span> days before the event. Extra guests are charged at <span class="fill">₹675</span> per child and <span class="fill">₹400</span> per adult. Fewer guests on the day do not reduce the total price.</li>
+      <li><b>Cancellation by the client.</b>
+        <ul>
+          <li>Cancelled <span class="blank s"></span> days or more before the event: <span class="blank l"></span> <span class="hint">(e.g. advance refunded, or kept as credit for another date)</span>.</li>
+          <li>Cancelled less than <span class="blank s"></span> days before the event: the advance of ₹4,000 is not refunded.</li>
+        </ul>
+      </li>
+      <li><b>Change of date.</b> Subject to availability, the date may be moved once, free of charge, if requested at least <span class="fill">3</span> days in advance. The advance carries over.</li>
+      <li><b>Cancellation by the service provider.</b> If the service provider cannot hold the event, all money paid is refunded in full.</li>
+      <li><b>Children's supervision.</b> The client and the accompanying adults are responsible for supervising the children throughout the event.</li>
+      <li><b>Damage.</b> The client is responsible for any damage to the venue, furniture or equipment caused by their guests, beyond normal use.</li>
+      <li><b>Timing.</b> The event ends at the agreed time. Extending it is subject to availability and charged at <span class="blank l"></span>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span><span class="n">5</span>Food safety and liability</span></h2>
+    <ul class="terms">
+      <li>Food is prepared and served by the service provider under its FSSAI registration / licence no. <span class="blank l"></span>.</li>
+      <li>The service provider is not responsible for reactions to allergens it was not told about in writing under section 2. Outside food, except a birthday cake brought by the client, is not allowed.</li>
+      <li>The service provider is not liable for loss of, or damage to, guests' personal belongings.</li>
+      <li>Neither party's liability under this agreement exceeds the total package price, except for injury caused by negligence.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span><span class="n">6</span>General terms</span></h2>
+    <ul class="terms">
+      <li><b>Force majeure.</b> If the event cannot be held because of events beyond either party's control (government order, natural disaster, power or civic failure), the parties will agree a new date; if none can be agreed within 30 days, all money paid is refunded.</li>
+      <li><b>Reasonable compensation.</b> Any amount kept on cancellation is a genuine pre-estimate of the service provider's loss (food purchased, slot blocked), in line with Section 74 of the Indian Contract Act, 1872.</li>
+      <li><b>Entire agreement.</b> This document is the whole agreement. Any change must be in writing (WhatsApp messages from the phone numbers above count) and agreed by both parties.</li>
+      <li><b>Governing law and disputes.</b> This agreement is governed by the laws of India. The parties will first try to settle any dispute by discussion; failing that, the courts at Hyderabad, Telangana have jurisdiction.</li>
+      <li><b>Capacity.</b> Both signatories are 18 or older and sign on their own behalf (the client also on behalf of the children attending).</li>
+    </ul>
+  </section>
+
+  <section class="sign-wrap">
+    <h2><span><span class="n">7</span>Signatures</span></h2>
+    <p>By signing, both parties agree to the terms above.</p>
+    <table class="sign">
+      <colgroup><col style="width:16%"><col style="width:42%"><col style="width:42%"></colgroup>
+      <tr><th></th><th>For the service provider</th><th>Client</th></tr>
+      <tr><td class="label">Name</td><td><div class="line"></div></td><td><div class="line"></div></td></tr>
+      <tr><td class="label">Signature</td><td><div class="line"></div></td><td><div class="line"></div></td></tr>
+      <tr><td class="label">Date</td><td><div class="line"></div></td><td><div class="line"></div></td></tr>
+      <tr><td class="label">Witness</td><td><div class="line"></div></td><td><div class="line"></div></td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <div class="rule-double"></div>
+    <p class="quote">“Today calls for something delicious”</p>
+    <p class="addr">MR. Sandwich · 110, My Home Vihanga Rd, Gachibowli, Hyderabad, Telangana 500032 · +91 73372 30311 · 100% Pure Veg</p>
+  </footer>
+</body>
+</html>
