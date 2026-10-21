@@ -32,9 +32,6 @@
   const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
   const waUrl = (text) => `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(text)}`;
 
-  /* ---------- WhatsApp links ---------- */
-  $$('[data-wa]').forEach((a) => { a.href = waUrl(a.dataset.wa); });
-
   /* ---------- homepage food list (featured items from menu-data.js) ---------- */
   const foodList = $('#food-list');
   if (foodList && window.MENU) {
@@ -45,6 +42,44 @@
       return `<li class="food-item" data-reveal><h3>${it.short || it.name}</h3><span class="price">${price}</span>${it.desc ? `<p>${it.desc}</p>` : ''}</li>`;
     }).join('');
   }
+
+  /* ---------- MR. Sandwich meal plans (MENU.mealPlans in menu-data.js) ----------
+     Per-meal price and saving are worked out from the plan price and mealValue; one meal = any Top Combo at mealValue.
+     The lowest price per meal gets the only tag. Each plan opens WhatsApp with that plan filled in. */
+  const meals = $('#meal-plans'), mp = window.MENU && window.MENU.mealPlans;
+  if (meals && mp) {
+    const { mealValue, days, plans } = mp;
+    const comboSec = window.MENU.sections.find((s) => s.id === 'combos');
+    const mealCombos = comboSec ? comboSec.groups.flatMap((g) => g.items).filter((it) => it.price === mealValue) : [];
+    const perMeal = (p) => p.price / p.meals;
+    const best = plans.reduce((a, p) => (perMeal(p) < perMeal(a) ? p : a));
+    const orList = (a) => (a.length > 1 ? `${a.slice(0, -1).join(', ')} or ${a[a.length - 1]}` : `${a[0]}`);
+    const wa = (text) => `data-wa="${text}" href="https://wa.me/${CONFIG.whatsapp}" target="_blank" rel="noopener"`;
+    meals.innerHTML = `<header class="meals-head" data-reveal>
+        <p class="meals-label">MR. Sandwich meal plans</p>
+        <h3 class="meals-title">Eat here often? <span class="dim">Get a meal plan.</span></h3>
+        <p class="meals-lede">${orList(plans.map((p) => p.meals))} meals to use within ${days} days, from ${inr(perMeal(best))} a meal instead of ${inr(mealValue)}.</p>
+      </header>
+      <ul class="meal-plans" data-stagger>${plans.map((p) => `<li data-reveal>
+        <a class="meal-plan press${p === best ? ' is-best' : ''}" ${wa(`Hi MR. Sandwich! I'd like the ${p.meals}-meal plan (${inr(p.price)}, ${days} days). My name is:`)}>
+          <span class="meal-n"><b>${p.meals}</b><small>meals</small></span>
+          <span class="meal-price">${inr(p.price)}<small>/${days} days</small></span>
+          <span class="meal-per">${inr(perMeal(p))} a meal${p.meals * mealValue > p.price ? ` · <em>save ${inr(p.meals * mealValue - p.price)}</em>` : ''}</span>
+          ${p === best ? '<span class="tag">Best value</span>' : ''}
+          <span class="meal-go"><svg class="i"><use href="#i-wa"/></svg><span>Get it on WhatsApp</span></span>
+        </a></li>`).join('')}</ul>
+      <div class="meals-foot" data-reveal>
+        ${mealCombos.length ? `<p class="meals-label">One meal = any one of these ${inr(mealValue)} Top Combos</p>
+        <ul class="meals-combos">${mealCombos.map((c) => `<li>${c.name.split(' + ').map((x, i) => `<span>${i ? '<i>+</i> ' : ''}${x}</span>`).join(' ')}</li>`).join('')}</ul>` : ''}
+        <p class="meals-terms">Valid ${days} days from the day you buy. Meals not used by then expire. To buy one, message us on WhatsApp or ask at the counter, and we add the plan to your mobile number.</p>
+        <p class="meals-links"><a class="link-arrow" href="/pass">See your meals left in My pass <svg class="i"><use href="#i-arrow"/></svg></a>
+          <span>Anything else? <a class="text-link" ${wa('Hi MR. Sandwich! I have a question about the meal plans.')}>Ask us on WhatsApp</a></span></p>
+      </div>`;
+    meals.hidden = false;
+  }
+
+  /* ---------- WhatsApp links (after the food section is filled, so the meal plans get theirs) ---------- */
+  $$('[data-wa]').forEach((a) => { a.href = waUrl(a.dataset.wa); });
 
   /* ---------- rolling digits ---------- */
   function setRoll(el, value) {

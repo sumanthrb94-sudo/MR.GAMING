@@ -65,7 +65,7 @@ img { display: block; max-width: 100%; height: auto; }
 .perk-copy { grid-column: 1; font-size: 15px; line-height: 1.35; }
 .perk-copy strong { color: var(--yellow); }
 .perk-arrow { grid-column: 2; grid-row: 1 / span 2; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); color: var(--ink); font-size: 20px; font-weight: 700; transition: transform .45s var(--ease-spring); }
-@media (hover: hover) { .perk:hover .perk-arrow { transform: translateX(4px); } }
+@media (hover: hover) { .perk:hover .perk-arrow { transform: translateX(4px); } .perk-down:hover .perk-arrow { transform: translateY(4px); } }
 
 /* ---------- sticky category bar ---------- */
 .cats { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--paper) 90%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(35,31,31,.14); }
@@ -76,11 +76,12 @@ img { display: block; max-width: 100%; height: auto; }
 }
 .search input::placeholder { color: var(--ink-2); }
 .search input:focus { outline: none; box-shadow: 0 0 0 4px rgba(250,198,7,.55); }
-.chips { position: relative; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; contain: paint; padding: 2px; margin: -2px; }
+.chips { position: relative; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; contain: paint; padding: 9.5px 5px; margin: -9.5px -5px; }   /* room for the 44px tap area and the focus ring, same layout */
 .chips::-webkit-scrollbar { display: none; }
 .chip { position: relative; z-index: 1; flex: none; padding: 8px 14px; border-radius: 999px; font: 700 13px/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; text-decoration: none; color: var(--ink-2); transition: color .3s; white-space: nowrap; }
+.chip::after { content: ""; position: absolute; inset: -7.5px 0; }   /* 29px pill, 44px tap target */
 .chip.is-active { color: var(--ink); }
-.chip-ind { position: absolute; z-index: 0; top: 2px; left: 0; height: calc(100% - 4px); border-radius: 999px; background: var(--yellow); box-shadow: inset 0 0 0 1.5px var(--ink); transition: transform .5s var(--ease-spring), width .5s var(--ease-spring); }
+.chip-ind { position: absolute; z-index: 0; top: 9.5px; left: 0; height: calc(100% - 19px); border-radius: 999px; background: var(--yellow); box-shadow: inset 0 0 0 1.5px var(--ink); transition: transform .5s var(--ease-spring), width .5s var(--ease-spring); }
 
 /* ---------- sections ---------- */
 main.paper { padding-block: 8px 24px; }
@@ -108,6 +109,39 @@ main.paper { padding-block: 8px 24px; }
 mark { background: var(--yellow); color: var(--ink); border-radius: 3px; padding: 0 2px; }
 
 .empty { text-align: center; padding: 48px 0; font: italic 600 18px var(--serif); color: var(--ink-2); }
+
+/* ---------- meal plans: price rows, then two newspaper columns ---------- */
+#meal-plans :is(.sec-note, .item-name, .item-desc, .plan-valid, .plan-lede) { font-variant-numeric: lining-nums; }   /* Playfair's old-style 1 reads as "I" */
+.plan .item-name { font: 800 22px/1.2 var(--serif); font-stretch: normal; }
+.plan .price { font-size: 19px; }
+.plan .item-desc b { color: var(--red); font-weight: 700; }
+.plan-tag { flex: none; align-self: center; padding: 5px 9px 4px; border-radius: 999px; background: var(--yellow); box-shadow: inset 0 0 0 1.5px var(--ink); font: 700 10.5px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.plan-valid { padding-top: 14px; text-align: center; font: italic 600 15px/1.35 var(--serif); }
+.plan-more { display: grid; margin-top: 24px; }
+.plan-more > div { padding-top: 12px; border-top: 2px solid var(--rule); }
+.plan-more > div + div { margin-top: 24px; }
+.plan-head { font: 800 13px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding-bottom: 8px; }
+.plan-lede { font: italic 500 15px/1.4 var(--serif); color: var(--ink-2); }
+.plan-more a:not(.plan-wa) { color: var(--ink); font-weight: 700; text-underline-offset: 3px; }
+.plan-combos li { padding: 9px 0; border-bottom: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent); font: 500 15.5px/1.35 var(--sans); font-stretch: 96%; }
+.plan-steps { list-style: none; counter-reset: step; display: grid; gap: 10px; padding-top: 2px; }
+.plan-steps li { counter-increment: step; position: relative; padding-left: 28px; font-size: 15px; line-height: 1.4; }
+.plan-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; font: italic 800 19px/1.1 var(--serif); font-variant-numeric: lining-nums; }
+.plan-wa {
+  display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; margin-top: 16px; padding: 0 20px;
+  border-radius: 999px; background: var(--yellow); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); text-decoration: none;
+  font: 700 14px/1.2 var(--sans); letter-spacing: .06em; text-transform: uppercase; transition: transform .45s var(--ease-spring);
+}
+.plan-wa span { font-size: 18px; transition: transform .45s var(--ease-spring); }
+.plan-wa:active { transform: scale(.98); }
+@media (hover: hover) { .plan-wa:hover span { transform: translateX(4px); } }
+.plan-ask { margin-top: 10px; text-align: center; font: italic 500 14px/1.4 var(--serif); color: var(--ink-2); }
+@media (min-width: 640px) {
+  .plan-more { grid-template-columns: 1fr 1fr; border-top: 2px solid var(--rule); }
+  .plan-more > div { border-top: 0; }
+  .plan-more > div:first-child { padding-right: 24px; }
+  .plan-more > div + div { margin-top: 0; padding-left: 24px; border-left: 1px solid var(--rule); }
+}
 
 /* ---------- footer ---------- */
 .foot { padding-block: 16px 48px; text-align: center; }

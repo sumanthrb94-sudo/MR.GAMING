@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>My pass · MR. GAMING</title>
-  <meta name="description" content="Sign in with your mobile number to see the hours left on your MR. GAMING pass.">
+  <meta name="description" content="Sign in with your mobile number to see the hours left on your MR. GAMING pass and the meals left on your MR. Sandwich meal plan.">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0B0B0A">
   <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
@@ -52,8 +52,8 @@
     <!-- Sign in: mobile number + SMS code -->
     <section class="card pass-card" id="login" hidden>
       <p class="eyebrow">My pass</p>
-      <h1 class="pass-hi">See your hours</h1>
-      <p class="pass-lede">Sign in with the mobile number you gave us when you bought your pass.</p>
+      <h1 class="pass-hi">See your hours and meals</h1>
+      <p class="pass-lede">Sign in with the mobile number you gave us when you bought your pass or meal plan.</p>
       <form id="phone-form" class="pass-form">
         <label class="field-label" for="phone">Mobile number</label>
         <div class="phone-row">
@@ -70,22 +70,22 @@
       </form>
       <p class="pass-msg" id="login-msg" role="status"></p>
       <div id="recaptcha"></div>
-      <p class="pass-note">No pass yet? Choose the 6-hr pass fare when you <a class="text-link" href="/#book">book a slot</a>.</p>
+      <p class="pass-note">No pass yet? Choose the 6-hr pass fare when you <a class="text-link" href="/#book">book a slot</a>, or see the <a class="text-link" href="/menu#meal-plans">MR. Sandwich meal plans</a>.</p>
     </section>
 
     <!-- Loading, or a message with no pass to show -->
     <section class="card pass-card" id="status" aria-live="polite">
       <p class="eyebrow">My pass</p>
-      <h1 class="pass-hi" id="status-text">Loading your hours…</h1>
+      <h1 class="pass-hi" id="status-text">Loading your hours and meals…</h1>
       <div class="actions" id="status-actions" hidden>
         <a class="btn btn-accent press" href="/#book">Book a slot <svg class="i"><use href="#i-arrow"/></svg></a>
         <a class="btn btn-ghost press" id="status-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp us</a>
       </div>
     </section>
 
-    <!-- One card per pass, filled by pass.js -->
+    <!-- One card per pass or meal plan, filled by pass.js -->
     <div class="pass-cards" id="cards" aria-live="polite"></div>
-    <p class="pass-note pass-foot" id="foot" hidden>Updates on its own when we add or use hours.</p>
+    <p class="pass-note pass-foot" id="foot" hidden>Updates on its own when we add or use hours or meals.</p>
   </main>
 
   <!-- Phone tab bar, same as the home page -->

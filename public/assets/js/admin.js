@@ -1,5 +1,6 @@
 /* MR. GAMING owner page: upcoming bookings, each day's requests, adding phone / walk-in bookings,
-   schedule (block / free hours) and passes (add or use hours, send the customer their pass link).
+   schedule (block / free hours), gaming passes and MR. Sandwich meal plans (add or use hours or meals,
+   send the customer their link).
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
    Owners log in on /pass like everyone else; it sees their /admins entry and opens this page.
    Reads use Firestore Lite (small, plain HTTPS): bookings re-read every 20 s and passes every minute while the
@@ -19,6 +20,7 @@ const inr = (n) => '₹' + Math.round(n || 0).toLocaleString('en-IN');
 const pad = (n) => String(n).padStart(2, '0');
 const clock = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
 const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, duo: { price: 1499, label: 'Duo pass' } };
+const MEALS = { days: 30, plans: [{ meals: 5, price: 1350 }, { meals: 8, price: 2040 }, { meals: 10, price: 2400 }] };   // same as MENU.mealPlans in menu-data.js
 const MEMBER = { solo: 169, duo: 279 };   // member rate once a pass's hours are used (CONFIG.memberRates in main.js)
 const RATES = { solo: 199, duo: 320, trio: 420, quad: 499 }, KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
@@ -258,79 +260,129 @@ $('#sched').addEventListener('click', async (e) => {
   refreshAll();
 });
 
-/* passes: /passes holds the owner's record (name, phone, price); /passCards is what the customer's link shows
-   (first name and hours only). Every change writes both in one batch. */
+/* passes and meal plans: /passes holds the owner's record (name, phone, price); /passCards is what the customer's link
+   shows (first name and hours or meals only). Every change writes both in one batch.
+   A gaming pass (type 'solo' | 'duo') counts hoursTotal / hoursUsed and "Add hours" renews it.
+   A MR. Sandwich meal plan (type 'meals', plan 5 | 8 | 10) counts mealsTotal / mealsUsed and has no hours. It is valid
+   MEALS.days from the day it's bought and its unused meals expire with it, so buying again starts a new plan. */
 const passLink = (id) => `${location.origin}/pass?id=${id}`;
 // Indian mobile as +91XXXXXXXXXX: the customer signs in at /pass with this number to see their passes
 const toE164 = (p) => { let d = String(p || '').replace(/\D/g, '').replace(/^0/, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return /^[6-9]\d{9}$/.test(d) ? '+91' + d : ''; };
 const firstName = (n) => String(n).trim().split(/\s+/)[0].slice(0, 20);
+const isMeals = (p) => p.type === 'meals';
+const mealPlan = (value) => MEALS.plans.find((m) => `meals-${m.meals}` === value);   // the form's option value, e.g. 'meals-8'
+const planName = (p) => `${+p.plan || +p.mealsTotal || 0}-meal plan`;
+// [total, used] field names: meals on a meal plan, hours on a gaming pass
+const counts = (p) => (isMeals(p) ? ['mealsTotal', 'mealsUsed'] : ['hoursTotal', 'hoursUsed']);
+// The customer's card: first name and hours or meals only (never the phone, full name or price)
+const cardOf = (p) => (isMeals(p)
+  ? { first: firstName(p.name), type: 'meals', plan: +p.plan || 0, mealsTotal: p.mealsTotal || 0, mealsUsed: p.mealsUsed || 0, expires: p.expires, updatedAt: serverTimestamp() }
+  : { first: firstName(p.name), type: p.type, hoursTotal: p.hoursTotal || 0, hoursUsed: p.hoursUsed || 0, expires: p.expires, updatedAt: serverTimestamp() });
+const shortDate = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const isExpired = (p) => (p.expires?.toMillis?.() ?? Infinity) < Date.now();
+// A meal plan bought today
+const mealPlanOf = (name, phone, phoneE164, m) => ({ name, phone, phoneE164, type: 'meals', plan: m.meals, price: m.price, mealsTotal: m.meals, mealsUsed: 0, expires: Timestamp.fromMillis(Date.now() + MEALS.days * DAY_MS) });
+// Saves a new pass or meal plan: the owner's record and the customer's card in one batch
+function addPass(pass) {
+  const ref = doc(collection(db, 'passes')), batch = writeBatch(db);
+  batch.set(ref, { ...pass, createdAt: serverTimestamp() });
+  batch.set(doc(db, 'passCards', ref.id), cardOf(pass));
+  return batch.commit();
+}
 function watchPasses() {
   unsub.push(watch(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
     const list = $('#passes');
     passData = Object.fromEntries(s.docs.map((d) => [d.id, d.data()]));
-    if (s.empty) { list.innerHTML = '<li class="admin-empty">No passes yet.</li>'; return; }
+    if (s.empty) { list.innerHTML = '<li class="admin-empty">No passes or meal plans yet.</li>'; return; }
     const now = Date.now();
     list.innerHTML = s.docs.map((d) => {
-      const p = d.data(), total = p.hoursTotal || 0, left = total - (p.hoursUsed || 0);
+      const p = d.data(), meals = isMeals(p), [tk, uk] = counts(p), total = +p[tk] || 0, left = total - (+p[uk] || 0), id = esc(d.id);
       const exp = p.expires?.toDate ? p.expires.toDate() : null, expired = exp && exp.getTime() < now;
+      // Meal plans lead with "Use 1 meal": it's what the owner taps at the counter (not once the plan has expired).
+      // "Undo 1 meal" fixes a wrong tap; "New plan" is for buying again (meals don't carry over).
+      const acts = meals ? `
+          <button class="btn btn-sm btn-accent press" data-pass="${id}" data-use="1" ${left < 1 || expired ? 'disabled' : ''}>Use 1 meal</button>
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="-1" ${+p.mealsUsed > 0 ? '' : 'disabled'}>Undo 1 meal</button>
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-renew="1">New plan</button>` : `
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="1" ${left < 1 ? 'disabled' : ''}>Use 1 hr</button>
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="2" ${left < 2 ? 'disabled' : ''}>Use 2 hrs</button>
+          <button class="btn btn-sm btn-accent press" data-pass="${id}" data-add="1">Add hours</button>`;
       return `<li class="card admin-item ${expired || left <= 0 ? 'is-dim' : ''}">
-        <div class="admin-item-top"><strong>${esc(p.name)}</strong><span class="pill">${esc(PASS[p.type]?.label || p.type)}</span></div>
-        <p class="admin-item-meta">${p.phoneE164 ? esc(p.phone) + ' (can sign in) · ' : p.phone ? esc(p.phone) + ' · ' : 'no mobile, link only · '}<b class="admin-left">${left} of ${total} hrs left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''}</p>
-        <div class="admin-actions">
-          <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-use="1" ${left < 1 ? 'disabled' : ''}>Use 1 hr</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-use="2" ${left < 2 ? 'disabled' : ''}>Use 2 hrs</button>
-          <button class="btn btn-sm btn-accent press" data-pass="${d.id}" data-add="1">Add hours</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-send="1">Send link</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${d.id}" data-del="1">Delete</button>
+        <div class="admin-item-top"><strong>${esc(p.name)}</strong><span class="pill">${esc(meals ? planName(p) : PASS[p.type]?.label || p.type)}</span></div>
+        <p class="admin-item-meta">${p.phoneE164 ? esc(p.phone) + ' (can sign in) · ' : p.phone ? esc(p.phone) + ' · ' : 'no mobile, link only · '}<b class="admin-left">${left} of ${total} ${meals ? 'meals' : 'hrs'} left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + shortDate(exp) : ''}</p>
+        <div class="admin-actions">${acts}
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-send="1">Send link</button>
+          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-del="1">Delete</button>
         </div>
       </li>`;
     }).join('');
   }, 60000));
 }
+// Add form: the meal plans come from MEALS; a plan's meal count is fixed, so the hours box goes (disabled, so it isn't checked)
+$('#pass-meals').innerHTML = MEALS.plans.map((m) => `<option value="meals-${m.meals}">${m.meals} meals · ${inr(m.price)}</option>`).join('');
+function passType() {
+  const plan = !!mealPlan($('#pass-type').value);
+  $('#pass-form').classList.toggle('is-meals', plan);
+  $('#pass-hours-wrap').hidden = $('#pass-hours').disabled = plan;
+  $('#pass-submit').textContent = plan ? 'Add meal plan' : 'Add pass';
+}
+$('#pass-type').addEventListener('change', passType); passType();
 $('#pass-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const type = $('#pass-type').value, hours = Math.round(+$('#pass-hours').value), name = $('#pass-name').value.trim();
-  const phone = $('#pass-phone').value.trim(), phoneE164 = toE164(phone);
-  if (!(hours >= 1 && hours <= 99)) { alert('Hours must be between 1 and 99.'); return; }
+  const type = $('#pass-type').value, plan = mealPlan(type), hours = Math.round(+$('#pass-hours').value), name = $('#pass-name').value.trim();
+  const phone = $('#pass-phone').value.trim(), phoneE164 = toE164(phone), what = plan ? 'meal plan' : 'pass';
+  if (!plan && !(hours >= 1 && hours <= 99)) { alert('Hours must be between 1 and 99.'); return; }
   if (phone && !phoneE164) { alert('Enter a 10-digit Indian mobile number, or leave it empty.'); return; }
-  if (!phone && !confirm('No mobile number: the customer can only see this pass through the link you send. Add it anyway?')) return;
-  const expires = Timestamp.fromMillis(Date.now() + 30 * DAY_MS), ref = doc(collection(db, 'passes'));
-  const batch = writeBatch(db);
-  batch.set(ref, { name, phone, phoneE164, type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires, createdAt: serverTimestamp() });
-  batch.set(doc(db, 'passCards', ref.id), { first: firstName(name), type, hoursTotal: hours, hoursUsed: 0, expires, updatedAt: serverTimestamp() });
-  try { await batch.commit(); e.target.reset(); } catch (err) { alert('Could not save the pass.'); }
+  if (!phone && !confirm(`No mobile number: the customer can only see this ${what} through the link you send. Add it anyway?`)) return;
+  const pass = plan ? mealPlanOf(name, phone, phoneE164, plan)
+    : { name, phone, phoneE164, type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires: Timestamp.fromMillis(Date.now() + 30 * DAY_MS) };
+  try { await addPass(pass); e.target.reset(); passType(); } catch (err) { alert(`Could not save the ${what}.`); }
   refreshAll();
 });
 $('#passes').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-pass]'); if (!b) return;
   const pid = b.dataset.pass, p = passData[pid]; if (!p) return;
   const ref = doc(db, 'passes', pid), card = doc(db, 'passCards', pid), batch = writeBatch(db);
+  const [tk, uk] = counts(p), what = isMeals(p) ? 'meal plan' : 'pass';
   if (b.dataset.send) return sendPass(pid, p);
+  if (b.dataset.renew) return renewPlan(p);
   if (b.dataset.del) {
-    if (!confirm(`Delete ${p.name}'s pass? Their link stops working.`)) return;
+    if (!confirm(`Delete ${p.name}'s ${what}? Their link stops working.`)) return;
     batch.delete(ref); batch.delete(card);
   } else if (b.dataset.add) {
     const n = Math.round(+prompt(`Add how many hours to ${p.name}'s pass? This also renews it for 30 days from today.`, '6'));
     if (!(n >= 1 && n <= 99)) return;
     // Renew: valid 30 days from today, unless it already runs longer
     const until = Math.max(p.expires?.toMillis?.() || 0, Date.now() + 30 * DAY_MS), expires = Timestamp.fromMillis(until);
-    batch.update(ref, { hoursTotal: increment(n), expires });
-    batch.set(card, { first: firstName(p.name), type: p.type, hoursTotal: (p.hoursTotal || 0) + n, hoursUsed: p.hoursUsed || 0, expires, updatedAt: serverTimestamp() });
+    batch.update(ref, { [tk]: increment(n), expires });
+    batch.set(card, cardOf({ ...p, [tk]: (p[tk] || 0) + n, expires }));
   } else {
-    const n = +b.dataset.use;
-    batch.update(ref, { hoursUsed: increment(n) });
-    batch.set(card, { first: firstName(p.name), type: p.type, hoursTotal: p.hoursTotal || 0, hoursUsed: (p.hoursUsed || 0) + n, expires: p.expires, updatedAt: serverTimestamp() });
+    const n = +b.dataset.use;   // -1 is "Undo 1 meal"
+    batch.update(ref, { [uk]: increment(n) });
+    batch.set(card, cardOf({ ...p, [uk]: (p[uk] || 0) + n }));
   }
   b.disabled = true;
   try { await batch.commit(); } catch (err) { alert('Could not save.'); b.disabled = false; }
   refreshAll();
 });
+// Buying again: a new plan for the same customer, valid MEALS.days from today; the old one keeps its own date
+async function renewPlan(p) {
+  const sizes = MEALS.plans.map((m) => m.meals), or = (a) => a.slice(0, -1).join(', ') + ' or ' + a[a.length - 1];
+  const answer = prompt(`New meal plan for ${p.name}, valid ${MEALS.days} days from today (this plan keeps its own date). How many meals: ${or(MEALS.plans.map((m) => `${m.meals} (${inr(m.price)})`))}?`, String(+p.plan || sizes[0]));
+  if (answer === null) return;
+  const m = MEALS.plans.find((x) => x.meals === Math.round(+answer));
+  if (!m) { alert(`Meal plans come with ${or(sizes)} meals.`); return; }
+  try { await addPass(mealPlanOf(p.name, p.phone || '', p.phoneE164 || '', m)); } catch (err) { alert('Could not save the meal plan.'); }
+  refreshAll();
+}
 function sendPass(pid, p) {
-  const left = (p.hoursTotal || 0) - (p.hoursUsed || 0), link = passLink(pid);
-  const text = `Hi ${firstName(p.name)}! Your MR. GAMING ${(PASS[p.type]?.label || 'pass').toLowerCase()} has ${left} hrs left. See your hours any time: ${link}`
+  const meals = isMeals(p), [tk, uk] = counts(p), left = (p[tk] || 0) - (p[uk] || 0), link = passLink(pid), what = meals ? 'meal plan' : 'pass';
+  const text = (meals
+    ? `Hi ${firstName(p.name)}! Your MR. Sandwich ${planName(p)} ${isExpired(p) ? `expired on ${shortDate(p.expires.toDate())}` : `has ${left} meal${left === 1 ? '' : 's'} left`}. See your meals any time: ${link}`
+    : `Hi ${firstName(p.name)}! Your MR. GAMING ${(PASS[p.type]?.label || 'pass').toLowerCase()} has ${left} hrs left. See your hours any time: ${link}`)
     + (p.phoneE164 ? ` or sign in with this number at ${location.origin}/pass` : '');
   let digits = String(p.phone || '').replace(/\D/g, '').replace(/^0/, '');
   if (digits.length === 10) digits = '91' + digits;
   if (digits.length === 12) { window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); return; }
-  (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => alert(`No phone number on this pass. Link copied:\n${link}`), () => prompt('No phone number on this pass. Copy the link:', link));
+  (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => alert(`No phone number on this ${what}. Link copied:\n${link}`), () => prompt(`No phone number on this ${what}. Copy the link:`, link));
 }

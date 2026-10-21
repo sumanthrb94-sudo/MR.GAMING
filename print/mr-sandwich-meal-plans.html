@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en-IN"><head><meta charset="utf-8"><title>MR. Sandwich · Meal plans flyer (A5)</title>
+<!-- Printable A5 flyer. Plans, prices and combos come from public/assets/js/menu-data.js (MENU.mealPlans + the ₹300 Top Combos),
+     so re-render after changing them there: node scripts/make-meal-flyer.mjs -->
+<style>
+@font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair.woff2") format("woff2"); font-weight: 400 900; }
+@font-face { font-family: "Playfair"; src: url("../public/assets/fonts/playfair-italic.woff2") format("woff2"); font-weight: 400 900; font-style: italic; }
+@font-face { font-family: "Archivo"; src: url("../public/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; }
+@page { size: 148mm 210mm; margin: 0; }
+/* the /menu palette; yellow is the one accent. Archivo has no ₹, so Inter draws it */
+:root { --paper: #FAF8EE; --card: #FFFDF7; --ink: #231F1F; --ink-2: #57524C; --rule: #4A4744; --line: rgba(35,31,31,.16); --yellow: #FAC607;
+        --serif: "Playfair", Georgia, serif; --sans: "Archivo", "Inter", sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 148mm; height: 210mm; overflow: hidden; }
+body {
+  background: var(--paper); color: var(--ink); font: 400 8.6pt/1.35 var(--sans); -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  /* faint paper grid, as on the menu and the table card */
+  background-image: linear-gradient(rgba(35,31,31,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(35,31,31,.04) 1px, transparent 1px);
+  background-size: 5mm 5mm;
+  padding: 6.6mm 8mm 6.2mm; display: flex; flex-direction: column;
+}
+body > * { flex-shrink: 0; }
+.label { font: 700 7pt/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.dbl { height: 1.9mm; border-top: .8mm solid var(--rule); border-bottom: .25mm solid var(--rule); }
+/* masthead */
+.top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 3mm; }
+.brand { display: flex; align-items: center; gap: 3.2mm; }
+.brand img { width: 12.5mm; height: 12.5mm; }
+.brand b { display: block; font: 900 17pt/1 var(--serif); letter-spacing: -.005em; }
+.brand span { display: block; margin-top: 1.4mm; color: var(--ink-2); }
+.kicker { text-align: right; font: italic 700 11pt/1.15 var(--serif); }
+.kicker small { display: block; margin-top: 1.2mm; font: 700 7pt/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+/* hero */
+.hero { position: relative; padding: 4.2mm 0 3.8mm; }
+/* the lowest price per meal, as a stamp */
+.stamp { position: absolute; right: 1.6mm; top: 5.4mm; width: 27mm; height: 27mm; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-content: center; text-align: center; transform: rotate(8deg); box-shadow: 0 0 0 1.2mm var(--paper), 0 0 0 1.6mm var(--ink); }
+.stamp small { font: italic 700 9pt/1 var(--serif); }
+.stamp b { display: block; margin: .8mm 0 .6mm; font: 900 19pt/1 var(--sans); font-stretch: 118%; letter-spacing: -.03em; color: var(--yellow); }
+.ask { font: italic 700 15pt/1 var(--serif); color: var(--ink-2); }
+h1 { margin-top: 1.5mm; font: 900 36.5pt/.98 var(--serif); letter-spacing: -.012em; }
+h1 span { background: linear-gradient(transparent 12%, var(--yellow) 12%, var(--yellow) 90%, transparent 90%); padding: 0 1.4mm; margin-left: -.4mm; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.lede { margin-top: 3mm; font-size: 10.5pt; line-height: 1.4; color: var(--ink-2); }
+.lede b { color: var(--ink); font-weight: 800; }
+/* plans: the hero of the page */
+.head { margin-bottom: 3.4mm; }
+.head span { color: var(--ink-2); }
+.plans { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3mm; } /* one column per plan in MENU */
+.plan { position: relative; display: flex; flex-direction: column; padding: 3.9mm 3.6mm 3.3mm; border: .4mm solid var(--ink); border-radius: 3.4mm; background: var(--card); }
+.plan .n { display: flex; align-items: baseline; gap: 1.6mm; font: 900 37pt/.86 var(--sans); font-stretch: 125%; letter-spacing: -.045em; }
+.plan .n small { font: italic 700 12pt/1 var(--serif); letter-spacing: 0; }
+.plan .price { margin-top: 2.9mm; padding-top: 2.5mm; border-top: 1px solid var(--line); font: 900 17pt/1 var(--sans); font-stretch: 118%; letter-spacing: -.025em; }
+.plan .per { margin-top: 1.2mm; font-weight: 600; color: var(--ink-2); }
+.plan .save { align-self: flex-start; margin-top: 2.3mm; padding: 1mm 2.4mm; border-radius: 99px; background: var(--yellow); color: var(--ink); font-weight: 800; white-space: nowrap; }
+.plan.best { background: var(--ink); color: var(--paper); }
+.plan.best .n { color: var(--yellow); }
+.plan.best .price { border-top-color: rgba(250,248,238,.2); }
+.plan.best .per { color: rgba(250,248,238,.72); }
+.plan .tag { position: absolute; top: 0; right: 3mm; transform: translateY(-50%); padding: 1.1mm 2.4mm; border-radius: 99px; background: var(--yellow); color: var(--ink); border: .4mm solid var(--ink); }
+.valid { margin-top: 2.6mm; padding: 1.8mm 3.6mm; border: 1px dashed var(--rule); border-radius: 3.4mm; text-align: center; font-size: 9pt; }
+.valid strong { font-weight: 800; }
+/* combos */
+.combos { margin: 4.8mm 0 4.2mm; }
+.combos h2 { font: 900 15pt/1.1 var(--serif); font-variant-numeric: lining-nums; margin-bottom: 2.2mm; } /* Playfair defaults to old-style figures */
+.combos ol { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 0 5mm; }
+.combos li { display: flex; gap: 2.6mm; align-items: flex-start; padding: 1.8mm 0; border-top: 1px solid var(--line); }
+.combos li:nth-child(-n+2) { border-top: .4mm solid var(--ink); }
+.disc { flex: none; width: 5.6mm; height: 5.6mm; display: grid; place-items: center; border-radius: 50%; background: var(--yellow); font: 900 8pt/1 var(--sans); }
+.combos li b { display: block; font-weight: 800; font-size: 9.4pt; line-height: 1.25; }
+.combos .rest { display: block; color: var(--ink-2); line-height: 1.3; }
+/* how to start + footer */
+.foot { margin-top: auto; padding-top: 3.2mm; border-top: .8mm solid var(--rule); display: grid; grid-template-columns: auto 1fr; gap: 5mm; align-items: center; }
+/* ~4 modules of white round the code (its quiet zone), and the extra padding at the bottom keeps the tab as far off it */
+.qr { position: relative; width: 27mm; height: 29.2mm; padding: 2.4mm 2.4mm 4.6mm; background: #fff; border: .4mm solid var(--ink); border-radius: 3mm; }
+.qr img { width: 100%; height: 100%; display: block; }
+.qr .tab { position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); padding: 1mm 2mm; border-radius: 99px; background: var(--yellow); border: .4mm solid var(--ink); white-space: nowrap; letter-spacing: .04em; }
+.how { list-style: none; display: grid; gap: 1.5mm; }
+.how li { display: flex; gap: 2.2mm; align-items: baseline; color: var(--ink-2); }
+.how li strong { color: var(--ink); font-weight: 800; }
+.how .disc { position: relative; top: -.3mm; width: 4.6mm; height: 4.6mm; font-size: 7pt; background: var(--ink); color: var(--yellow); }
+.how .more { padding-left: 6.8mm; font: italic 600 8.6pt/1.2 var(--serif); color: var(--ink-2); }
+.how .wa { display: block; font: 900 15pt/1.05 var(--sans); font-stretch: 118%; letter-spacing: -.02em; color: var(--ink); }
+.base { margin-top: 3.2mm; padding-top: 1.8mm; border-top: 1px solid var(--line); text-align: center; font-size: 7.4pt; color: var(--ink-2); }
+.base strong { color: var(--ink); font-weight: 800; }
+</style></head><body>
+
+<header class="top">
+  <div class="brand"><img src="mr-sandwich-640.png" alt="Mr. Sandwich"><div><b>Mr. Sandwich</b><span class="label">100% pure veg · Gachibowli</span></div></div>
+  <p class="kicker">Monthly meal plans<small id="k-plans"></small></p>
+</header>
+<div class="dbl"></div>
+
+<section class="hero">
+  <p class="ask">Eat here often?</p>
+  <h1>Get a <span>meal plan.</span></h1>
+  <p class="lede" id="lede"></p>
+  <p class="stamp" id="stamp"></p>
+</section>
+
+<section>
+  <p class="head label">Pick your plan <span id="vs"></span></p>
+  <div class="plans" id="plans"></div>
+  <p class="valid" id="valid"></p>
+</section>
+
+<section class="combos">
+  <h2 id="meal-is"></h2>
+  <ol id="combos"></ol>
+</section>
+
+<footer class="foot">
+  <div class="qr"><img src="qr-meal-plans.svg" alt="QR code: the meal plans on mr-gaming-rho.vercel.app/menu"><span class="tab label">Scan for menu</span></div>
+  <ol class="how" aria-label="How to start">
+    <li><span class="disc">1</span><span><span class="wa">WhatsApp +91 73372 30311</span>or ask at the counter to start your plan.</span></li>
+    <li><span class="disc">2</span><span>We add the plan to <strong>your mobile number</strong>.</span></li>
+    <li><span class="disc">3</span><span>See your meals left: sign in at <strong>mr-gaming-rho.vercel.app/pass</strong></span></li>
+    <li class="more">Anything else? Ask us on WhatsApp.</li>
+  </ol>
+</footer>
+<p class="base"><strong>MR. Sandwich</strong>, 110, My Home Vihanga Rd, Gachibowli, Hyderabad 500032</p>
+
+<script src="../public/assets/js/menu-data.js"></script>
+<script>
+// Everything with a number in it is computed from MENU, like the /menu page does
+const { mealValue, days, plans } = window.MENU.mealPlans;
+const combos = window.MENU.sections.find(s => s.id === 'combos').groups.flatMap(g => g.items).filter(i => i.price === mealValue);
+const rs = n => '₹' + n.toLocaleString('en-IN');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const perMeal = p => Math.round(p.price / p.meals);
+const best = plans.reduce((a, p) => perMeal(p) < perMeal(a) ? p : a);
+const counts = plans.map(p => p.meals);
+const list = counts.slice(0, -1).join(', ') + ' or ' + counts[counts.length - 1];
+
+document.getElementById('k-plans').textContent = counts.join(' · ') + ' meals';
+const lede = document.getElementById('lede');
+lede.append('Buy ' + list + ' meals at once and ', el('b', '', 'save on every one'), '.');
+document.getElementById('stamp').append(el('small', '', 'from'), el('b', '', rs(perMeal(best))), el('small', '', 'a meal'));
+document.getElementById('vs').textContent = '· savings vs paying ' + rs(mealValue) + ' a meal';
+
+const box = document.getElementById('plans');
+for (const p of plans) {
+  const full = p.meals * mealValue, save = full - p.price;
+  const card = el('article', 'plan' + (p === best ? ' best' : ''));
+  if (p === best) card.append(el('span', 'tag label', 'Best value'));
+  const n = el('p', 'n', String(p.meals)); n.append(el('small', '', 'meals'));
+  card.append(n, el('p', 'price', rs(p.price)), el('p', 'per', rs(perMeal(p)) + ' a meal'),
+    el('span', 'save', 'Save ' + rs(save) + ' · ' + Math.round(save / full * 100) + '%'));
+  box.append(card);
+}
+
+const v = document.getElementById('valid');
+v.append(el('strong', '', 'Valid ' + days + ' days from the day you buy.'), ' Meals not used by then expire.');
+
+document.getElementById('meal-is').textContent = '1 meal = any one ' + rs(mealValue) + ' Top Combo';   // the /menu wording
+const ol = document.getElementById('combos');
+combos.forEach((c, i) => {
+  const [first, ...rest] = c.name.split(' + ');
+  const li = el('li'); const t = el('div');
+  t.append(el('b', '', first), el('span', 'rest', '+ ' + rest.join(' + ')));
+  li.append(el('span', 'disc', String(i + 1)), t); ol.append(li);
+});
+</script>
+</body></html>

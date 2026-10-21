@@ -165,6 +165,8 @@ em { font-style: normal; color: var(--accent-text); }
   :root:not([data-theme]) #theme-toggle .i-moon { display: none; }
 }
 @media (min-width: 900px) { .nav { display: flex; } }
+/* small laptops: tighter links and no Book button (the nav has Book, as phones do), so the bar fits on one line */
+@media (min-width: 900px) and (max-width: 1099px) { .topbar-in { gap: var(--s3); } .brand { flex: none; } .nav a { padding-inline: var(--s2); white-space: nowrap; } .topbar-book { display: none; } }
 
 /* ---------- hero ---------- */
 .hero { position: relative; padding-block: clamp(56px, 8vw, 104px); overflow: hidden; }
@@ -267,7 +269,8 @@ em { font-style: normal; color: var(--accent-text); }
 
 /* booking builder */
 .builder { display: grid; gap: var(--s5); align-items: start; }
-@media (min-width: 960px) { .builder { grid-template-columns: 1fr 380px; gap: var(--s7); } .summary { position: sticky; top: calc(var(--topbar) + var(--s5)); } }
+/* laptop: the fare summary beside the steps (and the birthday upsell under them), not pushed below by the upsell */
+@media (min-width: 960px) { .builder { grid-template-columns: 1fr 380px; gap: var(--s7); } .builder > .checkout { grid-column: 2; grid-row: 1 / span 2; } .summary { position: sticky; top: calc(var(--topbar) + var(--s5)); } }
 .legend-note { color: var(--accent-text); letter-spacing: .04em; text-transform: none; }
 .step-hint { font-size: 14px; color: var(--muted); }
 .step-hint:empty { display: none; }
@@ -473,6 +476,76 @@ em { font-style: normal; color: var(--accent-text); }
 .food-item .price { font-weight: 800; font-size: 19px; font-variant-numeric: tabular-nums; }
 .food-cta { margin-top: var(--s6); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4); color: var(--muted); }
 
+/* ---------- meal plans · home ---------- */
+/* MR. Sandwich meal plans under the food list, filled by main.js from MENU.mealPlans.
+   Phones: three compact rows (meals, price, WhatsApp) that line up for comparing; 900px+: three cards. */
+.meals { margin-top: clamp(var(--s7), 8vw, var(--s9)); display: grid; gap: var(--s5); }
+.meals-head { display: grid; gap: var(--s3); max-width: 720px; }
+.meals-label { font: 500 12px/1.3 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.meals-title { font-weight: 850; font-stretch: 115%; font-size: clamp(28px, 3.8vw, 48px); line-height: 1; letter-spacing: -.025em; text-wrap: balance; }
+.meals-lede { color: var(--muted); max-width: 62ch; }
+.meal-plans { display: grid; gap: var(--s4); }
+.meal-plans > li { display: grid; }
+.meal-plan, .meal-plan:focus-visible { border-radius: var(--r-md); }
+/* the count column fits "10", so it never touches its price and all three prices line up */
+.meal-plan {
+  position: relative; display: grid; grid-template-columns: calc(var(--s8) + var(--s2)) minmax(0, 1fr) auto; grid-template-areas: "n price go" "n per go";
+  align-items: center; gap: 2px var(--s4); padding: var(--s4) var(--s4) var(--s4) var(--s5);
+  background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
+  transition: transform .45s var(--ease-spring), border-color .25s;
+}
+.meal-plan.is-best { border-color: var(--accent); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface)); }
+.meal-n { grid-area: n; display: grid; justify-items: start; gap: var(--s1); }
+.meal-n b { font-weight: 900; font-stretch: 125%; font-size: 44px; line-height: .85; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+.meal-n small { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.meal-price { grid-area: price; align-self: end; font-weight: 900; font-stretch: 115%; font-size: 24px; line-height: 1.1; letter-spacing: -.02em; }
+.meal-price small { margin-left: 2px; font-size: 13px; font-weight: 600; font-stretch: 100%; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
+.meal-per { grid-area: per; align-self: start; font-size: 14px; color: var(--muted); }
+.meal-per em { font-weight: 700; white-space: nowrap; }
+.meal-plan .tag { position: absolute; top: 0; right: var(--s5); transform: translateY(-50%); }
+.meal-go { grid-area: go; width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-weight: 700; font-size: 16px; transition: border-color .25s, box-shadow .3s; }
+.meal-plan.is-best .meal-go { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+/* the button's words are for screen readers on phones, shown from 900px */
+.meal-go > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (hover: hover) {
+  .meal-plan:hover { border-color: var(--accent); transform: translateY(-4px); }
+  .meal-plan:hover .meal-go { border-color: var(--text); }
+  .meal-plan.is-best:hover .meal-go { border-color: var(--accent); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); }
+}
+.meals-foot { display: grid; gap: var(--s3); }
+/* the combos one meal buys: two across on phones, one row on laptops */
+.meals-combos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr)); gap: var(--s2); margin-bottom: var(--s2); }
+.meals-combos li { display: grid; align-content: start; gap: 2px; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 14px; font-weight: 600; line-height: 1.3; }
+.meals-combos span { display: flex; gap: var(--s1); }
+.meals-combos i { font-style: normal; font-weight: 900; color: var(--accent-text); }
+.meals-terms { color: var(--muted); font-size: 15px; max-width: 68ch; text-wrap: pretty; }
+.meals-links { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s5); color: var(--muted); font-size: 15px; }
+.meals-links a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 379px) {
+  .meal-plan { grid-template-columns: var(--s8) minmax(0, 1fr) auto; column-gap: var(--s3); padding-left: var(--s4); }
+  .meal-n b { font-size: 36px; }
+  .meal-price { font-size: 22px; }
+  .meal-price small { font-size: 12px; }
+  .meal-per { font-size: 13px; }
+}
+/* the full-menu link after the plans closes the whole food section */
+.meals:not([hidden]) + .food-cta { margin-top: var(--s7); padding-top: var(--s6); border-top: 1px solid var(--line); }
+@media (min-width: 900px) {
+  .meals { gap: var(--s6); }
+  .meal-plans { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+  .meals-combos { gap: var(--s3); }
+  .meal-plan, .meal-plan:focus-visible { border-radius: var(--r-lg); }
+  .meal-plan { grid-template-columns: minmax(0, 1fr); grid-template-areas: "n" "price" "per" "go"; align-items: start; gap: var(--s2); padding: clamp(var(--s5), 3vw, 36px); }
+  .meal-n { display: flex; align-items: baseline; gap: var(--s3); }
+  .meal-n b { font-size: clamp(72px, 7.4vw, 104px); }
+  .meal-n small { font-size: 13px; }
+  .meal-price { margin-top: var(--s5); font-size: 36px; }
+  .meal-per { font-size: 15px; }
+  .meal-plan .tag { top: var(--s5); right: var(--s5); transform: none; }
+  .meal-go { margin-top: var(--s5); width: auto; height: auto; min-height: 52px; display: flex; justify-content: center; gap: var(--s2); }
+  .meal-go > span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+}
+
 /* FIFA cup */
 .cup { background: var(--accent); color: var(--accent-ink); padding-block: var(--section); }
 .cup-in { display: grid; gap: var(--s5); justify-items: start; }
@@ -558,6 +631,22 @@ em { font-style: normal; color: var(--accent-text); }
 .pass-meta:empty { display: none; }
 .pass-card .actions { margin-top: var(--s2); }
 .pass-note { font-size: 13px; color: var(--muted); }
+
+/* ---------- meal plans · /pass ---------- */
+/* A MR. Sandwich meal plan reuses the pass card. Its bar is cut into one step per meal (pass.js sets --n, up to 12),
+   so "6 left of 8" reads as six lit steps; the fill still slides when a meal is used.
+   The mask is one gap wider than the bar, so the last gap falls outside it and both ends keep their round caps. */
+.pass-bar.is-steps {
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 calc(100% / var(--n) - var(--s1)), transparent 0 calc(100% / var(--n))) 0 0 / calc(100% + var(--s1)) 100%;
+  mask: repeating-linear-gradient(90deg, #000 0 calc(100% / var(--n) - var(--s1)), transparent 0 calc(100% / var(--n))) 0 0 / calc(100% + var(--s1)) 100%;
+}
+.pass-bar.is-steps span { border-radius: 0; }
+/* the unlit steps are the meals used: a stronger track so they still read on the dark card */
+.pass-bar.is-steps { background: var(--line-strong); }
+/* Gaming passes and meal plans have different buttons; full width (up to the card's 520px) keeps every card in the list the same size */
+.pass-cards > .pass-card { width: 100%; }
+/* a long first name ("Hi Venkatasubramanian,") breaks inside the card instead of pushing the page sideways */
+.pass-cards .pass-hi { overflow-wrap: anywhere; }
 
 /* sign-in pieces shared by /pass and /admin */
 select.field { appearance: none; cursor: pointer; }

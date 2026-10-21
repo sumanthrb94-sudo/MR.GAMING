@@ -1,6 +1,7 @@
 /* Owner page: builds on style.css tokens */
 .admin-main { padding-block: var(--s6) var(--s9); display: grid; gap: var(--s5); }
 .admin-who { font-size: 13px; color: var(--muted); }
+@media (max-width: 479px) { .admin-who { display: none; } }   /* no room beside the name and Sign out on a phone */
 .admin-login { max-width: 440px; padding: var(--s6); display: grid; gap: var(--s4); }
 .admin-form { display: grid; gap: var(--s3); }
 .admin-form .btn { margin-top: var(--s2); }
@@ -17,10 +18,13 @@
 .admin-item { padding: var(--s4) var(--s5); display: grid; gap: var(--s2); box-shadow: none; }
 .admin-item.is-dim, .admin-item.status-cancelled, .admin-item.status-no-show, .admin-item.status-done { opacity: .55; }
 .admin-item-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); font-size: 17px; }
+.admin-item-top strong { min-width: 0; overflow-wrap: anywhere; }
+.admin-item-top .pill { flex: none; white-space: nowrap; }   /* "10-meal plan" stays on one line beside a long name */
 .admin-item-name { font-weight: 700; }
 .admin-item-meta { color: var(--muted); font-size: 14px; }
 .admin-item-total { font-weight: 900; font-stretch: 115%; font-size: 22px; }
 .admin-actions { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s1); }
+@media (max-width: 719px) { .admin-actions .btn { min-height: 44px; } }   /* thumb-sized at the counter */
 .pill { font: 600 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; padding: 6px 10px; border-radius: var(--r-pill); background: var(--surface-2); color: var(--muted); }
 .status-pending .pill { background: var(--accent); color: var(--accent-ink); }
 .status-confirmed .pill { background: color-mix(in srgb, var(--xbox) 25%, transparent); color: var(--text); }
@@ -34,8 +38,10 @@
 .sched-cell.is-pending { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
 .sched-cell.is-confirmed { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .sched-cell.is-blocked { background: var(--surface-2); color: var(--muted); text-decoration: line-through; }
-.admin-pass-form { padding: var(--s4); display: grid; gap: var(--s3); box-shadow: none; }
-@media (min-width: 720px) { .admin-pass-form { grid-template-columns: 1.2fr 1fr 1fr 110px auto; align-items: center; } .admin-pass-form .field { max-width: none; } }
+.admin-pass-form { padding: var(--s4); display: grid; gap: var(--s3); box-shadow: none; margin-bottom: var(--s3); }
+.admin-pass-form .field { max-width: none; }
+/* one row on a wide screen; the type column never clips its price; a meal plan has no hours box */
+@media (min-width: 960px) { .admin-pass-form { grid-template-columns: 1.2fr 1fr minmax(max-content, 1fr) 110px auto; align-items: center; } .admin-pass-form.is-meals { grid-template-columns: 1.2fr 1fr minmax(max-content, 1fr) auto; } }
 .admin-hours { display: flex; align-items: center; gap: var(--s2); color: var(--muted); font-weight: 600; }
 .admin-hours .field { min-width: 0; }
 .admin-left { color: var(--text); }

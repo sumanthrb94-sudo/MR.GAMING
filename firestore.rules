@@ -72,7 +72,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // What a pass holder sees at /pass?id=...: first name and hours only, no phone.
+    // What a pass holder sees at /pass?id=...: first name and hours or meals only, no phone.
     // Readable one at a time by its unguessable id, never listed.
     match /passCards/{passId} {
       allow get: if true;
