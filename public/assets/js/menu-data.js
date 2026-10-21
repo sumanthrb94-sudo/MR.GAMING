@@ -11,6 +11,18 @@ window.MENU = {
     'Please tell our team about any food allergies before ordering.',
     'Prices and offers may change without notice.'
   ],
+  // Monthly meal plans, prepaid: one meal = any Top Combo priced at mealValue (the combos section below).
+  // Valid `days` from the day of purchase; unused meals expire. Meals left show on /pass; the owner adds
+  // plans and ticks off meals on /admin (admin.js MEALS mirrors these numbers).
+  mealPlans: {
+    mealValue: 300,
+    days: 30,
+    plans: [
+      { meals: 5, price: 1350 },
+      { meals: 8, price: 2040 },
+      { meals: 10, price: 2400 }
+    ]
+  },
   sections: [
     {
       id: 'combos', title: 'Top Combos', groups: [{ items: [

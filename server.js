@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 5173;
+const PORT = +process.env.PORT || 5173;   // PORT=5301 node server.js for a second copy
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
