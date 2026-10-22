@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en-IN"><head><meta charset="utf-8"><title>MR. Sandwich · Birthday package flyer</title>
+<!-- The owner's birthday flyer with the new package. The base layer is their artwork as they sent it (birthday-flyer-source.jpg, 853 × 1280);
+     this page only paints over two parts of it: the price burst and the food band. Everything else is the original pixels.
+     Prices must match CONFIG.birthday in public/assets/js/main.js. Render: node scripts/make-birthday-flyer.mjs -->
+<style>
+@font-face { font-family: "Archivo"; src: url("../public/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; }
+/* colours picked from the artwork; Archivo has no ₹, so Inter draws it */
+:root { --cream: #FCF5E3; --red: #F60438; --pink: #F60650; --yellow: #FEE133; --white: #FFFFFF; --ink: #0D0E0D; --navy: #060D18; --splash: #FDD641; --spark: #F7CC2C;
+        --line: #4A2615; --shadow: rgba(74,38,21,.12); --plate: #FFFFFF; --plate-2: #F3EBDA;
+        --crust: #E9A23B; --crust-2: #F6C26A; --cheese: #FFD45E; --sauce: #E8432B; --mozz: #FFF7E0; --leaf: #2E9B4E; --leaf-2: #57C26E;
+        --bowl: #1E96E8; --bowl-2: #7CC6F5; --cream-sauce: #FFF3D6; --penne: #F4C25E; --penne-2: #D9993A;
+        --glaze: #E2602C; --glaze-2: #F99A62; --garlic: #FFF1D2; --onion: #5DBB4A; --onion-2: #E2F5CF;
+        --nugget: #F0A33E; --nugget-2: #D7832A; --crumb: #FFD27E; --filling: #FFE27A; --corn: #FFC21F;
+        --glass: rgba(255,255,255,.5); --mojito: #8FDB98; --mojito-2: #C8F0C4; --boba: #3A2216; --lime: #CBE65C; --lime-2: #7DB83A; --pith: #F3FAD9; --ice: rgba(240,255,255,.75);
+        --sans: "Archivo", "Inter", sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 853px; height: 1280px; overflow: hidden; }
+body { position: relative; background: var(--cream); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+.base, .art { position: absolute; left: 0; top: 0; width: 853px; height: 1280px; }
+.art { overflow: hidden; }
+/* the burst: its outline is traced from the old one, so the new one covers it exactly (the right side runs off the page, like the original) */
+.burst { fill: var(--red); stroke: var(--white); stroke-width: 9; paint-order: stroke; }
+.stitch { fill: none; stroke: var(--white); stroke-width: 2.4; stroke-dasharray: 7 5.5; stroke-linecap: round; }
+.price { position: absolute; left: 748px; top: 271px; transform: translate(-50%, -50%) rotate(-13deg); text-align: center; text-transform: uppercase; white-space: nowrap; color: var(--white); }
+.price .hrs, .price .per { display: block; font: 900 26px/1 var(--sans); font-stretch: 100%; letter-spacing: .01em; }
+.price b { display: block; margin: 2px 0 0; font: 900 74px/.92 var(--sans); font-stretch: 100%; letter-spacing: -.03em; color: var(--yellow); }
+.price .rs { display: inline-block; margin-right: .03em; font-size: .68em; vertical-align: .14em; letter-spacing: 0; }
+/* food band: plain background over the old photos, then the yellow splash and the sparkle that were behind them */
+.paper { fill: var(--cream); }
+.splash { fill: var(--splash); } .spark { fill: var(--spark); }
+.food { position: absolute; left: 0; top: 866px; width: 853px; height: 164px; }
+.items { list-style: none; display: grid; grid-template-columns: repeat(5, 150px); column-gap: 13px; justify-content: center; }
+.items li { position: relative; text-align: center; }
+/* the flyer's "+" between dishes */
+.items li + li::before, .items li + li::after { content: ""; position: absolute; left: -6.5px; top: 47px; width: 22px; height: 6px; border-radius: 3px; background: var(--navy); transform: translate(-50%, -50%); }
+.items li + li::after { width: 6px; height: 22px; }
+.ill { display: block; width: 148px; height: 97px; margin: 0 auto; overflow: visible; }
+.ill * { stroke: var(--line); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.ill .x, .ill .x * { stroke: none; }
+.ill .thin, .ill .thin * { stroke-width: 1.4; }
+.items p { margin-top: 3px; font: 800 17px/1.08 var(--sans); font-stretch: 96%; letter-spacing: .005em; text-transform: uppercase; color: var(--ink); }
+.adults { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font: 800 16.5px/1 var(--sans); font-stretch: 100%; letter-spacing: .02em; text-transform: uppercase; color: var(--ink); }
+.adults b { font-weight: 900; color: var(--pink); }
+/* illustration fills, dish by dish */
+.sh { fill: var(--shadow); } .plate { fill: var(--plate); } .plate-2 { fill: var(--plate-2); } .white { fill: var(--white); } .pink { fill: var(--pink); } .leaf { fill: var(--leaf); } .leaf-2 { fill: var(--leaf-2); } .none { fill: none; }
+.crust { fill: var(--crust); } .crust-2 { fill: var(--crust-2); } .cheese { fill: var(--cheese); } .sauce { fill: var(--sauce); } .mozz { fill: var(--mozz); }
+.bowl { fill: var(--bowl); } .bowl-2 { fill: var(--bowl-2); } .cream-sauce { fill: var(--cream-sauce); } .penne { fill: var(--penne); } .penne-2 { fill: var(--penne-2); }
+.glaze { fill: var(--glaze); } .glaze-2 { fill: var(--glaze-2); } .garlic { fill: var(--garlic); } .onion { fill: var(--onion); } .onion-2 { fill: var(--onion-2); }
+.nugget { fill: var(--nugget); } .nugget-2 { fill: var(--nugget-2); } .crumb { fill: var(--crumb); } .filling { fill: var(--filling); } .corn { fill: var(--corn); }
+.glass { fill: var(--glass); } .mojito { fill: var(--mojito); } .mojito-2 { fill: var(--mojito-2); } .boba { fill: var(--boba); } .ice { fill: var(--ice); } .lime { fill: var(--lime); } .lime-2 { fill: var(--lime-2); } .pith { fill: var(--pith); }
+.ill .ridge { fill: none; stroke: var(--penne-2); stroke-width: 1.3; } /* penne ridges */
+.ill .seg { fill: none; stroke: var(--pith); stroke-width: 1.3; } /* lime segments */
+</style></head><body>
+
+<img class="base" src="birthday-flyer-source.jpg" alt="" width="853" height="1280">
+
+<svg class="art" viewBox="0 0 853 1280" aria-hidden="true">
+  <path class="burst" d="M867.1 271.0C867.1 268.2 867.1 265.3 867.1 262.5C867.1 259.6 867.1 256.7 867.1 253.8C867.1 250.9 867.1 248.0 867.1 245.0C867.1 242.1 867.1 239.1 867.1 236.0C867.1 232.9 867.9 229.4 867.1 226.5C866.4 223.7 865.1 220.7 862.5 218.7C860.0 216.6 855.1 215.7 851.6 214.3C848.1 213.0 844.4 212.1 841.8 210.5C839.2 208.9 837.7 206.9 836.1 204.8C834.4 202.7 833.4 200.3 832.0 198.0C830.7 195.7 829.5 193.2 827.9 191.0C826.3 188.8 824.4 186.8 822.5 184.9C820.5 183.1 818.4 181.4 816.1 179.9C813.9 178.4 811.6 177.1 809.1 175.9C806.7 174.8 804.2 173.8 801.5 173.1C798.9 172.4 796.1 172.0 793.4 171.8C790.6 171.6 787.7 172.1 785.0 172.1C782.3 172.1 779.6 172.4 777.2 171.9C774.8 171.3 772.7 170.0 770.5 168.8C768.2 167.6 766.1 165.8 763.8 164.5C761.5 163.2 759.0 162.0 756.6 161.0C754.1 160.0 751.5 159.2 748.9 158.7C746.3 158.1 743.7 157.9 741.0 157.7C738.4 157.5 735.7 157.5 733.1 157.7C730.5 158.0 727.8 158.4 725.3 159.0C722.7 159.7 720.2 160.7 717.8 161.8C715.4 162.9 713.0 164.2 710.8 165.6C708.5 167.1 706.4 168.7 704.4 170.5C702.4 172.3 700.6 174.4 698.9 176.5C697.2 178.5 695.7 180.8 694.0 182.7C692.3 184.6 690.8 186.3 688.8 187.7C686.8 189.0 684.6 189.8 682.3 190.7C680.0 191.7 677.4 192.3 675.1 193.3C672.8 194.4 670.5 195.6 668.5 197.1C666.5 198.6 664.6 200.3 662.9 202.1C661.3 204.0 659.7 206.0 658.4 208.1C657.1 210.2 655.9 212.4 654.9 214.7C654.0 217.0 653.4 219.5 652.8 222.0C652.2 224.4 652.1 227.0 651.5 229.4C650.9 231.7 650.4 234.0 649.2 236.1C648.0 238.3 646.2 240.1 644.5 242.2C642.8 244.2 640.6 246.2 639.0 248.5C637.4 250.7 635.9 253.1 634.7 255.5C633.5 257.9 632.5 260.5 631.7 263.1C630.9 265.7 630.2 268.3 629.8 271.0C629.3 273.7 629.0 276.4 629.0 279.1C628.9 281.8 629.1 284.6 629.4 287.2C629.8 289.9 630.3 292.6 631.0 295.2C631.7 297.9 632.5 300.5 633.6 303.0C634.6 305.5 635.8 307.9 637.2 310.2C638.6 312.6 640.2 314.8 641.9 316.9C643.7 319.0 645.5 321.0 647.6 322.8C649.7 324.6 652.1 326.1 654.4 327.6C656.6 329.1 659.3 330.2 661.2 331.9C663.1 333.5 664.5 335.3 665.9 337.4C667.2 339.5 667.9 342.0 669.1 344.3C670.3 346.5 671.5 348.9 673.0 350.9C674.5 353.0 676.2 354.9 678.1 356.6C680.0 358.3 682.1 359.7 684.3 361.0C686.5 362.3 688.9 363.1 691.2 364.2C693.5 365.2 695.9 366.0 698.1 367.2C700.3 368.4 702.3 369.9 704.4 371.4C706.5 373.0 708.5 374.9 710.7 376.4C712.9 378.0 715.2 379.6 717.6 380.7C720.1 381.8 722.6 382.7 725.2 383.2C727.8 383.8 730.5 384.0 733.1 384.0C735.8 384.0 738.5 383.8 741.1 383.3C743.7 382.9 746.3 382.1 748.9 381.3C751.4 380.5 753.8 379.3 756.3 378.5C758.8 377.8 761.1 377.0 763.6 376.7C766.2 376.5 768.8 377.0 771.5 377.2C774.2 377.4 777.0 377.9 779.7 377.9C782.5 377.9 785.2 377.7 787.9 377.2C790.6 376.8 793.3 376.1 795.8 375.2C798.4 374.3 800.9 373.2 803.2 371.9C805.6 370.5 807.8 368.9 809.8 367.1C811.8 365.3 813.5 363.1 815.4 361.1C817.2 359.1 818.8 356.9 820.8 355.2C822.8 353.4 825.0 352.0 827.4 350.5C829.7 349.1 832.5 348.0 835.1 346.6C837.6 345.1 839.7 343.3 842.5 341.9C845.4 340.4 848.7 339.3 852.0 337.9C855.4 336.5 860.0 335.6 862.5 333.5C865.1 331.4 866.4 328.4 867.1 325.4C867.9 322.4 867.1 318.7 867.1 315.5C867.1 312.2 867.1 309.1 867.1 306.0C867.1 302.9 867.1 299.9 867.1 297.0C867.1 294.0 867.1 291.1 867.1 288.2C867.1 285.3 867.1 282.4 867.1 279.5C867.1 276.7 867.1 273.8 867.1 271.0Z"/>
+  <path class="stitch" d="M856.1 271.0C856.1 268.4 856.2 265.8 856.2 263.2C856.2 260.6 856.2 258.0 856.3 255.4C856.3 252.7 856.3 250.1 856.4 247.3C856.4 244.6 856.5 241.8 856.6 239.0C856.6 236.2 857.5 233.0 856.8 230.3C856.1 227.7 855.0 224.9 852.5 223.1C850.0 221.3 845.2 220.6 841.9 219.5C838.6 218.3 834.9 217.7 832.5 216.4C830.0 215.0 828.6 213.2 827.2 211.3C825.7 209.4 824.8 207.1 823.6 205.0C822.4 202.9 821.4 200.6 819.9 198.6C818.5 196.6 816.9 194.8 815.1 193.1C813.4 191.4 811.4 189.9 809.4 188.6C807.3 187.3 805.2 186.0 803.0 185.0C800.8 184.0 798.4 183.2 796.0 182.6C793.6 182.1 791.1 181.7 788.6 181.7C786.0 181.6 783.3 182.2 780.8 182.3C778.4 182.4 776.0 182.8 773.8 182.3C771.6 181.8 769.8 180.6 767.8 179.5C765.8 178.3 763.9 176.6 761.9 175.4C759.8 174.1 757.6 172.9 755.4 171.9C753.2 171.0 750.9 170.2 748.5 169.7C746.2 169.1 743.8 168.9 741.4 168.7C739.0 168.5 736.6 168.5 734.2 168.7C731.9 168.9 729.5 169.2 727.2 169.9C724.9 170.5 722.6 171.4 720.4 172.5C718.3 173.5 716.1 174.7 714.2 176.1C712.2 177.4 710.2 178.9 708.5 180.7C706.8 182.4 705.2 184.4 703.7 186.3C702.2 188.3 701.0 190.5 699.5 192.2C698.1 194.0 696.7 195.6 695.0 196.8C693.2 198.0 691.1 198.6 689.1 199.4C687.0 200.2 684.5 200.6 682.4 201.5C680.3 202.4 678.2 203.5 676.4 204.7C674.5 206.0 672.9 207.6 671.4 209.2C669.8 210.8 668.5 212.6 667.3 214.5C666.1 216.4 665.1 218.5 664.3 220.6C663.5 222.7 663.0 224.9 662.5 227.1C662.0 229.3 662.0 231.7 661.5 233.8C661.0 236.0 660.6 238.0 659.5 239.9C658.5 241.8 656.7 243.4 655.1 245.2C653.4 247.0 651.3 248.8 649.8 250.8C648.2 252.7 646.8 254.8 645.6 257.0C644.4 259.2 643.5 261.5 642.7 263.8C641.9 266.2 641.2 268.6 640.8 271.0C640.3 273.4 640.0 275.9 639.9 278.3C639.9 280.8 640.0 283.3 640.3 285.7C640.6 288.1 641.1 290.6 641.7 292.9C642.4 295.3 643.2 297.7 644.1 299.9C645.1 302.2 646.2 304.4 647.5 306.5C648.8 308.6 650.4 310.6 652.0 312.4C653.6 314.3 655.4 316.1 657.3 317.6C659.3 319.2 661.6 320.5 663.7 321.8C665.8 323.1 668.4 324.0 670.1 325.4C671.9 326.8 673.1 328.5 674.3 330.3C675.4 332.2 676.0 334.6 677.0 336.6C678.0 338.7 679.1 340.9 680.4 342.8C681.7 344.6 683.2 346.4 684.9 347.9C686.6 349.5 688.5 350.8 690.4 351.9C692.4 353.0 694.6 353.7 696.7 354.6C698.8 355.5 700.9 356.2 702.9 357.3C704.9 358.4 706.7 359.8 708.5 361.2C710.4 362.7 712.2 364.5 714.1 366.0C716.1 367.5 718.1 369.0 720.3 370.0C722.5 371.1 724.8 371.9 727.1 372.4C729.5 372.9 731.9 373.1 734.3 373.1C736.7 373.1 739.1 372.8 741.5 372.3C743.8 371.9 746.2 371.1 748.5 370.3C750.7 369.5 752.9 368.3 755.2 367.6C757.4 366.9 759.5 366.1 761.7 365.9C764.0 365.7 766.4 366.3 768.8 366.5C771.2 366.8 773.8 367.4 776.3 367.5C778.8 367.6 781.4 367.4 783.8 367.0C786.2 366.7 788.7 366.1 791.0 365.3C793.3 364.5 795.6 363.6 797.8 362.4C799.9 361.1 801.8 359.6 803.6 357.9C805.5 356.3 807.0 354.2 808.6 352.4C810.2 350.6 811.6 348.6 813.4 347.0C815.2 345.4 817.2 344.1 819.5 342.9C821.7 341.6 824.3 340.7 826.6 339.5C829.0 338.2 831.0 336.6 833.6 335.4C836.3 334.2 839.5 333.2 842.7 332.0C845.9 330.9 850.4 330.2 852.8 328.3C855.2 326.5 856.4 323.7 857.1 320.9C857.7 318.1 856.9 314.7 856.8 311.7C856.7 308.7 856.6 305.8 856.6 303.0C856.5 300.2 856.4 297.4 856.4 294.7C856.3 291.9 856.3 289.3 856.3 286.6C856.2 284.0 856.2 281.4 856.2 278.8C856.2 276.2 856.1 273.6 856.1 271.0Z"/>
+  <path class="paper" d="M0 865H786V834H853V1016H815V1030H55V1018H0Z"/>
+  <path class="splash" d="M853 833C838 835 818 843 806 857C795 869 791 886 797 899C803 911 809 921 808 936C807 950 801 962 806 968C811 974 821 966 829 957C836 949 840 938 845 931C848 927 851 926 853 925Z"/>
+  <path class="spark" d="M829 981C832 981 832 985 834 987C838 986 840 990 837 992C834 994 832 993 831 997C830 1002 822 1004 821 1000C820 997 824 994 823 992C820 990 821 986 825 987C826 984 826 981 829 981Z"/>
+</svg>
+
+<p class="price"><span class="hrs">3 hours</span><b><span class="rs">₹</span>675</b><span class="per">per child</span></p>
+
+<section class="food" aria-label="Food included per child">
+  <ul class="items">
+    <li>
+      <svg class="ill" viewBox="0 0 140 92" aria-hidden="true">
+        <ellipse class="sh x" cx="70" cy="84" rx="60" ry="6"/>
+        <ellipse class="plate" cx="70" cy="66" rx="61" ry="19"/>
+        <ellipse class="plate-2 x" cx="70" cy="65" rx="48" ry="13"/>
+        <g transform="translate(70 52) scale(.94) translate(-70 -52)">
+        <g id="slice" transform="rotate(-3 40 50)">
+          <path class="sauce" d="M8 32Q36 18 66 26L50 80Z"/>
+          <path class="cheese x" d="M14 35Q36 24 60 30L57 40Q55 45 53 42L49 72L44 59Q42 54 39 57L32 50Q29 46 26 49Z"/>
+          <circle class="mozz thin" cx="27" cy="38" r="5.5"/><circle class="mozz thin" cx="47" cy="36" r="5"/><circle class="mozz thin" cx="46" cy="56" r="4.2"/>
+          <path class="leaf thin" d="M33 47q6-7 13-1q-6 7-13 1z"/><path class="leaf thin" d="M51 44q4-6 9-3q-3 6-9 3z"/>
+          <path class="crust" d="M5 31Q36 13 69 23Q72 30 65 31Q36 22 10 37Q3 37 5 31Z"/>
+          <path class="crust-2 x" d="M15 28Q36 18 58 21Q36 21 15 31Z"/>
+        </g>
+        <use href="#slice" transform="matrix(-1 0 0 1 140 0) rotate(-4 40 50)"/>
+        </g>
+      </svg>
+      <p>2 Margherita<br>pizza slices</p>
+    </li>
+    <li>
+      <svg class="ill" viewBox="0 0 140 92" aria-hidden="true">
+        <ellipse class="sh x" cx="70" cy="85" rx="48" ry="6"/>
+        <path class="cream-sauce" d="M18 55Q14 42 27 37Q28 25 43 25Q50 14 64 18Q75 10 87 18Q101 15 104 27Q119 29 117 42Q125 47 122 55Z"/>
+        <g transform="translate(38 37) rotate(-30)"><path class="penne" d="M-13-5H9L13 5H-9Z"/><path class="ridge" d="M-6-4.5L-2 4.5M0-4.5L4 4.5M6-4.5L9 3"/><ellipse class="penne-2 thin" cx="11" cy="0" rx="2.4" ry="5.2" transform="rotate(-22 11 0)"/></g>
+        <g transform="translate(70 26) rotate(12)"><path class="penne" d="M-13-5H9L13 5H-9Z"/><path class="ridge" d="M-6-4.5L-2 4.5M0-4.5L4 4.5M6-4.5L9 3"/><ellipse class="penne-2 thin" cx="11" cy="0" rx="2.4" ry="5.2" transform="rotate(-22 11 0)"/></g>
+        <g transform="translate(100 38) rotate(-56)"><path class="penne" d="M-12-5H8L12 5H-8Z"/><path class="ridge" d="M-5-4.5L-1 4.5M1-4.5L5 4.5"/><ellipse class="penne-2 thin" cx="10" cy="0" rx="2.4" ry="5.2" transform="rotate(-22 10 0)"/></g>
+        <g transform="translate(57 45) rotate(28)"><path class="penne" d="M-12-5H8L12 5H-8Z"/><path class="ridge" d="M-5-4.5L-1 4.5M1-4.5L5 4.5"/><ellipse class="penne-2 thin" cx="10" cy="0" rx="2.4" ry="5.2" transform="rotate(-22 10 0)"/></g>
+        <g transform="translate(88 47) rotate(-10)"><path class="penne" d="M-12-5H8L12 5H-8Z"/><path class="ridge" d="M-5-4.5L-1 4.5M1-4.5L5 4.5"/><ellipse class="penne-2 thin" cx="10" cy="0" rx="2.4" ry="5.2" transform="rotate(-22 10 0)"/></g>
+        <path class="cream-sauce thin" d="M58 30q9-6 17 0q5 4-1 6q-8 3-15 0q-5-3-1-6z"/>
+        <path class="cream-sauce thin" d="M28 47q7-5 14-1q4 4-2 6q-7 2-11-1q-4-2-1-4z"/>
+        <path class="cream-sauce thin" d="M84 33q6-4 12 0q3 3-2 5q-6 1-9-1q-3-2-1-4z"/>
+        <g class="leaf x"><circle cx="46" cy="22" r="1.8"/><circle cx="64" cy="40" r="1.8"/><circle cx="84" cy="22" r="1.8"/><circle cx="110" cy="44" r="1.8"/><circle cx="32" cy="40" r="1.8"/><circle cx="76" cy="47" r="1.8"/><circle cx="50" cy="51" r="1.6"/></g>
+        <g class="sauce x"><circle cx="56" cy="22" r="1.2"/><circle cx="98" cy="27" r="1.2"/><circle cx="40" cy="47" r="1.2"/></g>
+        <path class="bowl" d="M12 52Q14 86 70 87Q126 86 128 52Q70 64 12 52Z"/>
+        <path class="bowl-2" d="M12 52Q70 64 128 52Q128 58 124 60Q70 72 16 60Q12 58 12 52Z"/>
+        <path class="white x" d="M24 66Q28 76 40 80Q30 79 25 72Z" opacity=".55"/>
+      </svg>
+      <p>White sauce<br>pasta</p>
+    </li>
+    <li>
+      <svg class="ill" viewBox="0 0 140 92" aria-hidden="true">
+        <ellipse class="sh x" cx="70" cy="85" rx="48" ry="6"/>
+        <defs><g id="bite"><rect class="glaze" x="-10" y="-9" width="20" height="18" rx="6"/><path class="glaze-2 x" d="M-6-6H3Q5-6 4-4L-4 1Q-7 3-7 0V-3Q-7-6-6-6Z"/><circle class="white x" cx="5" cy="-4" r="1.3"/></g></defs>
+        <use href="#bite" transform="translate(50 32) rotate(12)"/><use href="#bite" transform="translate(73 25) rotate(-8)"/><use href="#bite" transform="translate(95 32) rotate(20)"/>
+        <use href="#bite" transform="translate(34 46) rotate(-16)"/><use href="#bite" transform="translate(59 47) rotate(8)"/><use href="#bite" transform="translate(84 46) rotate(-10)"/><use href="#bite" transform="translate(107 48) rotate(16)"/>
+        <path class="garlic thin" d="M64 34l4-2 3 3-3 3-4-1z"/><path class="garlic thin" d="M41 37l4-1 2 3-3 3-4-2z"/><path class="garlic thin" d="M86 36l4-2 3 3-2 3-4-1z"/><path class="garlic thin" d="M101 22l3-2 3 2-1 4h-4z"/>
+        <g class="onion x"><circle cx="62" cy="17" r="4"/><circle cx="43" cy="23" r="3.6"/><circle cx="88" cy="20" r="3.6"/><circle cx="73" cy="38" r="4"/><circle cx="50" cy="43" r="3.6"/><circle cx="97" cy="42" r="3.6"/></g>
+        <g class="onion-2 x"><circle cx="62" cy="17" r="1.8"/><circle cx="43" cy="23" r="1.6"/><circle cx="88" cy="20" r="1.6"/><circle cx="73" cy="38" r="1.8"/><circle cx="50" cy="43" r="1.6"/><circle cx="97" cy="42" r="1.6"/></g>
+        <g class="garlic x"><ellipse cx="55" cy="26" rx="1.7" ry="1"/><ellipse cx="80" cy="31" rx="1.7" ry="1" transform="rotate(30 80 31)"/><ellipse cx="38" cy="54" rx="1.7" ry="1"/><ellipse cx="68" cy="52" rx="1.7" ry="1" transform="rotate(-30 68 52)"/><ellipse cx="104" cy="54" rx="1.7" ry="1"/></g>
+        <path class="white" d="M14 52Q16 86 70 87Q124 86 126 52Q70 64 14 52Z"/>
+        <path class="plate-2" d="M14 52Q70 64 126 52Q126 58 122 60Q70 72 18 60Q14 58 14 52Z"/>
+        <path class="pink x" d="M18 68Q70 82 122 68L120 74Q70 88 20 74Z"/>
+      </svg>
+      <p>Chilli potato<br>garlic shots</p>
+    </li>
+    <li>
+      <svg class="ill" viewBox="0 0 140 92" aria-hidden="true">
+        <ellipse class="sh x" cx="70" cy="84" rx="58" ry="6"/>
+        <ellipse class="plate" cx="70" cy="68" rx="61" ry="17"/>
+        <ellipse class="plate-2 x" cx="70" cy="67" rx="48" ry="11"/>
+        <defs><g id="nug"><path class="nugget" d="M19.6-1.1Q20.5 0 18.7 2.1Q18.9 4.5 15.9 6.1Q14.5 8.4 10.6 9.2Q7.8 10.9 3.7 10.8Q0 11.8-3.7 10.8Q-7.8 10.9-10.6 9.2Q-14.5 8.4-15.9 6.1Q-18.9 4.5-18.7 2.1Q-20.5 0-18.7-2.3Q-18.9-4.8-15.9-6.5Q-14.5-8.9-10.6-9.7Q-7.8-11.6-3.7-11.5Q0-12.6 3.7-11.5Q7.8-11.6 10.6-9.7Q14.5-8.9 15.9-6.5Q18.9-4.8 18.7-2.3Z"/><path class="nugget-2 x" d="M-16.5 5.2C-11 8.6-3 9.4 3.5 9.2C10 9 15 7 17.6 4.2C16.4 7.6 12.6 9.6 7.6 10.6C2 11.8-6 11.6-11.4 9.6C-14 8.6-15.8 7-16.5 5.2Z"/><ellipse class="crust-2 x" cx="-7" cy="-6.5" rx="7" ry="2.6" transform="rotate(-8 -7 -6.5)"/><g class="crumb x"><circle cx="-12" cy="1" r="1.1"/><circle cx="-4" cy="-1" r="1"/><circle cx="5" cy="3" r="1.1"/><circle cx="12" cy="-3" r="1"/><circle cx="-6" cy="5" r="1"/><circle cx="3" cy="-7" r="1"/><circle cx="13" cy="4" r="1"/><circle cx="-15" cy="-3" r="1"/></g></g></defs>
+        <use href="#nug" transform="translate(54 41) rotate(-6) scale(1.12)"/><use href="#nug" transform="translate(36 61) rotate(4) scale(1.12)"/><use href="#nug" transform="translate(73 63) rotate(-3) scale(1.12)"/>
+        <path class="nugget" d="M88 48C89 39 97 35 106 35L108 35Q110 40 115 39Q117 44 122 44Q124 47 127 48C128 58 120 63 110 63C99 64 88 58 88 48Z"/>
+        <path class="filling thin" d="M108 36Q110 40 115 39Q117 44 122 44Q124 47 126 49Q117 53 110 47Q105 42 108 36Z"/>
+        <g class="corn thin"><rect x="111" y="42" width="4" height="3.8" rx="1.2"/><rect x="117" y="46" width="4" height="3.8" rx="1.2"/></g>
+        <path class="nugget-2 x" d="M90 54C95 60 103 61 110 61C118 61 123 58 126.4 54.6C124 60 118 63 110 63C100 64 92 60 90 54Z"/><ellipse class="crust-2 x" cx="98" cy="40" rx="6" ry="2.4" transform="rotate(-14 98 40)"/>
+        <g class="crumb x"><circle cx="101" cy="47" r="1.1"/><circle cx="109" cy="54" r="1"/><circle cx="95" cy="52" r="1"/><circle cx="118" cy="56" r="1.1"/><circle cx="104" cy="41" r="1"/></g>
+      </svg>
+      <p>Cheese corn<br>nuggets</p>
+    </li>
+    <li>
+      <svg class="ill" viewBox="0 0 140 92" aria-hidden="true">
+        <ellipse class="sh x" cx="70" cy="88" rx="30" ry="4"/>
+        <path class="pink" d="M63 76L76-2L84-1L71 77Z"/>
+        <path class="glass" d="M43 12H97L91 85Q70 90 49 85Z"/>
+        <path class="mojito x" d="M45 26H95L90.2 83.4Q70 88 49.8 83.4Z" opacity=".9"/>
+        <path class="mojito-2 x" d="M45 26H95L94.4 33Q70 37 45.6 33Z"/>
+        <g class="boba"><circle cx="56" cy="79" r="4.4"/><circle cx="65" cy="81" r="4.4"/><circle cx="75" cy="81" r="4.4"/><circle cx="84" cy="79" r="4.4"/><circle cx="60" cy="71" r="4.4"/><circle cx="70" cy="73" r="4.4"/><circle cx="80" cy="71" r="4.4"/></g>
+        <g class="white x"><circle cx="54.6" cy="77.6" r="1.1"/><circle cx="63.6" cy="79.6" r="1.1"/><circle cx="73.6" cy="79.6" r="1.1"/><circle cx="82.6" cy="77.6" r="1.1"/><circle cx="58.6" cy="69.6" r="1.1"/><circle cx="68.6" cy="71.6" r="1.1"/><circle cx="78.6" cy="69.6" r="1.1"/></g>
+        <rect class="ice thin" x="52" y="34" width="15" height="15" rx="3" transform="rotate(-14 59 41)"/>
+        <rect class="ice thin" x="72" y="42" width="14" height="14" rx="3" transform="rotate(12 79 49)"/>
+        <path class="leaf thin" d="M66 58q8-8 15-1q-8 8-15 1z"/><path class="leaf thin" d="M52 50q5-7 11-2q-6 6-11 2z"/>
+        <path class="none" d="M43 12H97L91 85Q70 90 49 85Z"/>
+        <path class="white x" d="M48 18L52 18L54 78L51 77Z" opacity=".7"/>
+        <circle class="lime-2" cx="97" cy="14" r="12.5"/><circle class="pith x" cx="97" cy="14" r="10.4"/><circle class="lime x" cx="97" cy="14" r="9"/>
+        <path class="seg" d="M97 14V5.5M97 14V22.5M97 14L105 14M97 14H89M97 14L103 8M97 14L91 20M97 14L103 20M97 14L91 8"/>
+        <path class="leaf" d="M40 10q2-10 12-9q-1 10-12 9z"/><path class="leaf-2" d="M50 12q8-7 15 0q-8 7-15 0z"/>
+      </svg>
+      <p>Boba mint<br>mojito</p>
+    </li>
+  </ul>
+  <p class="adults"><b>Adults ₹399</b> · same menu with paneer pizza</p>
+</section>
+
+</body></html>

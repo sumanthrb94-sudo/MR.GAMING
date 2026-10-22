@@ -25,7 +25,7 @@ const MEMBER = { solo: 169, duo: 279 };   // member rate once a pass's hours are
 const RATES = { solo: 199, duo: 320, trio: 420, quad: 499 }, KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
 const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Whole room', party: 'Birthday party' };
-const BDAY = { perChild: 600, perAdult: 299, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 };   // same as CONFIG.birthday in main.js
+const BDAY = { perChild: 675, perAdult: 399, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 };   // same as CONFIG.birthday in main.js
 const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -179,7 +179,7 @@ function fillBookingForm() {
 function bookingDraft() {
   const station = bk('station').value, squad = station === 'squad';
   if (station === 'party') {
-    // Birthday package: fixed 3 hours, whole game room, ₹600 a child + ₹299 an adult, at least 10 guests in total
+    // Birthday package: fixed 3 hours, whole game room, ₹675 a child + ₹399 an adult, at least 10 guests in total
     const adults = Math.max(0, Math.min(99, Math.round(+bk('adults').value) || 0));
     const kids = Math.max(1, BDAY.minGuests - adults, Math.min(99, Math.round(+bk('kids').value) || 0));
     const start = Math.min(+bk('start').value, CLOSE - BDAY.hours);

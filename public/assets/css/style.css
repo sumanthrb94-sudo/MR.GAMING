@@ -439,6 +439,7 @@ em { font-style: normal; color: var(--accent-text); }
 .bday-food { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
 .bday-food li { display: flex; align-items: baseline; gap: var(--s2); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-weight: 700; font-size: 15px; line-height: 1.25; }
 .bday-food b { font-weight: 900; font-stretch: 120%; color: var(--accent-text); }
+.bday-food li:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* an odd last item takes the full row */
 .bday-plan { padding: clamp(24px, 3vw, 32px); display: grid; gap: var(--s5); }
 .bday-grid { display: grid; gap: var(--s4); }
 @media (min-width: 520px) { .bday-grid { grid-template-columns: 1fr 1fr; } }

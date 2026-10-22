@@ -124,7 +124,7 @@
 
         <nav class="quick" aria-label="Quick links" data-stagger>
           <a class="quick-tile press" href="#book" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-calendar"/></svg></span><b>Book a slot</b><small>Live availability</small></a>
-          <a class="quick-tile press" href="#birthday" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthday party</b><small>₹600 per child</small></a>
+          <a class="quick-tile press" href="#birthday" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthday party</b><small>₹675 per child</small></a>
           <a class="quick-tile press" href="/menu" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-food"/></svg></span><b>Food menu</b><small>10% off while you play</small></a>
           <a class="quick-tile press" href="/pass" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-ticket"/></svg></span><b>Log in</b><small>See your pass hours</small></a>
         </nav>
@@ -378,7 +378,7 @@
           <!-- Birthday upsell: slides down to the planner with the date filled in -->
           <a class="upsell card" id="bday-upsell" href="#bday-plan">
             <span class="upsell-ic"><svg class="i"><use href="#i-cake"/></svg></span>
-            <span class="upsell-text"><b>Birthday coming up?</b><span>3 hrs of games, food included · ₹600/child · min 10 guests</span></span>
+            <span class="upsell-text"><b>Birthday coming up?</b><span>3 hrs of games, food included · ₹675/child · min 10 guests</span></span>
             <span class="upsell-go"><svg class="i"><use href="#i-arrow"/></svg></span>
           </a>
 
@@ -417,26 +417,27 @@
 
         <div class="bday" data-stagger>
           <figure class="bday-flyer" data-reveal>
-            <a href="/assets/images/birthday-flyer.jpg" target="_blank" rel="noopener" aria-label="Open the birthday package flyer full size">
+            <a href="/assets/images/birthday-package.jpg" target="_blank" rel="noopener" aria-label="Open the birthday package flyer full size">
               <picture>
-                <source type="image/webp" srcset="/assets/images/birthday-flyer-560.webp 560w, /assets/images/birthday-flyer-853.webp 853w" sizes="(min-width: 900px) 40vw, 100vw">
-                <img src="/assets/images/birthday-flyer.jpg" width="853" height="1280" loading="lazy" decoding="async"
-                  alt="Mr. Sandwich birthday package flyer: 3 hours, ₹600 per child. Children at a party table with pizza and a birthday cake, and playing PS5 and Xbox on beanbags. Food included per child: 2 pizza slices, a choice of snack, French fries and 1 scoop of ice cream. Bookings and enquiries 7337230311.">
+                <source type="image/webp" srcset="/assets/images/birthday-package-560.webp 560w, /assets/images/birthday-package-853.webp 853w" sizes="(min-width: 900px) 40vw, 100vw">
+                <img src="/assets/images/birthday-package.jpg" width="853" height="1280" loading="lazy" decoding="async"
+                  alt="MR. Sandwich birthday package flyer: 3 hours, ₹675 per child. Children at a party table with pizza and a birthday cake, and playing PS5 and Xbox on beanbags. Food included per child: 2 Margherita pizza slices, white sauce pasta, chilli potato garlic shots, cheese corn nuggets and a boba mint mojito. Adults ₹399 with paneer pizza. Bookings and enquiries 7337230311.">
               </picture>
             </a>
           </figure>
           <article class="card plan plan-hot bday-deal" data-reveal>
             <p class="plan-name">3 hours, food included <span class="tag">Per child</span></p>
-            <p class="plan-price">₹600<small>/child</small></p>
+            <p class="plan-price">₹675<small>/child</small></p>
             <ul class="bday-food" aria-label="Food included for each child">
-              <li><b>2</b> pizza slices</li>
-              <li><b>1</b> snack of their choice</li>
-              <li><b>+</b> French fries</li>
-              <li><b>1</b> scoop of ice cream</li>
+              <li><b>2</b> Margherita pizza slices</li>
+              <li><b>+</b> white sauce pasta</li>
+              <li><b>+</b> chilli potato garlic shots</li>
+              <li><b>+</b> cheese corn nuggets</li>
+              <li><b>1</b> boba mint mojito</li>
             </ul>
             <ul class="specs"><li>Play PS5 &amp; Xbox</li><li>Board games</li><li>Celebrate together</li></ul>
             <ul class="bday-terms">
-              <li><strong>Minimum 10 guests.</strong> Adults are welcome at ₹299 each and count towards the 10.</li>
+              <li><strong>Minimum 10 guests.</strong> Adults are welcome at ₹399 each (paneer pizza instead of Margherita) and count towards the 10.</li>
               <li><strong>The game room is all yours.</strong> More than 15 guests? You get the whole restaurant.</li>
               <li><strong>₹3,000 advance</strong> to book. If you cancel, we keep a ₹1,000 cancellation charge and refund ₹2,000.</li>
             </ul>
@@ -446,7 +447,7 @@
             <p class="summary-title">Plan the party</p>
             <div class="bday-grid">
               <div class="bday-field">
-                <span class="field-label" id="bday-kids-label">Children <span class="field-note">₹600 each</span></span>
+                <span class="field-label" id="bday-kids-label">Children <span class="field-note">₹675 each</span></span>
                 <div class="stepper" role="group" aria-labelledby="bday-kids-label">
                   <button class="icon-btn press" type="button" id="bday-kids-minus" aria-label="One fewer child">−</button>
                   <output id="bday-kids" aria-live="polite">10</output>
@@ -454,7 +455,7 @@
                 </div>
               </div>
               <div class="bday-field">
-                <span class="field-label" id="bday-adults-label">Adults <span class="field-note">₹299 each</span></span>
+                <span class="field-label" id="bday-adults-label">Adults <span class="field-note">₹399 each</span></span>
                 <div class="stepper" role="group" aria-labelledby="bday-adults-label">
                   <button class="icon-btn press" type="button" id="bday-adults-minus" aria-label="One fewer adult">−</button>
                   <output id="bday-adults" aria-live="polite">0</output>
@@ -471,7 +472,7 @@
               <div><dt>Advance to book</dt><dd>₹3,000</dd></div>
             </dl>
             <div class="summary-total">
-              <span id="bday-sum">10 guests × ₹600</span>
+              <span id="bday-sum">10 guests × ₹675</span>
               <span class="total"><span class="roll" id="bday-total" data-prefix="₹"></span></span>
             </div>
             <a class="btn btn-accent btn-block press" id="bday-send" href="https://wa.me/917337230311" target="_blank" rel="noopener">
@@ -493,7 +494,7 @@
                 <li>Your date and time are confirmed only after the ₹3,000 advance is received.</li>
                 <li>The balance is paid on the day of the party, at the venue.</li>
                 <li>We accept UPI, cash and card.</li>
-                <li>Prices: ₹600 per child and ₹299 per adult for the 3-hour package. Minimum charge is for 10 guests.</li>
+                <li>Prices: ₹675 per child and ₹399 per adult for the 3-hour package. Minimum charge is for 10 guests.</li>
               </ol>
             </section>
             <section>
@@ -515,7 +516,7 @@
             <section>
               <h3>Food</h3>
               <ol start="11">
-                <li>We are 100% pure veg. Food is served as listed in the package for every child.</li>
+                <li>We are 100% pure veg. Every guest gets the food listed in the package; adults get paneer pizza instead of Margherita.</li>
                 <li>Outside food and drinks are not allowed, except your birthday cake.</li>
                 <li>Please tell us about any food allergies when you confirm the guest count.</li>
               </ol>
