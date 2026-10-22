@@ -165,6 +165,7 @@ em { font-style: normal; color: var(--accent-text); }
   :root:not([data-theme]) #theme-toggle .i-moon { display: none; }
 }
 @media (min-width: 900px) { .nav { display: flex; } }
+@media (max-width: 1199px) { .nav .nav-wide { display: none; } }
 /* small laptops: tighter links and no Book button (the nav has Book, as phones do), so the bar fits on one line */
 @media (min-width: 900px) and (max-width: 1099px) { .topbar-in { gap: var(--s3); } .brand { flex: none; } .nav a { padding-inline: var(--s2); white-space: nowrap; } .topbar-book { display: none; } }
 
@@ -457,11 +458,16 @@ em { font-style: normal; color: var(--accent-text); }
 .bday-tc-body h3 { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s3); }
 .bday-tc-body ol { padding-left: var(--s5); display: grid; gap: var(--s2); font-size: 15px; line-height: 1.5; }
 .bday-tc-body li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.bday-tc-back { grid-column: 1 / -1; }
+.bday-tc-back a { min-height: 44px; }
 .bday-tc-cancel { grid-column: 1 / -1; padding: var(--s5); border-radius: var(--r-md); background: var(--surface-2); }
 .bday-terms { display: grid; gap: var(--s2); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: 15px; color: var(--muted); }
 .bday-terms strong { color: var(--text); }
 .bday-lines { padding-bottom: 0; border-bottom: 0; }
 .bday-min { grid-column: 1 / -1; font-size: 14px; color: var(--muted); }
+/* running total right under the counters, so it stays in view while tapping + and − (the summary below repeats it) */
+.bday-run { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--surface-2); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bday-run b { font-weight: 900; font-stretch: 120%; font-size: 24px; letter-spacing: -.02em; }
 .field-note { color: var(--muted); letter-spacing: .02em; text-transform: none; }
 .stepper { display: flex; align-items: center; gap: var(--s3); min-height: 52px; }
 .stepper .icon-btn { width: 44px; height: 44px; font-size: 22px; font-weight: 700; }
@@ -590,15 +596,15 @@ em { font-style: normal; color: var(--accent-text); }
 .tab.is-active .tab-ic::before { opacity: 1; transform: none; }
 @media (min-width: 900px) { .tabbar { display: none; } }
 
-/* ---------- reveal motion (fade-in-blur, once) ---------- */
-.js [data-reveal] { opacity: 0; transform: translateY(24px); filter: blur(10px); transition: opacity .9s var(--ease-out), transform .9s var(--ease-out), filter .9s var(--ease-out); transition-delay: calc(var(--i, 0) * 90ms); }
+/* ---------- reveal motion (quick fade-up, once; main.js starts it just before the element scrolls in) ---------- */
+.js [data-reveal] { opacity: 0; transform: translateY(8px); transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); transition-delay: calc(min(var(--i, 0), 6) * 40ms); }   /* long lists: the stagger stops growing after 6 */
 .js [data-reveal].is-in { opacity: 1; transform: none; filter: none; }
 /* Hero: a CSS fade that starts with the first paint instead of waiting for main.js, so the top of the page is never held back.
    Starts at opacity .001, not 0, so the browser treats the text as painted (largest-paint timing) from the first frame. */
 .hero [data-reveal], .js .hero [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; animation: hero-in .7s var(--ease-out) both; }
 @keyframes hero-in { from { opacity: .001; transform: translateY(14px); } }
-.js .display .w { display: inline-block; opacity: 0; transform: translateY(.35em); filter: blur(14px); }
-.js .display.is-in .w { opacity: 1; transform: none; filter: none; transition: opacity .9s var(--ease-out), transform 1s var(--ease-out), filter .9s var(--ease-out); transition-delay: calc(var(--w) * 70ms + 80ms); }
+.js .display .w { display: inline-block; opacity: 0; transform: translateY(.2em); }
+.js .display.is-in .w { opacity: 1; transform: none; filter: none; transition: opacity .35s var(--ease-out), transform .4s var(--ease-out); transition-delay: calc(var(--w) * 40ms); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -672,6 +678,9 @@ select.field { appearance: none; cursor: pointer; }
 .trust { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-top: var(--s6); color: var(--muted); font-size: 15px; }
 .trust li { display: inline-flex; align-items: center; gap: var(--s2); }
 .trust .i { width: 18px; height: 18px; color: var(--accent-text); }
+/* the address, up top: opens the same Google Maps place as the Visit section */
+.trust-where a { color: var(--text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.trust-where a:hover { text-decoration-color: currentColor; }
 
 .seg-scroll { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-snap-type: x proximity; }
 .seg-scroll::-webkit-scrollbar { display: none; }
@@ -681,8 +690,9 @@ select.field { appearance: none; cursor: pointer; }
   :root { --section: 56px; --topbar: calc(60px + env(safe-area-inset-top)); }
   .topbar { padding-top: env(safe-area-inset-top); background: color-mix(in srgb, var(--bg) 86%, transparent); }
   .topbar-in { gap: var(--s3); } .topbar-actions { gap: var(--s2); }
-  .topbar-book { display: none; }
-  .my-pass { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  /* Book is the one lime button; Log in shrinks to a round icon button beside the theme toggle (its aria-label names it) */
+  .topbar .my-pass { width: 40px; padding: 0; }
+  .topbar .my-pass span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .brand { gap: var(--s2); } .brand-name { font-size: 17px; }
 
   .hero { padding-block: var(--s6); }
@@ -698,13 +708,17 @@ select.field { appearance: none; cursor: pointer; }
   .quick-ic { width: 40px; height: 40px; display: grid; place-items: center; margin-bottom: var(--s3); border-radius: 12px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-text); }
   .quick-tile b { font-size: 16px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
   .quick-tile small { font-size: 13px; color: var(--muted); line-height: 1.3; }
+  /* an odd last tile (FIFA Cup) is one slim full-width row */
+  .quick-tile:last-child:nth-child(odd) { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--s3); padding-block: var(--s3); }
+  .quick-tile:last-child:nth-child(odd) .quick-ic { grid-row: span 2; margin-bottom: 0; }
 
   .facts { margin-top: var(--s6); }
   .fact { padding-top: var(--s4); }
   .fact + .fact { padding-left: var(--s3); }
   .fact { padding-right: var(--s3); }
   .fact dd { font-size: clamp(22px, 7vw, 30px); }
-  .trust { display: grid; gap: var(--s3); margin-top: var(--s5); padding: var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); font-size: 15px; color: var(--text); }
+  .trust { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); margin-top: var(--s5); padding: var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); font-size: 15px; color: var(--text); }
+  .trust .trust-where { grid-column: 1 / -1; }
 
   .marquee-track { padding-block: var(--s3); }
   .marquee span { font-size: 18px; }
@@ -761,7 +775,14 @@ select.field { appearance: none; cursor: pointer; }
   .in-checkout .footer { padding-bottom: calc(var(--s8) + 96px + env(safe-area-inset-bottom)); }
 }
 @keyframes bar-in { from { transform: translateY(120%); opacity: 0; } }
-@media (max-width: 379px) { #theme-toggle { display: none; } }
+/* 360–379px: a smaller wordmark and round buttons, so logo, theme, Log in and Book share one line */
+@media (max-width: 379px) {
+  .topbar-actions { gap: 6px; }
+  .brand-name { font-size: 15px; }
+  #theme-toggle, .topbar .my-pass { width: 36px; height: 36px; min-height: 36px; }
+  .topbar-book { min-height: 36px; padding-inline: 14px; }
+}
+@media (max-width: 359px) { #theme-toggle { display: none; } }
 @media (max-width: 359px) {
   .brand-name { font-size: 15px; }
   .quick-tile { padding: var(--s3); }

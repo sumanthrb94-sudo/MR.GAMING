@@ -67,6 +67,7 @@
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
     <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 21c.5-4.5 2.5-8 7-10"/><path d="M9 18c6.22 0 10.5-3.29 11-12V4h-4.01C7 4 4 8 4 13c0 1 0 3 2 5z"/></symbol>
     <symbol id="i-card" viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 10h18M7 15h.01M11 15h2"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10M17 4v8a5 5 0 0 1-10 0V4"/><path d="M5 9a2 2 0 1 0 0-4h2M19 9a2 2 0 1 1 0-4h-2"/></symbol>
     <symbol id="i-door" viewBox="0 0 24 24"><path d="M14 12v.01M3 21h18M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol>
   </svg>
 
@@ -84,6 +85,7 @@
         <a href="#book">Book</a>
         <a href="#birthday">Birthdays</a>
         <a href="/menu">Food menu</a>
+        <a class="nav-wide" href="#fifa">FIFA Cup</a>
         <a href="#visit">Visit</a>
         <span class="nav-ind" aria-hidden="true"></span>
       </nav>
@@ -127,6 +129,7 @@
           <a class="quick-tile press" href="#birthday" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthday party</b><small>₹675 per child</small></a>
           <a class="quick-tile press" href="/menu" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-food"/></svg></span><b>Food menu</b><small>10% off while you play</small></a>
           <a class="quick-tile press" href="/pass" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-ticket"/></svg></span><b>Log in</b><small>See your pass hours</small></a>
+          <a class="quick-tile press" href="#fifa" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-trophy"/></svg></span><b>FIFA Cup</b><small>Coming soon · join the waitlist</small></a>
         </nav>
 
         <dl class="facts" data-stagger>
@@ -145,6 +148,7 @@
         </dl>
 
         <ul class="trust" data-reveal>
+          <li class="trust-where"><svg class="i"><use href="#i-pin"/></svg><a href="https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6" target="_blank" rel="noopener">110, My Home Vihanga Rd, Gachibowli</a></li>
           <li><svg class="i"><use href="#i-door"/></svg>Private room</li>
           <li><svg class="i"><use href="#i-leaf"/></svg>100% pure veg</li>
           <li><svg class="i"><use href="#i-card"/></svg>UPI, cash or card</li>
@@ -371,7 +375,7 @@
                 </div>
               </details>
               <p class="book-status" id="book-status" role="status"></p>
-              <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. Pay the advance by UPI to lock it in.</p>
+              <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. No advance for gaming: you pay at the venue.</p>
             </div>
           </div>
 
@@ -439,7 +443,7 @@
             <ul class="bday-terms">
               <li><strong>Minimum 10 guests.</strong> Adults are welcome at ₹399 each (paneer pizza instead of Margherita) and count towards the 10.</li>
               <li><strong>The game room is all yours.</strong> More than 15 guests? You get the whole restaurant.</li>
-              <li><strong>₹3,000 advance</strong> to book. If you cancel, we keep a ₹1,000 cancellation charge and refund ₹2,000.</li>
+              <li><strong>₹4,000 advance</strong> to book. If you cancel, we keep a ₹1,000 cancellation charge and refund ₹3,000.</li>
             </ul>
           </article>
 
@@ -462,6 +466,7 @@
                   <button class="icon-btn press" type="button" id="bday-adults-plus" aria-label="One more adult">+</button>
                 </div>
               </div>
+              <p class="bday-run" aria-live="polite"><span id="bday-run-sum">10 × ₹675</span><b id="bday-run-total">₹6,750</b></p>
               <p class="bday-min" id="bday-min">Minimum 10 guests in total. Adults count towards it.</p>
               <label class="bday-field"><span class="field-label">Date</span><input class="field" id="bday-date" type="date"></label>
               <label class="bday-field"><span class="field-label">Time</span><select class="field" id="bday-start"></select></label>
@@ -469,7 +474,7 @@
             </div>
             <dl class="summary-lines bday-lines">
               <div><dt>Space</dt><dd id="bday-space">Exclusive game room</dd></div>
-              <div><dt>Advance to book</dt><dd>₹3,000</dd></div>
+              <div><dt>Advance to book</dt><dd>₹4,000</dd></div>
             </dl>
             <div class="summary-total">
               <span id="bday-sum">10 guests × ₹675</span>
@@ -491,7 +496,7 @@
             <section>
               <h3>Booking &amp; payment</h3>
               <ol>
-                <li>Your date and time are confirmed only after the ₹3,000 advance is received.</li>
+                <li>Your date and time are confirmed only after the ₹4,000 advance is received.</li>
                 <li>The balance is paid on the day of the party, at the venue.</li>
                 <li>We accept UPI, cash and card.</li>
                 <li>Prices: ₹675 per child and ₹399 per adult for the 3-hour package. Minimum charge is for 10 guests.</li>
@@ -539,13 +544,14 @@
             <section class="bday-tc-cancel">
               <h3>Cancellation &amp; change policy</h3>
               <ol start="19">
-                <li><strong>You cancel:</strong> a ₹1,000 cancellation charge applies. We keep ₹1,000 of the ₹3,000 advance and refund ₹2,000.</li>
+                <li><strong>You cancel:</strong> a ₹1,000 cancellation charge applies. We keep ₹1,000 of the ₹4,000 advance and refund ₹3,000.</li>
                 <li><strong>You change the date:</strong> one change is free if you ask at least 3 days before the party, subject to availability. Your advance moves to the new date.</li>
                 <li><strong>No-show:</strong> if no one arrives within the booked time, the advance is not refunded.</li>
                 <li><strong>We cancel:</strong> you get the full advance back or a new date of your choice.</li>
                 <li><strong>Refunds</strong> go back to the same UPI account or the payment method you used.</li>
               </ol>
             </section>
+            <p class="bday-tc-back"><a class="link-arrow" href="#bday-plan">Back to the planner <svg class="i"><use href="#i-arrow"/></svg></a></p>
           </div>
         </details>
       </div>

@@ -20,7 +20,7 @@
     // Birthday package: 3 hours, food included, ₹675 a child, ₹399 an adult. Minimum 10 guests (adults count towards it).
     // Up to roomMax guests get the game room to themselves; more than that get the whole restaurant.
     // Advance to book; on cancellation cancelFee is kept and the rest refunded
-    birthday: { perChild: 675, perAdult: 399, hours: 3, minGuests: 10, roomMax: 15, advance: 3000, cancelFee: 1000 },
+    birthday: { perChild: 675, perAdult: 399, hours: 3, minGuests: 10, roomMax: 15, advance: 4000, cancelFee: 1000 },
     // Food add-ons in the booking are the menu's Top Combos (menu-data.js), 10% off (foodPerk) for console bookers
   };
 
@@ -127,7 +127,8 @@
       const space = guests > roomMax ? 'Whole restaurant' : 'Exclusive game room';
       $('#bday-space').textContent = space;
       $('#bday-min').textContent = `${guests} guests. Minimum 10 in total; adults count towards it.`;
-      $('#bday-sum').textContent = `${kids} × ${inr(perChild)}${adults ? ` + ${adults} × ${inr(perAdult)}` : ''}`;
+      $('#bday-sum').textContent = $('#bday-run-sum').textContent = `${kids} × ${inr(perChild)}${adults ? ` + ${adults} × ${inr(perAdult)}` : ''}`;
+      $('#bday-run-total').textContent = inr(total);   // the running total under the counters
       setRoll($('#bday-total'), total);
       const h = +startIn.value, day = dateIn.value ? new Date(dateIn.value + 'T00:00') : null;
       const time = `${clock12(h)} – ${clock12(h + hours)}`;
@@ -185,7 +186,7 @@
     setTimeout(() => { const s = $('.shine', title); if (s) s.classList.add('is-shining'); }, 900);
   }
 
-  /* ---------- scroll reveals (once) ---------- */
+  /* ---------- scroll reveals (once): start a little before the element enters the screen, so it is in by the time it is seen ---------- */
   $$('[data-stagger]').forEach((g) => $$('[data-reveal]', g).forEach((el, i) => el.style.setProperty('--i', i)));
   const onReveal = (el) => {
     el.classList.add('is-in');
@@ -194,7 +195,7 @@
   if ('IntersectionObserver' in window && !reduced) {
     const io = new IntersectionObserver((entries) => entries.forEach((e) => {
       if (e.isIntersecting) { onReveal(e.target); io.unobserve(e.target); }
-    }), { rootMargin: '0px 0px -8% 0px', threshold: .12 });
+    }), { rootMargin: '0px 0px 15% 0px', threshold: 0 });
     $$('[data-reveal]').forEach((el) => io.observe(el));
   } else {
     $$('[data-reveal]').forEach(onReveal);
@@ -204,10 +205,10 @@
   const topbar = $('#topbar');
   const onScroll = () => topbar.classList.toggle('is-scrolled', window.scrollY > 8);
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-  // Phone tab bar: the tab for the section under the middle of the screen lights up
+  // Phone tab bar: the tab for the section under the middle of the screen lights up (none for the FIFA Cup and Visit)
   const tabbar = $('#tabbar');
   if (tabbar && 'IntersectionObserver' in window) {
-    const TAB_FOR = { top: 'top', stations: 'top', prices: 'top', book: 'book', birthday: 'birthday', food: 'food', fifa: 'food' };
+    const TAB_FOR = { top: 'top', stations: 'top', prices: 'top', book: 'book', birthday: 'birthday', food: 'food' };
     const tabs = $$('[data-tab]', tabbar);
     const light = (id) => tabs.forEach((t) => {
       const on = t.dataset.tab === TAB_FOR[id];
@@ -342,7 +343,8 @@
 
     // con: the console filter (any / ps5 / xbox / room); station: what's booked (ps5 / xbox / squad = whole room)
     // live: null while loading, true once the database answered, false if it can't be reached
-    const state = { step: 1, con: 'any', station: 'ps5', players: '1', time: '1', plan: 'hourly', food: {}, date: days[0].key, start: null, game: 'any', week: new Map(), live: null, held: null };
+    // passPlan: the visitor's own pass ('use-pass' / 'member') once they arrive from My pass or pick it, so the fare step leads with it
+    const state = { step: 1, con: 'any', station: 'ps5', players: '1', time: '1', plan: 'hourly', passPlan: null, food: {}, date: days[0].key, start: null, game: 'any', week: new Map(), live: null, held: null };
     const takenOn = (key) => state.week.get(key) || new Set();
     // Opened from a pass card (/?pass=duo#book): pay with the pass
     const params = new URLSearchParams(location.search), passKind = params.get('pass');
@@ -407,6 +409,7 @@
       $$('button', segs.time).forEach((b) => { b.disabled = state.con === 'room' && +b.dataset.value < CONFIG.squadMinHours; });
       if (state.start !== null && !fits(state.date, state.station, +state.start, +state.time)) { state.start = null; if (state.step > 1) goStep(1); }
       if (!passOk() && state.plan !== 'hourly') state.plan = 'hourly';
+      if (state.plan === 'use-pass' || state.plan === 'member') state.passPlan = state.plan;
       $$('button', segs.plan).forEach((b) => { b.disabled = !passOk(); b.setAttribute('aria-pressed', String(b.dataset.value === state.plan)); });
       const day = days.find((d) => d.key === state.date), n = +state.time, P = price(state.plan), picked = state.start !== null, s0 = +state.start;
       Object.assign(state, { day, hours: n, squad: state.station === 'squad' }, P);
@@ -479,16 +482,21 @@
       if (state.start === null) { $('#fares').innerHTML = ''; return; }
       const n = +state.time, hourly = price('hourly'), pass = price('buy-pass'), perHr = Math.round(CONFIG.passes[P.kind] / CONFIG.passHours);
       const save = CONFIG.rates[P.kind] * CONFIG.passHours - CONFIG.passes[P.kind];
-      const card = (plan, title, amount, lines, badge = '') => `<button type="button" class="fare ${plan === 'buy-pass' ? 'fare-pass' : ''}" role="radio" aria-checked="${state.plan === plan}" data-plan="${plan}">
+      const own = passOk() && state.passPlan;   // a pass holder: their pass first, no "Best value" upsell above it
+      const card = (plan, title, amount, lines, badge = '') => `<button type="button" class="fare ${plan === (own || 'buy-pass') ? 'fare-pass' : ''}" role="radio" aria-checked="${state.plan === plan}" data-plan="${plan}">
         <span class="fare-head"><b>${title}</b>${badge}</span><span class="fare-price">${amount}</span>
         <span class="fare-lines">${lines.map((l) => `<span>${l}</span>`).join('')}</span></button>`;
-      let html = card('hourly', 'Pay per hour', inr(hourly.gaming), [`${inr(hourly.rate)}/hr × ${hrs(n)}`, passOk() && state.plan === 'hourly' ? `<em>Play 6 hrs this month? The pass saves you ${inr(save)}.</em>` : 'Pay for today only']);
+      const buyLines = [`${inr(perHr)}/hr · save ${inr(save)} vs hourly`, `Today uses ${hrs(n)} · ${hrs(CONFIG.passHours - n)} left for 30 days`, `Then ${inr(CONFIG.memberRates[P.kind])}/hr member rate till day 30`];
+      let html = '';
+      if (own) {
+        const mine = price(own);
+        html += card(own, own === 'use-pass' ? `My ${P.passName.toLowerCase()}` : 'Member rate', inr(mine.gaming), [own === 'use-pass' ? `${hrs(n)} off your pass` : `${inr(mine.memberRate)}/hr × ${hrs(n)} · pass hours used up`, 'We check your pass when we confirm']);
+      }
+      html += card('hourly', 'Pay per hour', inr(hourly.gaming), [`${inr(hourly.rate)}/hr × ${hrs(n)}`, passOk() && !own && state.plan === 'hourly' ? `<em>Play 6 hrs this month? The pass saves you ${inr(save)}.</em>` : 'Pay for today only']);
       if (passOk()) {
-        html += card('buy-pass', `6-hr ${P.passName}`, inr(pass.gaming), [`${inr(perHr)}/hr · save ${inr(save)} vs hourly`, `Today uses ${hrs(n)} · ${hrs(CONFIG.passHours - n)} left for 30 days`, `Then ${inr(CONFIG.memberRates[P.kind])}/hr member rate till day 30`], '<span class="tag">Best value</span>');
-        if (state.plan === 'use-pass' || state.plan === 'member') {
-          const mine = price(state.plan);
-          html += card(state.plan, state.plan === 'use-pass' ? `My ${P.passName.toLowerCase()}` : 'Member rate', inr(mine.gaming), [state.plan === 'use-pass' ? `${hrs(n)} off your pass` : `${inr(mine.memberRate)}/hr × ${hrs(n)} · pass hours used up`, 'We check your pass when we confirm']);
-        }
+        // Hours left on the pass: no new pass on offer. Hours used up (member rate): a new pass, last and untagged
+        if (!own) html += card('buy-pass', `6-hr ${P.passName}`, inr(pass.gaming), buyLines, '<span class="tag">Best value</span>');
+        else if (own === 'member') html += card('buy-pass', `New 6-hr ${P.passName.toLowerCase()}`, inr(pass.gaming), buyLines);
       } else html += `<p class="fare-note">The 6-hr pass is for 1–2 players on one console. ${state.station === 'squad' ? 'The whole room' : 'Groups of 3–4'} pay by the hour.</p>`;
       $('#fares').innerHTML = html;
       $('#plan-hint').textContent = !passOk() ? 'Passes are for 1 or 2 players on one console.'
@@ -650,7 +658,7 @@
         st.perk ? `Gamer perk (10% off food): −${inr(st.perk)}` : null,
         `*Total: ${inr(st.total)}*`,
         '',
-        st.total ? 'Please confirm and send the UPI QR for the advance.' : 'Please confirm my slot.'
+        'Please confirm my slot.'
       ].filter((l) => l !== null);
       const url = waUrl(lines.join('\n'));
 
