@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stock · MR. Sandwich</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0B0A">
+  <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
+  <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="modulepreload" href="/assets/vendor/firebase-account.0e285128.js">
+  <link rel="modulepreload" href="/assets/js/firebase-config.js">
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
+  <link rel="stylesheet" href="/assets/css/admin.css">
+  <link rel="stylesheet" href="/assets/css/stock.css">
+  <script>
+    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body class="admin stock">
+  <header class="topbar is-scrolled">
+    <div class="wrap topbar-in">
+      <a class="brand" href="/"><img src="/assets/images/logo-96.webp" width="36" height="36" alt=""><span class="brand-name">MR. GAMING</span></a>
+      <div class="topbar-actions">
+        <span class="admin-who" id="who"></span>
+        <a class="btn btn-sm btn-ghost press" id="owner-link" href="/admin" hidden>Owner page</a>
+        <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap admin-main stock-main">
+    <!-- Signed out: sent to the one login on /pass -->
+    <section class="card admin-login" id="login" hidden>
+      <h1 class="h2">Taking you to log in…</h1>
+      <p class="admin-msg">Not moving? <a class="text-link" href="/pass">Log in here</a>.</p>
+    </section>
+
+    <!-- Signed in, but not an owner or on the stock list -->
+    <section class="card admin-login" id="denied" hidden>
+      <h1 class="h2">Not on the stock list yet</h1>
+      <p class="admin-msg">This number signed in but can't open the stock page. Ask the owner to add it, quoting this ID:</p>
+      <p class="admin-uid" id="uid"></p>
+      <p class="admin-msg"><a class="text-link" href="/pass">Go to My pass</a></p>
+    </section>
+
+    <!-- Stock -->
+    <section id="dash" hidden>
+      <div class="stock-top">
+        <div>
+          <p class="eyebrow">MR. Sandwich</p>
+          <h1 class="stock-title">Stock</h1>
+        </div>
+        <div class="stock-cta">
+          <button class="btn btn-accent press" id="open-add" type="button">Add stock</button>
+          <button class="btn btn-ghost press" id="open-new" type="button">New product</button>
+        </div>
+      </div>
+      <p class="stock-offline" id="offline" role="status" hidden>Can't reach the database. What you see may be out of date: check your connection.</p>
+
+      <div class="stock-alerts">
+        <section class="stock-alert is-expired" aria-labelledby="h-expired">
+          <h2 class="admin-h" id="h-expired">Expired <span class="admin-count" id="n-expired"></span></h2>
+          <ul class="stock-rows" id="l-expired"><li class="admin-empty">Loading…</li></ul>
+        </section>
+        <section class="stock-alert is-soon" aria-labelledby="h-soon">
+          <h2 class="admin-h" id="h-soon">Expires in 3 days or less <span class="admin-count" id="n-soon"></span></h2>
+          <ul class="stock-rows" id="l-soon"><li class="admin-empty">Loading…</li></ul>
+        </section>
+        <section class="stock-alert is-low" aria-labelledby="h-low">
+          <h2 class="admin-h" id="h-low">Running low <span class="admin-count" id="n-low"></span></h2>
+          <ul class="stock-rows" id="l-low"><li class="admin-empty">Loading…</li></ul>
+        </section>
+      </div>
+
+      <h2 class="admin-h">All products <span class="admin-count" id="n-all"></span></h2>
+      <label class="stock-search"><span class="sr-only">Search products</span><input class="field" id="search" type="search" placeholder="Search products or category" autocomplete="off" enterkeyhint="search"></label>
+      <ul class="stock-products" id="products"><li class="admin-empty">Loading…</li></ul>
+    </section>
+  </main>
+
+  <!-- Add stock: one batch = one product, one quantity, one expiry date -->
+  <dialog class="card stock-sheet" id="add-dlg" aria-labelledby="add-h">
+    <form class="stock-form" id="add-form" method="dialog">
+      <div class="stock-sheet-head"><h2 class="stock-sheet-h" id="add-h">Add stock</h2><button class="stock-x press" type="button" data-close aria-label="Close">×</button></div>
+      <label class="stock-lab"><span class="field-label">Product</span><select class="field" id="add-product" required></select></label>
+      <label class="stock-lab"><span class="field-label">Quantity</span>
+        <span class="stock-qty"><input class="field" id="add-qty" type="number" inputmode="decimal" min="0.001" max="100000" step="any" required><span class="stock-unit" id="add-unit"></span></span>
+      </label>
+      <label class="stock-lab"><span class="field-label">Expiry date</span><input class="field" id="add-expiry" type="date" required></label>
+      <label class="stock-check"><input type="checkbox" id="add-noexp"><span>No expiry (plates, foil, boxes…)</span></label>
+      <label class="stock-lab"><span class="field-label">Note (optional)</span><input class="field" id="add-note" maxlength="100" placeholder="e.g. supplier, bill no." autocomplete="off"></label>
+      <button class="btn btn-accent press" type="submit">Add stock</button>
+      <p class="admin-msg" id="add-msg" role="status"></p>
+    </form>
+  </dialog>
+
+  <!-- New product (also edits one) -->
+  <dialog class="card stock-sheet" id="new-dlg" aria-labelledby="new-h">
+    <form class="stock-form" id="new-form" method="dialog">
+      <div class="stock-sheet-head"><h2 class="stock-sheet-h" id="new-h">New product</h2><button class="stock-x press" type="button" data-close aria-label="Close">×</button></div>
+      <label class="stock-lab"><span class="field-label">Name</span><input class="field" id="new-name" maxlength="60" required placeholder="e.g. Sandwich bread" autocomplete="off"></label>
+      <label class="stock-lab"><span class="field-label">Unit</span>
+        <select class="field" id="new-unit">
+          <option>packet</option><option>kg</option><option>g</option><option>litre</option><option>ml</option><option>carton</option><option>box</option><option>piece</option><option>bottle</option><option>tin</option><option>bag</option><option value="">Other…</option>
+        </select>
+      </label>
+      <label class="stock-lab" id="new-unit-other-wrap" hidden><span class="field-label">Other unit</span><input class="field" id="new-unit-other" maxlength="20" placeholder="e.g. tray" autocomplete="off"></label>
+      <label class="stock-lab"><span class="field-label">Category (optional)</span><input class="field" id="new-cat" maxlength="30" list="cats" placeholder="e.g. bread, masala, drinks" autocomplete="off"></label>
+      <datalist id="cats"></datalist>
+      <label class="stock-lab"><span class="field-label">Running low at</span>
+        <span class="stock-qty"><input class="field" id="new-low" type="number" inputmode="decimal" min="0" max="100000" step="any" value="2" required><span class="stock-unit" id="new-low-unit">packet</span></span>
+      </label>
+      <p class="admin-note">It shows under Running low when the stock left is this much or less.</p>
+      <button class="btn btn-accent press" id="new-submit" type="submit">Add product</button>
+      <p class="admin-msg" id="new-msg" role="status"></p>
+    </form>
+  </dialog>
+
+  <!-- One product: use stock, its batches (first expiry first), history -->
+  <dialog class="card stock-sheet" id="prod-dlg" aria-labelledby="prod-h">
+    <div class="stock-form">
+      <div class="stock-sheet-head">
+        <div><h2 class="stock-sheet-h" id="prod-h"></h2><p class="stock-sub" id="prod-sub"></p></div>
+        <button class="stock-x press" type="button" data-close aria-label="Close">×</button>
+      </div>
+      <form class="stock-use" id="use-form">
+        <label class="stock-lab"><span class="field-label">Use how many?</span>
+          <span class="stock-qty"><input class="field" id="use-qty" type="number" inputmode="decimal" min="0.001" step="any" value="1" required><span class="stock-unit" id="use-unit"></span></span>
+        </label>
+        <button class="btn btn-accent press" id="use-btn" type="submit">Use</button>
+        <p class="admin-msg" id="use-msg" role="status"></p>
+      </form>
+      <h3 class="stock-h3">Batches <span class="dim">first expiry first</span></h3>
+      <ul class="stock-batches" id="prod-batches"></ul>
+      <div class="admin-actions">
+        <button class="btn btn-sm btn-ghost press" id="prod-add" type="button">Add stock</button>
+        <button class="btn btn-sm btn-ghost press" id="prod-edit" type="button">Edit product</button>
+        <button class="btn btn-sm btn-ghost press" id="prod-del" type="button" hidden>Delete product</button>
+      </div>
+      <h3 class="stock-h3">History <span class="dim">last 50</span></h3>
+      <ul class="stock-moves" id="prod-moves"></ul>
+    </div>
+  </dialog>
+
+  <script type="module" src="/assets/js/stock.js"></script>
+</body>
+</html>

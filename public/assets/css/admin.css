@@ -74,3 +74,6 @@
 .admin-book-form .field { max-width: none; }
 @media (min-width: 520px) { .admin-book-form { grid-template-columns: 1fr 1fr; } .admin-book-form > p, .admin-book-form > .btn { grid-column: 1 / -1; } }
 .admin-bk-total { font-weight: 900; font-stretch: 115%; font-size: 20px; }
+
+/* the Stock link leaves no room for the name on narrow phones; the logo stays */
+@media (max-width: 439px) { .topbar-in:has(a[href="/stock"]) .brand-name { display: none; } }

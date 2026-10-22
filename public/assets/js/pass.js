@@ -3,7 +3,8 @@
    - /pass?id=...  the link the owner sends: reads that one pass card (first name and hours or meals only, no sign-in)
    - /pass         the customer signs in with their mobile number + SMS code and sees every pass and meal plan saved
                    under that number (firestore.rules lets a signed-in number read only its own passes).
-                   The same login serves the owner: a number listed in /admins is sent to /admin.
+                   The same login serves the owner: a number listed in /admins is sent to /admin,
+                   and stock staff (listed in /stockStaff) are sent to /stock.
    Hours and meals are re-read every 30 seconds and when the page comes back into view. */
 import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
@@ -176,12 +177,16 @@ function startAccount() {
     $('#login').hidden = !!user;
     if (!user) { $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
     showStatus('Loading your hours and meals…', false);
-    // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead.
-    // The owner check and the passes read go out together (one wait, not two).
+    // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead,
+    // and one on the stock list (/stockStaff, and not an owner) opens the stock page.
+    // The owner check, the stock check and the passes read go out together (one wait, not two).
     const passes = myPasses(); passes.catch(() => {});
-    getDoc(doc(db, 'admins', u.uid)).then((a) => {
-      if (a.exists()) { try { localStorage.setItem('mg-owner', u.uid); } catch (e) {} showStatus('Opening the owner dashboard…', false); location.replace('/admin'); } else loadMine(passes);
-    }).catch(() => loadMine(passes));
+    const has = (col) => getDoc(doc(db, col, u.uid)).then((a) => a.exists()).catch(() => false);
+    Promise.all([has('admins'), has('stockStaff')]).then(([owner, stock]) => {
+      if (owner) { try { localStorage.setItem('mg-owner', u.uid); } catch (e) {} showStatus('Opening the owner dashboard…', false); location.replace('/admin'); }
+      else if (stock) { try { localStorage.setItem('mg-stock', u.uid); } catch (e) {} showStatus('Opening the stock page…', false); location.replace('/stock'); }
+      else loadMine(passes);
+    });
   });
 }
 

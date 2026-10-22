@@ -10,6 +10,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 - `print/` + `scripts/make-qr-card.mjs` — printable QR table card; `print/mr-sandwich-meal-plans.html` + `scripts/make-meal-flyer.mjs` — meal plans flyer
 - `brand/` — master logo files (not served)
 - `public/admin.html`, `public/assets/js/admin.js`, `public/assets/css/admin.css` — owner page (no login form: owners log in on /pass, which sends `/admins` accounts here)
+- `public/stock.html`, `public/assets/js/stock.js`, `public/assets/css/stock.css` — MR. Sandwich stock (batches by expiry, first expiry first out; `stockProducts`/`stockBatches`/`stockMoves`). Owners and `/stockStaff` accounts only; /pass sends stock staff here
 - `public/pass.html`, `public/assets/js/pass.js` — "My pass": customer sign-in by mobile number, or the owner's link `/pass?id=…` (styles in style.css)
 - `public/assets/images/games/` — original game-card artwork (never official game art); cards in index.html `#game-cards`, `data-pick-game` feeds the booking form
 - Phones: bottom `.tabbar` (index.html and pass.html), open-now status (`CONFIG.open`/`close` in main.js), `public/manifest.webmanifest` for "Add to Home screen"

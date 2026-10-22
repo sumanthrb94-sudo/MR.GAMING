@@ -1,0 +1,102 @@
+/* Stock page (/stock): builds on style.css tokens and admin.css. Phone first: used in the kitchen. */
+:root { --warn: #F5A524; --warn-text: #F5A524; --danger-ink: #FFFFFF; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --warn: #E08A00; --warn-text: #8A5200; } }
+:root[data-theme="light"] { --warn: #E08A00; --warn-text: #8A5200; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.stock .btn-sm { min-height: 44px; }   /* thumb-sized everywhere, wet hands included */
+.stock-main { gap: 0; }
+
+.stock-top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--s4); }
+.stock-title { font-weight: 900; font-stretch: 120%; font-size: clamp(34px, 7vw, 56px); line-height: 1; letter-spacing: -.03em; margin-top: var(--s2); }
+.stock-cta { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); width: 100%; }
+@media (min-width: 720px) { .stock-cta { display: flex; width: auto; } }
+.stock-offline { margin-top: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: color-mix(in srgb, var(--danger) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); font-size: 15px; }
+
+/* the three lists at the top */
+.stock-alerts { display: grid; gap: var(--s3); margin-top: var(--s4); }
+@media (min-width: 960px) { .stock-alerts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); align-items: start; } }
+.stock-alert { padding: 0 var(--s4) var(--s3); border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.stock-alert .admin-h { font-size: 18px; margin: var(--s4) 0 var(--s2); }
+.stock-alert .admin-h::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); align-self: center; }
+.stock-alert .admin-empty { padding: var(--s1) 0 var(--s2); font-size: 15px; }
+.stock-alert.is-expired.has-rows { border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
+.stock-alert.is-expired.has-rows .admin-h::before { background: var(--danger); }
+.stock-alert.is-soon.has-rows { border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+.stock-alert.is-soon.has-rows .admin-h::before { background: var(--warn); }
+.stock-alert.is-low.has-rows .admin-h::before { background: var(--text); }
+
+.stock-rows { display: grid; }
+.stock-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; border-top: 1px solid var(--line); }
+.stock-row:first-child { border-top: 0; }
+.stock-row-main { flex: 1; min-width: 0; min-height: 44px; display: grid; gap: 2px; text-align: left; }
+.stock-row-main strong { overflow-wrap: anywhere; }
+.stock-row .btn { flex: none; }
+.stock-row-meta { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.stock-row.is-expired .stock-row-meta { color: var(--danger); }
+.stock-when { color: var(--warn-text); font-weight: 700; }
+.stock-out { color: var(--danger); font-weight: 700; }
+.stock-btn-danger { background: var(--danger); color: var(--danger-ink); }
+.stock-btn-danger:hover { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 22%, transparent); }
+
+/* product list */
+.stock-search { display: block; margin-bottom: var(--s3); }
+.stock-search .field { max-width: none; }
+.stock-products { display: grid; gap: var(--s2); }
+@media (min-width: 960px) { .stock-products { grid-template-columns: 1fr 1fr; } }
+.stock-prod { width: 100%; min-height: 64px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s3); align-items: center; padding: var(--s3) var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); text-align: left; transition: border-color .25s, transform .4s var(--ease-spring); }
+.stock-prod:hover { border-color: var(--line-strong); }
+.stock-prod:active { transform: scale(.98); }
+.stock-prod-name { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s1) var(--s2); min-width: 0; }
+.stock-prod-name strong { overflow-wrap: anywhere; }
+.stock-prod-qty { font-weight: 900; font-stretch: 115%; font-size: 18px; text-align: right; white-space: nowrap; }
+.stock-prod.is-low .stock-prod-qty { color: var(--danger); }
+.stock-prod-meta { grid-column: 1 / -1; color: var(--muted); font-size: 14px; }
+
+/* sheets: a bottom sheet on a phone, a centred panel on a wide screen */
+.stock-sheet { width: min(560px, 100%); max-width: 100%; max-height: min(92dvh, 900px); margin: auto auto 0; padding: 0; border-radius: var(--r-lg) var(--r-lg) 0 0; color: var(--text); overflow: auto; overscroll-behavior: contain; }
+.stock-sheet::backdrop { background: var(--scrim); }
+@media (min-width: 720px) { .stock-sheet { margin: auto; border-radius: var(--r-lg); } }
+.stock-sheet[open] { animation: sheet-in .45s var(--ease-out); }
+@keyframes sheet-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.stock-form { display: grid; gap: var(--s3); padding: var(--s4) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom)); }
+@media (min-width: 720px) { .stock-form { padding: var(--s5); } }
+.stock-form .field { max-width: none; }
+.stock-sheet-head { display: flex; align-items: start; justify-content: space-between; gap: var(--s3); }
+.stock-sheet-h { font-weight: 900; font-stretch: 115%; font-size: 24px; line-height: 1.15; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.stock-sub { color: var(--muted); font-size: 15px; margin-top: var(--s1); }
+.stock-x { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); font-size: 24px; line-height: 1; display: grid; place-items: center; }
+.stock-lab { display: grid; gap: var(--s2); }
+.stock-qty { display: flex; align-items: center; gap: var(--s3); }
+.stock-qty .field { flex: 1; min-width: 0; }
+.stock-unit { flex: none; max-width: 40%; color: var(--muted); font-weight: 600; overflow-wrap: anywhere; }
+.stock-check { display: flex; align-items: center; gap: var(--s3); min-height: 44px; font-weight: 600; }
+.stock-check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.field:disabled { opacity: .45; }
+.stock-h3 { font-weight: 800; font-size: 18px; margin-top: var(--s3); display: flex; gap: var(--s2); align-items: baseline; }
+.stock-h3 .dim { font-weight: 500; font-size: 14px; }
+
+.stock-use { display: grid; gap: var(--s3); padding: var(--s4); border-radius: var(--r-md); background: var(--surface-2); }
+@media (min-width: 420px) { .stock-use { grid-template-columns: 1fr auto; align-items: end; } .stock-use .admin-msg { grid-column: 1 / -1; } }
+.stock-use .admin-msg { min-height: 0; color: var(--text); }
+.stock-use .admin-msg:empty { display: none; }
+
+.stock-batches { display: grid; gap: var(--s2); }
+.stock-batch { padding: var(--s3) var(--s4); border-radius: var(--r-md); border: 1px solid var(--line); display: grid; gap: 2px; }
+.stock-batch-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); font-size: 17px; }
+.stock-batch .admin-actions { margin-top: var(--s2); }
+.stock-batch.is-first { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+.stock-batch.is-soon .stock-row-meta:first-of-type { color: var(--warn-text); font-weight: 600; }
+.stock-batch.is-expired { border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.stock-batch.is-expired .stock-row-meta:first-of-type { color: var(--danger); font-weight: 600; }
+.pill.stock-first { background: var(--accent); color: var(--accent-ink); flex: none; }
+.pill.stock-pill-danger { background: var(--danger); color: var(--danger-ink); flex: none; }
+
+.stock-moves { display: grid; }
+.stock-move { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px var(--s3); padding: var(--s2) 0; border-top: 1px solid var(--line); font-size: 15px; }
+.stock-move:first-child { border-top: 0; }
+.stock-move.is-waste .stock-move-what b { color: var(--danger); }
+.stock-move.is-add .stock-move-what b { color: var(--accent-text); }
+
+/* an owner's top bar has "Owner page" too: on a narrow phone the logo stands in for the name */
+@media (max-width: 439px) { .stock .topbar-in:has(#owner-link:not([hidden])) .brand-name { display: none; } }

@@ -4,6 +4,7 @@
   python3 scripts/firebase_admin.py KEY.json deploy-rules        publish firestore.rules
   python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX   log in on the site as an owner (opens /admin)
                                                                      (creates the phone sign-in user if needed)
+  python3 scripts/firebase_admin.py KEY.json add-stock-staff +91XXXXXXXXXX   same, for the stock page only (opens /stock)
 
 Needs: pip install google-auth requests. The key is never printed or stored."""
 import pathlib, sys
@@ -31,7 +32,7 @@ if cmd == 'deploy-rules':
     r.raise_for_status()
     print('rules published:', ruleset)
 
-elif cmd == 'add-owner':
+elif cmd in ('add-owner', 'add-stock-staff'):
     phone = sys.argv[3].replace(' ', '')
     if not phone.startswith('+'):
         phone = '+91' + phone.lstrip('0')
@@ -45,9 +46,10 @@ elif cmd == 'add-owner':
         r = S.post(base, json={'phoneNumber': phone})   # creates the phone sign-in user
         r.raise_for_status()
         uid = r.json()['localId']
-    r = S.patch(f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/admins/{uid}',
+    col = 'admins' if cmd == 'add-owner' else 'stockStaff'
+    r = S.patch(f'https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/{col}/{uid}',
                 json={'fields': {'phone': {'stringValue': phone}}})
     r.raise_for_status()
-    print(f'owner added: {phone} ({uid})')
+    print(f"{'owner' if col == 'admins' else 'stock staff'} added: {phone} ({uid})")
 else:
     sys.exit(__doc__)

@@ -137,5 +137,71 @@ service cloud.firestore {
       allow read: if isAdmin() || isMember();
       allow write: if isAdmin();
     }
+
+    // ---- MR. Sandwich stock (/stock): products, batches with an expiry date (first expiry, first out) and a log of moves.
+    // Only owners and stock staff. A stock staff member is a signed-in user whose uid has a document in /stockStaff
+    // (added by an owner or with the admin key); it opens /stock only, never bookings, requests or passes.
+    function isStockStaff() {
+      return request.auth != null && exists(/databases/$(database)/documents/stockStaff/$(request.auth.uid));
+    }
+    function canStock() { return isAdmin() || isStockStaff(); }
+    function isQty(q) { return (q is int || q is float) && q >= 0 && q <= 100000; }
+    // "who" on a batch or move is the phone number the person signed in with, so the log can't be signed as someone else
+    function isMe(by) { return by is string && request.auth.token.phone_number != null && by == request.auth.token.phone_number; }
+    function validProduct() {
+      let p = request.resource.data;
+      return p.keys().hasOnly(['name', 'unit', 'category', 'low', 'createdAt'])
+        && p.name is string && p.name.size() > 0 && p.name.size() <= 60
+        && p.unit is string && p.unit.size() > 0 && p.unit.size() <= 20
+        && p.category is string && p.category.size() <= 30
+        && isQty(p.low)
+        && p.createdAt is timestamp;
+    }
+
+    match /stockStaff/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if isAdmin();
+    }
+
+    match /stockProducts/{productId} {
+      allow read: if canStock();
+      allow create: if canStock() && validProduct() && request.resource.data.createdAt == request.time;
+      allow update: if canStock() && validProduct() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if canStock();
+    }
+
+    // One delivery of a product with one expiry date (null = no expiry, e.g. plates). Using it only lowers qty;
+    // a batch used up or thrown away is deleted.
+    match /stockBatches/{batchId} {
+      allow read: if canStock();
+      allow create: if canStock()
+        && request.resource.data.keys().hasOnly(['productId', 'qty', 'expiry', 'note', 'addedAt', 'addedBy'])
+        && request.resource.data.productId is string
+        && exists(/databases/$(database)/documents/stockProducts/$(request.resource.data.productId))
+        && isQty(request.resource.data.qty) && request.resource.data.qty > 0
+        && (request.resource.data.expiry == null || request.resource.data.expiry is timestamp)
+        && request.resource.data.note is string && request.resource.data.note.size() <= 100
+        && request.resource.data.addedAt == request.time
+        && isMe(request.resource.data.addedBy);
+      allow update: if canStock()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty'])
+        && isQty(request.resource.data.qty) && request.resource.data.qty < resource.data.qty;
+      allow delete: if canStock();
+    }
+
+    // History: added / used / thrown away. Append-only from the site.
+    match /stockMoves/{moveId} {
+      allow read: if canStock();
+      allow create: if canStock()
+        && request.resource.data.keys().hasOnly(['productId', 'batchId', 'type', 'qty', 'at', 'by'])
+        && request.resource.data.productId is string && request.resource.data.productId.size() <= 40
+        && request.resource.data.batchId is string && request.resource.data.batchId.size() <= 40
+        && request.resource.data.type in ['add', 'use', 'waste']
+        && isQty(request.resource.data.qty) && request.resource.data.qty > 0
+        && request.resource.data.at == request.time
+        && isMe(request.resource.data.by);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
   }
 }
