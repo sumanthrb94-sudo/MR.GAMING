@@ -1,4 +1,5 @@
-/* MR. Sandwich menu page: renders window.MENU (meal plans after Top Combos), search, sticky category chips. */
+/* MR. Sandwich menu page: renders window.MENU (meal plans after Top Combos), search, sticky category chips,
+   open-now status and WhatsApp links. The table-QR layout (?src=qr) is set before paint by the script in menu.html. */
 (function () {
   'use strict';
   const M = window.MENU;
@@ -10,7 +11,24 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const inr = (n) => '₹' + n.toLocaleString('en-IN');
   const WA = '917337230311';   // same number as CONFIG.whatsapp in main.js
+  const HOURS = { open: 11, close: 23 };   // mirror CONFIG.open / CONFIG.close in main.js (24h clock): change both together
   const waUrl = (text) => `https://wa.me/${WA}?text=${encodeURIComponent(text)}`;
+
+  /* ---------- WhatsApp links: data-wa holds the message (href without it is the no-JS fallback) ---------- */
+  $$('[data-wa]').forEach((a) => { a.href = waUrl(a.dataset.wa); });
+
+  /* ---------- hours and open now? (Hyderabad time, from HOURS) ---------- */
+  const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
+  const hoursLine = $('#hours-line');
+  if (hoursLine) hoursLine.textContent = `Open ${clock12(HOURS.open)} – ${clock12(HOURS.close)}, every day`;
+  const statuses = $$('[data-open-status]');
+  const paintOpen = () => {
+    const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000), h = ist.getHours();
+    const open = h >= HOURS.open && h < HOURS.close;
+    const text = open ? `Open now · till ${clock12(HOURS.close)}` : h < HOURS.open ? `Opens today at ${clock12(HOURS.open)}` : `Closed now · opens ${clock12(HOURS.open)} tomorrow`;
+    statuses.forEach((el) => { el.classList.toggle('is-open', open); $('.open-text', el).textContent = text; });
+  };
+  if (statuses.length) { paintOpen(); setInterval(paintOpen, 60000); }
 
   const main = $('#menu'), chips = $('#chips'), ind = $('.chip-ind'), empty = $('#empty');
 
@@ -57,7 +75,9 @@
 
   const perk = $('#plans-perk');
   if (!P) perk.remove();
-  else $('.perk-copy', perk).innerHTML = `${counts} meals a month, from <strong>${inr(best.per)}&nbsp;a&nbsp;meal</strong>.`;
+  else $('.perk-copy', perk).innerHTML = `${counts} meals a month, from <strong>${inr(best.per)}&nbsp;a&nbsp;meal</strong>`;
+  const planLine = $('.perk-line a[href="#meal-plans"]');   // the table-QR one-liner
+  if (planLine && !P) { planLine.nextSibling.remove(); planLine.remove(); }
 
   /* ---------- render ---------- */
   const itemHtml = (it, two) => `
@@ -92,8 +112,16 @@
   const reveal = (el) => el.classList.add('is-in');
   if ('IntersectionObserver' in window && !reduced) {
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); } }), { rootMargin: '0px 0px -6% 0px', threshold: .05 });
-    $$('[data-reveal]').forEach((el, i) => { if (el.closest('.mast')) el.style.setProperty('--i', i); io.observe(el); });
+    $$('[data-reveal]').forEach((el) => io.observe(el));
   } else $$('[data-reveal]').forEach(reveal);
+
+  /* ---------- chips: fade the edge that has more to swipe to ---------- */
+  const chipsWrap = chips.parentElement;
+  const paintEdges = () => {
+    chipsWrap.classList.toggle('is-scrolled', chips.scrollLeft > 4);
+    chipsWrap.classList.toggle('at-end', chips.scrollLeft + chips.clientWidth >= chips.scrollWidth - 4);
+  };
+  chips.addEventListener('scroll', paintEdges, { passive: true });
 
   /* ---------- active chip with a sliding indicator ---------- */
   let active = null;
@@ -116,9 +144,9 @@
   };
   let ticking = false;
   window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { pick(); ticking = false; }); } }, { passive: true });
-  window.addEventListener('resize', () => { const a = active; active = null; setActive(a); });
-  document.fonts && document.fonts.ready.then(() => { active = null; pick(); });
-  pick();
+  window.addEventListener('resize', () => { const a = active; active = null; setActive(a); paintEdges(); });
+  document.fonts && document.fonts.ready.then(() => { active = null; pick(); paintEdges(); });
+  pick(); paintEdges();
 
   /* ---------- search ---------- */
   const q = $('#q');
@@ -139,6 +167,6 @@
     });
     empty.hidden = any;
     $$('.chip', chips).forEach((c) => { c.hidden = !!document.getElementById(c.dataset.id).hidden; });
-    active = null; pick();
+    active = null; pick(); paintEdges();
   });
 })();
