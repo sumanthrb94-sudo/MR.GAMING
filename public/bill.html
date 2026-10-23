@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bill · MR. Sandwich · MR. GAMING</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0B0B0A">
+  <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
+  <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/shell.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/assets/css/bill.css">
+  <link rel="modulepreload" href="/assets/vendor/firebase-public.2b1547c7.js">
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <script>
+    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body class="bill-page">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
+  </svg>
+
+  <header class="topbar bill-noprint" id="topbar">
+    <div class="wrap topbar-in">
+      <a class="brand" href="/" aria-label="MR. GAMING home">
+        <img src="/assets/images/logo-96.webp" width="36" height="36" alt="">
+        <span class="brand-name">MR. GAMING</span>
+      </a>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
+          <svg class="i i-sun"><use href="#i-sun"/></svg>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- One bill, read by its link (/bill?id=...): first name, the lines and the totals; never a phone number.
+       Printable on A4 or an 80 mm receipt printer (bill.css @media print). -->
+  <main class="wrap bill-main">
+    <article class="bill" id="bill" aria-live="polite">
+      <p class="bill-status" id="bill-status">Loading your bill…</p>
+    </article>
+    <div class="bill-acts bill-noprint" id="bill-acts" hidden>
+      <button class="btn btn-accent press" id="print-a4" type="button"><svg class="i"><use href="#i-print"/></svg>Print or save as PDF</button>
+      <button class="btn btn-ghost press" id="print-receipt" type="button">Print receipt (80 mm)</button>
+    </div>
+  </main>
+
+  <script src="/assets/js/main.js"></script>
+  <script type="module" src="/assets/js/bill.js"></script>
+</body>
+</html>

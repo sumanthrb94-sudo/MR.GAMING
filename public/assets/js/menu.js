@@ -1,6 +1,7 @@
 /* MR. Sandwich menu page (/menu, the Food tab): renders window.MENU (meal plans after Top Combos), search and sticky
    category chips, then applies the owner's live changes (menuOverrides via menu-live.js: price, sold out today, hidden).
-   The table-QR layout (?src=qr) is set before paint by the script in menu.html. Runs after main.js (window.MG). */
+   The table-QR layout (?src=qr) is set before paint by the script in menu.html. Runs after main.js (window.MG).
+   Then online ordering for delivery or pickup (order.js: "+" on each dish, the cart bar and the checkout sheet). */
 (function () {
   'use strict';
   const M = window.MENU;
@@ -180,6 +181,10 @@
     if (q.value.trim()) q.dispatchEvent(new Event('input'));
     active = null; pick(); paintEdges();
   };
-  const goLive = () => import('/assets/js/menu-live.js').then((m) => m.loadOverrides().then((ov) => applyLive(m, ov))).catch(() => {});
+  // Online ordering (order.js) starts only from the live prices: no overrides read, no ordering (the menu stays as printed)
+  const goLive = () => import('/assets/js/menu-live.js').then((m) => m.loadOverrides().then((ov) => {
+    applyLive(m, ov);
+    return import('/assets/js/order.js').then((o) => o.start({ MENU: M, live: m, ov }));
+  })).catch((e) => { if (e && !e.code) console.warn(e); });
   if ('requestIdleCallback' in window) requestIdleCallback(goLive, { timeout: 1500 }); else setTimeout(goLive, 300);
 })();

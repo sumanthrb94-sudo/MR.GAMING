@@ -103,11 +103,15 @@
     <!-- One card per pass or meal plan, filled by pass.js -->
     <div class="pass-cards" id="cards" aria-live="polite"></div>
 
-    <!-- Signed in: the gaming bookings made with this sign-in, upcoming first (firestore.rules lets a customer read only
-         requests carrying their own uid). Changes and cancellations go through us on WhatsApp. -->
+    <!-- Signed in: the MR. Sandwich food orders and the gaming bookings made with this sign-in, newest and upcoming first
+         (firestore.rules let a customer read only orders and requests carrying their own uid), each with its bill once
+         we've billed it. Changes and cancellations go through us on WhatsApp. -->
     <section class="card pass-card my-bookings" id="bookings" hidden aria-labelledby="bookings-title">
-      <p class="eyebrow">My bookings</p>
-      <h2 class="bookings-title" id="bookings-title">Your gaming slots</h2>
+      <p class="eyebrow">My orders &amp; bookings</p>
+      <h2 class="bookings-title" id="bookings-title">Your food orders and gaming slots</h2>
+      <h3 class="bookings-sub" id="orders-sub" hidden>Food orders</h3>
+      <ul class="booking-list" id="order-list"></ul>
+      <h3 class="bookings-sub" id="slots-sub" hidden>Gaming slots</h3>
       <ul class="booking-list" id="booking-list"></ul>
       <p class="pass-note" id="bookings-note"></p>
     </section>

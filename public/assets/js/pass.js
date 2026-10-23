@@ -5,8 +5,10 @@
                    under that number (firestore.rules lets a signed-in number read only its own passes).
                    The same login serves the owner: a number listed in /admins is sent to /admin,
                    and stock staff (listed in /stockStaff) are sent to /stock.
-   Signed in, "My bookings" lists the gaming bookings made with this sign-in (requests whose uid is the caller's;
-   firestore.rules allows no others), upcoming first. Changes and cancellations go through us on WhatsApp.
+   Signed in, "My orders & bookings" lists the MR. Sandwich food orders (foodOrders) and the gaming bookings (requests)
+   made with this sign-in (whose uid is the caller's; firestore.rules allow no others), newest orders and upcoming slots
+   first, each with a link to its bill once billed (/bill?id=...) and food orders with "Track" (/menu?order=...).
+   Changes and cancellations go through us on WhatsApp.
    Hours, meals and bookings are re-read every 30 seconds and when the page comes back into view. */
 import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
@@ -128,6 +130,9 @@ const hr = (h) => `${h % 12 || 12} ${h < 12 || h === 24 ? 'am' : 'pm'}`;
 const dayOf = (key) => { const [y, m, d] = String(key).split('-').map(Number); return new Date(y, m - 1, d); };
 // "Now" in Hyderabad as "YYYY-MM-DD" and the hour, whatever the phone's timezone
 const istNow = () => { const d = new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000); return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, hour: d.getHours() }; };
+const FOOD_STATUS = { placed: 'Placed', accepted: 'Accepted', preparing: 'Preparing', out: 'On the way', ready: 'Ready', delivered: 'Delivered', picked: 'Picked up', cancelled: 'Cancelled' };
+const FOOD_DONE = ['delivered', 'picked', 'cancelled'];
+const billLink = (r) => (r.bill && r.bill.id ? ` · <a class="text-link" href="/bill?id=${encodeURIComponent(r.bill.id)}">Bill</a>` : '');
 const isPast = (r, now) => OFF.includes(r.status) || r.date < now.key || (r.date === now.key && +r.start + +r.hours <= now.hour);
 function renderBookings(rows) {
   const now = istNow(), list = rows.map((r) => ({ ...r, past: isPast(r, now) }));
@@ -138,23 +143,44 @@ function renderBookings(rows) {
     const d = dayOf(r.date), s0 = +r.start, n = +r.hours, players = +r.players || 1;
     return `<li class="booking-row${r.past ? ' is-past' : ''}${OFF.includes(r.status) ? ' is-off' : ''}">
       <div><span class="booking-when">${esc(DAY[d.getDay()])} ${d.getDate()} ${esc(MON[d.getMonth()])} · ${esc(hr(s0))} – ${esc(hr(s0 + n))}</span>
-        <span class="booking-what">${esc(CONSOLE[r.station] || r.station)} · ${players} player${players > 1 ? 's' : ''} · <span class="dim">${esc(r.id)}</span></span></div>
+        <span class="booking-what">${esc(CONSOLE[r.station] || r.station)} · ${players} player${players > 1 ? 's' : ''} · <span class="dim">${esc(r.id)}</span>${billLink(r)}</span></div>
       <div class="booking-right"><span class="tag">${esc(STATUS[r.status] || r.status)}</span><b>₹${Math.round(+r.total || 0).toLocaleString('en-IN')}</b></div>
     </li>`;
   }).join('');
-  $('#bookings-note').innerHTML = !list.length ? 'No bookings with this number yet. <a class="text-link" href="/book">Book a slot</a>.'
-    : `Pay at the venue. To change or cancel, <a class="text-link" href="${esc(waLink('Hi MR. GAMING! About my booking'))}" target="_blank" rel="noopener">message us on WhatsApp</a>.`;
+  $('#slots-sub').hidden = !list.length || !foodRows.length;
+  $('#bookings-note').innerHTML = !list.length && !foodRows.length ? 'No orders or bookings with this number yet. <a class="text-link" href="/book">Book a slot</a> or <a class="text-link" href="/menu">order food</a>.'
+    : `Pay at the venue, on delivery or at pickup. To change or cancel, <a class="text-link" href="${esc(waLink('Hi MR. GAMING! About my booking or order'))}" target="_blank" rel="noopener">message us on WhatsApp</a>.`;
   $('#bookings').hidden = false;
+}
+// Food orders: the ones still on their way first, then the latest few
+let foodRows = [];
+function renderOrders(rows) {
+  const ms = (o) => (o.createdAt && o.createdAt.toMillis ? o.createdAt.toMillis() : 0);
+  foodRows = [...rows.filter((o) => !FOOD_DONE.includes(o.status)), ...rows.filter((o) => FOOD_DONE.includes(o.status)).sort((a, b) => ms(b) - ms(a)).slice(0, 5)];
+  $('#order-list').innerHTML = foodRows.map((o) => {
+    const t = ms(o), d = new Date(t + 330 * 60000), h = d.getUTCHours(), n = (o.items || []).reduce((s, l) => s + (+l.qty || 0), 0), off = FOOD_DONE.includes(o.status);
+    const when = t ? `${DAY[d.getUTCDay()]} ${d.getUTCDate()} ${MON[d.getUTCMonth()]} · ${h % 12 || 12}:${String(d.getUTCMinutes()).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}` : '';
+    return `<li class="booking-row${off ? ' is-past' : ''}${o.status === 'cancelled' ? ' is-off' : ''}">
+      <div><span class="booking-when">${esc(when)} · ${o.mode === 'delivery' ? 'Delivery' : 'Pickup'}</span>
+        <span class="booking-what">${n} item${n === 1 ? '' : 's'} · <span class="dim">${esc(o.id)}</span>${off ? '' : ` · <a class="text-link" href="/menu?order=${encodeURIComponent(o.id)}">Track</a>`}${billLink(o)}</span></div>
+      <div class="booking-right"><span class="tag">${esc(FOOD_STATUS[o.status] || o.status)}</span><b>₹${Math.round(+o.subtotal || 0).toLocaleString('en-IN')}</b></div>
+    </li>`;
+  }).join('');
+  $('#orders-sub').hidden = !foodRows.length;
 }
 let bookingsLoaded = false;
 async function loadBookings() {
   if (!user) return;
   try {
-    const snap = await getDocs(query(collection(db, 'requests'), where('uid', '==', user.uid)));
+    const [snap, food] = await Promise.all([
+      getDocs(query(collection(db, 'requests'), where('uid', '==', user.uid))),
+      getDocs(query(collection(db, 'foodOrders'), where('uid', '==', user.uid))).catch(() => null)
+    ]);
     if (!user) return;
+    if (food) renderOrders(food.docs.map((d) => ({ id: d.id, ...d.data() })));
     renderBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); bookingsLoaded = true;
   } catch (e) {
-    if (!bookingsLoaded) { $('#booking-list').innerHTML = ''; $('#bookings-note').textContent = "Couldn't load your bookings right now. Try again in a minute."; $('#bookings').hidden = false; }
+    if (!bookingsLoaded) { $('#booking-list').innerHTML = ''; $('#bookings-note').textContent = "Couldn't load your orders and bookings right now. Try again in a minute."; $('#bookings').hidden = false; }
   }
 }
 
@@ -219,7 +245,7 @@ function startAccount() {
     $('#foot').textContent = user ? `Signed in as ${prettyPhone(user.phoneNumber)}. Updates on its own when we add or use hours or meals.` : '';
     $('#signout').hidden = !user;
     $('#login').hidden = !!user;
-    if (!user) { $('#bookings').hidden = true; $('#booking-list').innerHTML = ''; $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
+    if (!user) { $('#bookings').hidden = true; $('#booking-list').innerHTML = ''; $('#order-list').innerHTML = ''; foodRows = []; $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
     showStatus('Loading your hours and meals…', false);
     // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead,
     // and one on the stock list (/stockStaff, and not an owner) opens the stock page.

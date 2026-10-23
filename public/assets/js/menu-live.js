@@ -31,6 +31,21 @@ export function liveItem(it, id, ov) {
   return { prices: cols.map((c) => c.price), cols, hidden: !shown.length, soldOut: shown.length > 0 && shown.every((c) => c.soldOut) };
 }
 
+// Every orderable price as Map(doc id -> { id, item, name, col, price, soldOut, hidden }): one entry per item, or one
+// per column of a two-price item (col = the column's name from the group's `cols`, e.g. 'Aloo patty'; '' otherwise).
+// Food orders (order.js) carry these doc ids, and the console checks an order's prices against it.
+export function priceList(MENU, ov) {
+  const ids = idsFor(MENU), out = new Map();
+  MENU.sections.forEach((s) => s.groups.forEach((g) => g.items.forEach((it) => {
+    const id = ids.get(it), live = liveItem(it, id, ov);
+    docIds(it, id).forEach((docId, c) => {
+      const p = it.prices ? live.cols[c] : live;
+      out.set(docId, { id: docId, item: it, name: it.name, col: it.prices ? (g.cols && g.cols[c]) || `Option ${c + 1}` : '', price: p.price, soldOut: p.soldOut, hidden: live.hidden || p.hidden });
+    });
+  })));
+  return out;
+}
+
 // One read of the whole collection (Firestore Lite, loaded only when called). Resolves to Map(doc id -> fields);
 // rejects if Firestore can't be reached (callers keep menu-data.js).
 let db = null;

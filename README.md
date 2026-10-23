@@ -105,6 +105,20 @@ python3 scripts/firebase_admin.py /path/to/key.json add-owner +917337230311
 
 Owners sign in through "Log in" (`/pass`) with their mobile number and an SMS code (Firebase Phone Auth); an account listed in `/admins` is taken to `/admin`. To add an owner: `python3 scripts/firebase_admin.py KEY.json add-owner +91XXXXXXXXXX`. The site's domain must be listed in Firebase > Authentication > Settings > Authorized domains.
 
+## Food orders and bills
+
+**Ordering (/menu).** Every dish that isn't sold out has a **+** (two-price items open a choice of column, e.g. Aloo or Veg patty). The cart bar sits above the tab bar; the sheet has the cart, kitchen notes, **Delivery or Pickup**, the address and the total, then the same mobile + SMS code sign-in as /book. Prices are always the live ones (menu-data.js + today's menuOverrides, re-checked just before placing). Orders are taken only while we're open (11 am – 11 pm India time, `CONFIG.open/close`); otherwise the page says when online orders open. Payment is on delivery or at pickup (cash or UPI); `payment: { method, status }` on the order is where a payment gateway will plug in later.
+
+**Delivery.** Free within the radius set in the console (default 4 km, straight line from the shop's saved location, using the customer's "Use my location"). Beyond it: "We don't deliver there yet — ask us on WhatsApp". Until the shop location is set: "Delivery coming soon — pickup available". No minimum order. After placing, the sheet tracks the order (placed → accepted → preparing → out for delivery / ready for pickup → delivered / picked up), re-reading every 15 seconds while open, with a WhatsApp link carrying the order. Signed-in customers see their food orders and bills under **My orders & bookings** on /pass.
+
+**Console.** Orders has Gaming and Food lists; new food orders pop up like bookings (sheet, chime, notification, title count) within about 10 seconds. Each order: next step, Cancel (with a reason the customer sees), Call, WhatsApp (status message), Maps, and a warning if a line's price differs from today's menu. **Bill** is on every food order, booking, birthday, pass and meal plan: lines are filled in and editable, paid by cash / UPI / card, numbered MS-2026-27-0001 onwards per financial year. **Bills** shows today's takings by gaming / food / passes & meals / birthdays and by cash / UPI / card, voids (with a reason) and CSV for any dates. **Settings** (gear on phones): set the shop location once at the shop, radius, delivery on/off, GSTIN, legal name, food GST (5%), gaming GST (0%), and whether menu prices are before GST (the menu says "GST extra as applicable").
+
+**GST.** Bills show GST only once a GSTIN is saved; until then they're titled "Bill", carry no GST lines and the total is the plain sum. With a GSTIN they're "Tax invoice" with the GSTIN, legal name, taxable value and CGST + SGST (half each). Bills already made never change.
+
+**Bill links.** `/bill?id=…` opens one bill by its unguessable id (first name, lines, totals, no phone), printable on A4 or an 80 mm receipt printer; share it from the console on WhatsApp.
+
+**Owner to-do before going live:** in the console, Settings → *Set shop location* while standing in the shop; check the radius; add the GSTIN and legal name when registered (leave empty until then).
+
 ## Run locally
 
 ```bash

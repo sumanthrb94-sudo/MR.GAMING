@@ -1,0 +1,58 @@
+/* A bill (/bill?id=...), on screen and in print (A4, or an 80 mm receipt: bill.js sets the page size before printing).
+   Builds on style.css tokens; print swaps them for black on white. */
+.bill-main { padding-block: var(--s6) var(--s9); display: grid; gap: var(--s5); justify-items: center; }
+.bill { width: 100%; max-width: 760px; padding: clamp(20px, 5vw, 44px); display: grid; gap: var(--s5); background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: var(--r-lg); font-size: 15px; line-height: 1.45; }
+.bill-status { font-weight: 700; font-size: 18px; text-align: center; padding: var(--s6) 0; }
+.bill-void { padding: var(--s3) var(--s4); border-radius: var(--r-md); border: 2px solid var(--danger); color: var(--danger); font-weight: 600; }
+.bill-void b { font: 800 13px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; margin-right: var(--s2); }
+.bill-head { display: grid; gap: var(--s4); padding-bottom: var(--s4); border-bottom: 2px solid var(--text); }
+@media (min-width: 620px) { .bill-head { grid-template-columns: minmax(0, 1fr) auto; align-items: start; } .bill-meta { text-align: right; } }
+.bill-from { display: grid; gap: 2px; color: var(--muted); font-size: 14px; min-width: 0; }
+.bill-brand { font-weight: 900; font-stretch: 115%; font-size: 24px; line-height: 1.1; letter-spacing: -.01em; color: var(--text); }
+.bill-legal, .bill-gstin { color: var(--text); font-weight: 600; }
+.bill-gstin { font-family: var(--f-mono); font-size: 13px; letter-spacing: .04em; }
+.bill-title { font-weight: 900; font-stretch: 115%; font-size: 28px; line-height: 1; letter-spacing: -.02em; text-transform: uppercase; margin-bottom: var(--s3); }
+.bill-meta dl { display: grid; gap: 4px; font-size: 14px; }
+.bill-meta dl div { display: flex; gap: var(--s2); justify-content: space-between; }
+@media (min-width: 620px) { .bill-meta dl div { justify-content: flex-end; } }
+.bill-meta dt { color: var(--muted); }
+.bill-meta dd { font-weight: 700; overflow-wrap: anywhere; }
+.bill-lines { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bill-lines th { font: 600 11px/1.2 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 0 var(--s2) var(--s2) 0; border-bottom: 1px solid var(--line-strong); }
+.bill-lines td { padding: var(--s2) var(--s2) var(--s2) 0; border-bottom: 1px dashed var(--line-strong); vertical-align: top; overflow-wrap: anywhere; }
+.bill-lines .num { text-align: right; white-space: nowrap; padding-right: 0; padding-left: var(--s2); }
+.bill-sum { display: grid; gap: 4px; justify-self: end; width: min(100%, 380px); font-variant-numeric: tabular-nums; }
+.bill-sum div { display: flex; justify-content: space-between; gap: var(--s4); }
+.bill-sum dt { color: var(--muted); }
+.bill-sum dd { font-weight: 600; white-space: nowrap; }
+.bill-sum .bill-total { margin-top: var(--s2); padding-top: var(--s2); border-top: 2px solid var(--text); font-weight: 900; font-stretch: 115%; font-size: 22px; }
+.bill-sum .bill-total dt { color: var(--text); }
+.bill-paid { font-weight: 700; }
+.bill-thanks { color: var(--muted); font-size: 13px; }
+.bill-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s3); }
+.bill-acts .i { width: 18px; height: 18px; }
+
+/* the 80 mm receipt layout (also applied for a moment on screen, so bill.js can measure its length) */
+.receipt .bill { max-width: 74mm; padding: 0; gap: 3mm; border: 0; border-radius: 0; font-size: 11px; }
+.receipt .bill-head { grid-template-columns: 1fr; text-align: center; gap: 2mm; padding-bottom: 2mm; }
+.receipt .bill-meta { text-align: left; }
+.receipt .bill-meta dl div { justify-content: space-between; }
+.receipt .bill-brand { font-size: 16px; }
+.receipt .bill-from { font-size: 10.5px; }
+.receipt .bill-title { font-size: 15px; margin-bottom: 1.5mm; text-align: center; }
+.receipt .bill-meta dl { font-size: 10.5px; }
+.receipt .bill-lines th { font-size: 9px; }
+.receipt .bill-lines td { padding-block: 1mm; }
+.receipt .bill-sum { width: 100%; }
+.receipt .bill-sum .bill-total { font-size: 15px; }
+.receipt .bill-thanks { font-size: 10px; text-align: center; }
+
+@media print {
+  :root, :root[data-theme] { --bg: #FFFFFF; --surface: #FFFFFF; --text: #000000; --muted: #333333; --line: #BBBBBB; --line-strong: #777777; --danger: #000000; color-scheme: light; }
+  body { background: var(--bg); color: var(--text); padding: 0; }
+  .bill-noprint, .tabbar { display: none !important; }
+  .bill-main { padding: 0; display: block; }
+  .bill { max-width: none; border: 0; border-radius: 0; padding: 0; box-shadow: none; }
+  .receipt .bill { max-width: 74mm; }
+  .bill-lines tr, .bill-sum div { break-inside: avoid; }
+}

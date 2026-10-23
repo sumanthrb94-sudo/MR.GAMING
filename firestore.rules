@@ -5,6 +5,8 @@ rules_version = '2';
 // Once signed in with their mobile number (SMS code) they may also book (a request carrying their uid and verified
 // number, with the hold documents for the hours it needs), read their own bookings, and read the passes saved
 // under that number.
+// Signed in, they may also order food from /menu for delivery or pickup and read their own food orders.
+// Settings/shop (shop location, delivery radius, tax details) and single bills by their link are public reads.
 // Everything else is owner-only.
 // An owner is a signed-in user whose uid has a document in /admins (created with the admin key, never from the site).
 service cloud.firestore {
@@ -231,6 +233,167 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time
         && isMe(request.resource.data.by);
       allow delete: if canStock();
+    }
+
+    // ---- MR. Sandwich food orders from /menu: home delivery or pickup, paid on delivery / at pickup (cash or UPI).
+    // A customer signed in with their mobile number creates one; it carries their uid and the verified number, the live
+    // menu price of each line (the console flags any line that differs from the menu), a subtotal that must equal the sum of
+    // the lines, status 'placed' and payment { method: 'cod', status: 'unpaid' } (a payment gateway later writes its own
+    // method). Orders only while the shop is open (11 am to 11 pm India time, CONFIG.open/close in main.js), and delivery only
+    // when the owner has set the shop location, left delivery on, and the drop is within the free radius (settings/shop).
+    // The customer reads their own orders (My orders on /pass, tracking on /menu); the owner reads and moves them along.
+    // The lines of an order are also written, in the same batch, as up to five "parts" of at most six lines
+    // (foodOrders/{id}/parts/0..4, each { lines, sum }), because rules evaluate at most 1,000 expressions per document
+    // and checking 30 lines in one document goes over. Each part checks its own lines; the order checks that its items
+    // are exactly the parts put together and its subtotal is the sum of theirs.
+    // One line { id, name, col, price, qty }: exactly five fields, all read below (a missing one fails), so no others;
+    // id, name and column together at most 200 characters (adding them also requires strings); price 1 to 10,000;
+    // quantity 1 to 20.
+    function okLine(l) {
+      return l.size() == 5
+        && (l.id + l.name + l.col).size() <= 200
+        && l.price is int && l.price > 0 && l.price <= 10000
+        && l.qty is int && l.qty > 0 && l.qty <= 20;
+    }
+    function okPart(it, n) {
+      return n >= 1 && n <= 6 && okLine(it[0])
+        && (n < 2 || okLine(it[1])) && (n < 3 || okLine(it[2])) && (n < 4 || okLine(it[3])) && (n < 5 || okLine(it[4])) && (n < 6 || okLine(it[5]));
+    }
+    function partSum(it, n) {
+      return it[0].price * it[0].qty + (n < 2 ? 0 : it[1].price * it[1].qty) + (n < 3 ? 0 : it[2].price * it[2].qty) + (n < 4 ? 0 : it[3].price * it[3].qty) + (n < 5 ? 0 : it[4].price * it[4].qty) + (n < 6 ? 0 : it[5].price * it[5].qty);
+    }
+    function part(orderId, k) { return getAfter(/databases/$(database)/documents/foodOrders/$(orderId)/parts/$(k)).data; }
+    function parts1(o, a) { return o.items == a.lines && o.subtotal == a.sum; }
+    function parts2(o, a, b) { return o.items == a.lines.concat(b.lines) && o.subtotal == a.sum + b.sum; }
+    function parts3(o, a, b, c) { return o.items == a.lines.concat(b.lines.concat(c.lines)) && o.subtotal == a.sum + b.sum + c.sum; }
+    function parts4(o, a, b, c, d) { return o.items == a.lines.concat(b.lines.concat(c.lines.concat(d.lines))) && o.subtotal == a.sum + b.sum + c.sum + d.sum; }
+    function parts5(o, a, b, c, d, e) { return o.items == a.lines.concat(b.lines.concat(c.lines.concat(d.lines.concat(e.lines)))) && o.subtotal == a.sum + b.sum + c.sum + d.sum + e.sum; }
+    function partsOk(o, orderId, n) {
+      return n <= 6 ? parts1(o, part(orderId, '0'))
+        : n <= 12 ? parts2(o, part(orderId, '0'), part(orderId, '1'))
+        : n <= 18 ? parts3(o, part(orderId, '0'), part(orderId, '1'), part(orderId, '2'))
+        : n <= 24 ? parts4(o, part(orderId, '0'), part(orderId, '1'), part(orderId, '2'), part(orderId, '3'))
+        : parts5(o, part(orderId, '0'), part(orderId, '1'), part(orderId, '2'), part(orderId, '3'), part(orderId, '4'));
+    }
+    // 11:00 to 22:59 India time (UTC+5:30)
+    function shopOpen() {
+      let m = (request.time.hours() * 60 + request.time.minutes() + 330) % 1440;
+      return m >= 11 * 60 && m < 23 * 60;
+    }
+    // Flat-earth distance from the shop (fine at a few km; cosLat is saved with the location), with 2% for rounding
+    function inRadius(o) {
+      let s = get(/databases/$(database)/documents/settings/shop).data;
+      let dy = (o.lat - s.lat) * 111.32;
+      let dx = (o.lng - s.lng) * 111.32 * s.cosLat;
+      let r = s.freeRadiusKm * 1.02;
+      return s.deliveryOn == true && s.lat is number && s.lng is number && s.cosLat is number
+        && o.distanceKm <= s.freeRadiusKm && dx * dx + dy * dy <= r * r;
+    }
+    function validFoodOrder(o, orderId) {
+      // Exactly 16 fields, every one of them read below (a missing one fails): id, uid, phone, name, items, subtotal, mode,
+      // address, landmark, lat, lng, distanceKm, note, status, payment, createdAt
+      return isVerified()
+        && o.size() == 16
+        && o.id == orderId && orderId.matches('^FO-[0-9]{4}-[0-9]{4}-[A-Z0-9]{4}$')
+        && o.uid == request.auth.uid
+        && o.phone == request.auth.token.phone_number
+        && o.name is string && o.name.size() > 0 && o.name.size() <= 40
+        && o.items is list && o.items.size() >= 1 && o.items.size() <= 30
+        && o.subtotal is int && o.subtotal >= 1
+        && partsOk(o, orderId, o.items.size())
+        && o.note is string && o.note.size() <= 200
+        && o.status == 'placed'
+        && o.payment == { 'method': 'cod', 'status': 'unpaid' }
+        && o.createdAt == request.time
+        && shopOpen()
+        && ((o.mode == 'pickup' && o.address == '' && o.landmark == '' && o.lat == null && o.lng == null && o.distanceKm == null)
+          || (o.mode == 'delivery'
+            && o.address is string && o.address.size() >= 5 && o.address.size() <= 200
+            && o.landmark is string && o.landmark.size() <= 100
+            && o.lat is number && o.lat >= -90 && o.lat <= 90 && o.lng is number && o.lng >= -180 && o.lng <= 180
+            && o.distanceKm is number && o.distanceKm >= 0
+            && inRadius(o)));
+    }
+    match /foodOrders/{orderId} {
+      allow create: if validFoodOrder(request.resource.data, orderId);
+      allow get, list: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      // The owner: accept / preparing / out for delivery or ready for pickup / delivered or picked up / cancelled (with a
+      // reason), ack/ackAt/ackBy when seen, payment once billed, and the bill { id, no } (null again if that bill is voided)
+      allow update: if isAdmin();
+      allow delete: if false;
+
+      // The parts (see okLine above): only with a new order of the caller's, in the same batch; never changed
+      match /parts/{k} {
+        allow create: if isVerified() && k in ['0', '1', '2', '3', '4']
+          && !exists(/databases/$(database)/documents/foodOrders/$(orderId))
+          && getAfter(/databases/$(database)/documents/foodOrders/$(orderId)).data.uid == request.auth.uid
+          && request.resource.data.size() == 2
+          && request.resource.data.lines is list
+          && okPart(request.resource.data.lines, request.resource.data.lines.size())
+          && request.resource.data.sum == partSum(request.resource.data.lines, request.resource.data.lines.size());
+        allow get, list: if isAdmin();
+        allow update, delete: if false;
+      }
+    }
+
+    // ---- Shop settings (console > Settings): the shop location and free-delivery radius, delivery on/off, and the tax
+    // details. Public: /menu needs the location and radius, and bills print the GSTIN. Owner-only writes.
+    function validShop(s) {
+      return s.keys().hasOnly(['lat', 'lng', 'accuracy', 'cosLat', 'locatedAt', 'freeRadiusKm', 'deliveryOn', 'gstin', 'legalName', 'foodGst', 'gamingGst', 'pricesExclusive', 'updatedAt', 'by'])
+        && (!('lat' in s) || s.lat == null || (s.lat is number && s.lat >= -90 && s.lat <= 90))
+        && (!('lng' in s) || s.lng == null || (s.lng is number && s.lng >= -180 && s.lng <= 180))
+        && (!('cosLat' in s) || s.cosLat == null || (s.cosLat is number && s.cosLat > 0 && s.cosLat <= 1))
+        && s.freeRadiusKm is number && s.freeRadiusKm > 0 && s.freeRadiusKm <= 30
+        && s.deliveryOn is bool
+        && s.gstin is string && (s.gstin == '' || s.gstin.matches('^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'))
+        && s.legalName is string && s.legalName.size() <= 100
+        && s.foodGst is number && s.foodGst >= 0 && s.foodGst <= 28
+        && s.gamingGst is number && s.gamingGst >= 0 && s.gamingGst <= 28
+        && s.pricesExclusive is bool
+        && s.updatedAt == request.time && isMe(s.by);
+    }
+    match /settings/{id} {
+      allow get: if id == 'shop';
+      allow list: if false;
+      allow create, update: if isAdmin() && id == 'shop' && validShop(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // ---- Bills (console > Bill on a food order, booking, birthday, pass or meal plan). Numbered MS-<financial year>-0001
+    // upwards: counters/bills-<FY> holds the last number and goes up by exactly one with each bill, in the same transaction.
+    // A bill carries the customer's first name only (never a phone), its lines and totals, how it was paid and who billed it.
+    // Anyone with the link reads one bill by its unguessable id (/bill?id=...); only the owner lists them (takings, CSV).
+    // Bills never change, except that an owner may void one once, with a reason.
+    match /counters/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && id.matches('^bills-20[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.keys().hasOnly(['n', 'updatedAt']) && request.resource.data.n == 1;
+      allow update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['n', 'updatedAt']) && request.resource.data.n == resource.data.n + 1;
+      allow delete: if false;
+    }
+    match /bills/{billId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['no', 'seq', 'fy', 'kind', 'ref', 'first', 'mode', 'lines', 'subtotal', 'taxes', 'tax', 'roundOff', 'total', 'gst', 'method', 'paidAt', 'by', 'createdAt'])
+        && request.resource.data.fy is string && request.resource.data.fy.matches('^20[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.seq is int
+        && getAfter(/databases/$(database)/documents/counters/$('bills-' + request.resource.data.fy)).data.n == request.resource.data.seq
+        && request.resource.data.no == 'MS-' + request.resource.data.fy + '-' + (request.resource.data.seq < 10 ? '000' : request.resource.data.seq < 100 ? '00' : request.resource.data.seq < 1000 ? '0' : '') + string(request.resource.data.seq)
+        && request.resource.data.kind in ['food', 'gaming', 'birthday', 'pass', 'meals']
+        && request.resource.data.first is string && request.resource.data.first.size() <= 20
+        && request.resource.data.lines is list && request.resource.data.lines.size() >= 1 && request.resource.data.lines.size() <= 40
+        && request.resource.data.total is number && request.resource.data.total >= 0
+        && request.resource.data.method in ['cash', 'upi', 'card']
+        && request.resource.data.paidAt == request.time && request.resource.data.createdAt == request.time
+        && isMe(request.resource.data.by);
+      allow update: if isAdmin() && !('void' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['void'])
+        && request.resource.data.void.keys().hasOnly(['reason', 'at', 'by'])
+        && request.resource.data.void.reason is string && request.resource.data.void.reason.size() > 0 && request.resource.data.void.reason.size() <= 200
+        && request.resource.data.void.at == request.time && isMe(request.resource.data.void.by);
+      allow delete: if false;
     }
   }
 }

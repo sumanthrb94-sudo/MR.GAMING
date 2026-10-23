@@ -33,6 +33,9 @@
     <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 4.3a1.7 1.7 0 0 1 3.4 0 1.7 1.7 0 0 0 2.6 1.1 1.7 1.7 0 0 1 2.3 2.3 1.7 1.7 0 0 0 1.1 2.6 1.7 1.7 0 0 1 0 3.4 1.7 1.7 0 0 0-1.1 2.6 1.7 1.7 0 0 1-2.3 2.3 1.7 1.7 0 0 0-2.6 1.1 1.7 1.7 0 0 1-3.4 0 1.7 1.7 0 0 0-2.6-1.1 1.7 1.7 0 0 1-2.3-2.3 1.7 1.7 0 0 0-1.1-2.6 1.7 1.7 0 0 1 0-3.4 1.7 1.7 0 0 0 1.1-2.6 1.7 1.7 0 0 1 2.3-2.3 1.7 1.7 0 0 0 2.6-1.1z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0"/><path d="M17.66 16.66l-4.25 4.24a2 2 0 0 1-2.82 0l-4.25-4.24a8 8 0 1 1 11.32 0z"/></symbol>
   </svg>
 
   <header class="topbar is-scrolled">
@@ -41,6 +44,7 @@
       <div class="topbar-actions">
         <span class="con-live" id="live" role="status" hidden></span>
         <span class="admin-who" id="who"></span>
+        <a class="icon-btn press con-gear" href="#settings" id="gear" aria-label="Settings" hidden><svg class="i"><use href="#i-gear"/></svg></a>
         <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
       </div>
     </div>
@@ -66,10 +70,12 @@
       <nav class="con-nav" id="nav" aria-label="Console">
         <a class="con-tab" href="#orders" data-view="orders"><span class="con-ic"><svg class="i"><use href="#i-bell"/></svg><b class="con-badge" id="b-orders" hidden></b></span><span>Orders</span></a>
         <a class="con-tab" href="#schedule" data-view="schedule"><span class="con-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Schedule</span></a>
+        <a class="con-tab" href="#bills" data-view="bills"><span class="con-ic"><svg class="i"><use href="#i-receipt"/></svg></span><span>Bills</span></a>
         <a class="con-tab" href="#passes" data-view="passes"><span class="con-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>Passes</span></a>
         <a class="con-tab" href="#birthdays" data-view="birthdays"><span class="con-ic"><svg class="i"><use href="#i-cake"/></svg><b class="con-badge is-quiet" id="b-bdays" hidden></b></span><span>Birthdays</span></a>
         <a class="con-tab" href="#menu" data-view="menu"><span class="con-ic"><svg class="i"><use href="#i-food"/></svg><b class="con-badge is-quiet" id="b-menu" hidden></b></span><span>Menu</span></a>
         <a class="con-tab" href="#stock" data-view="stock"><span class="con-ic"><svg class="i"><use href="#i-box"/></svg><b class="con-badge" id="b-stock" hidden></b></span><span>Stock</span></a>
+        <a class="con-tab con-tab-rail" href="#settings" data-view="settings"><span class="con-ic"><svg class="i"><use href="#i-gear"/></svg></span><span>Settings</span></a>
       </nav>
 
       <div class="con-views">
@@ -85,18 +91,86 @@
             </div>
           </div>
           <div class="con-stats" id="stats">
-            <a class="con-stat" href="#orders" data-jump="o-new"><span class="con-stat-k">New orders</span><b id="st-new">–</b></a>
+            <a class="con-stat" href="#orders" data-jump="o-new"><span class="con-stat-k">New orders</span><b id="st-new">–</b><small id="st-new-split"></small></a>
             <a class="con-stat" href="#orders" data-jump="o-today"><span class="con-stat-k">Today's bookings</span><b id="st-today">–</b></a>
             <a class="con-stat" href="#orders" data-jump="o-today"><span class="con-stat-k">Booked today</span><b id="st-rev">–</b><small>not cancelled</small></a>
             <a class="con-stat con-stat-wide" href="#orders" data-jump="o-today"><span class="con-stat-k">Next booking</span><b class="con-stat-next" id="st-next">–</b></a>
             <a class="con-stat" href="#stock"><span class="con-stat-k">Stock alerts</span><b id="st-stock">–</b></a>
           </div>
-          <h2 class="admin-h" id="o-new">New <span class="admin-count" id="c-new"></span></h2>
-          <ul class="admin-list" id="list-new"><li class="admin-empty">Loading…</li></ul>
-          <h2 class="admin-h" id="o-today">Today <span class="admin-count" id="c-today"></span></h2>
-          <ul class="admin-list" id="list-today"></ul>
-          <h2 class="admin-h">Coming up <span class="admin-count" id="c-up"></span></h2>
-          <ul class="admin-list" id="list-up"></ul>
+          <!-- Gaming bookings and MR. Sandwich food orders (admin-shop.js): one list at a time -->
+          <div class="seg con-chips con-switch" id="o-switch" role="group" aria-label="Which orders">
+            <button type="button" data-orders="gaming" aria-pressed="true">Gaming <b class="con-badge" id="sw-gaming" hidden></b></button>
+            <button type="button" data-orders="food" aria-pressed="false">Food <b class="con-badge" id="sw-food" hidden></b></button>
+          </div>
+          <div id="o-gaming">
+            <h2 class="admin-h" id="o-new">New <span class="admin-count" id="c-new"></span></h2>
+            <ul class="admin-list" id="list-new"><li class="admin-empty">Loading…</li></ul>
+            <h2 class="admin-h" id="o-today">Today <span class="admin-count" id="c-today"></span></h2>
+            <ul class="admin-list" id="list-today"></ul>
+            <h2 class="admin-h">Coming up <span class="admin-count" id="c-up"></span></h2>
+            <ul class="admin-list" id="list-up"></ul>
+          </div>
+          <div id="o-food" hidden>
+            <p class="admin-note">MR. Sandwich orders from /menu: delivery or pickup, paid on delivery or at pickup. Placed → accepted → preparing → out for delivery / ready for pickup → delivered / picked up.</p>
+            <h2 class="admin-h">New <span class="admin-count" id="c-fnew"></span></h2>
+            <ul class="admin-list" id="food-new"><li class="admin-empty">Loading…</li></ul>
+            <h2 class="admin-h">In progress <span class="admin-count" id="c-flive"></span></h2>
+            <ul class="admin-list" id="food-live"></ul>
+            <h2 class="admin-h">Done today <span class="admin-count" id="c-fdone"></span></h2>
+            <ul class="admin-list" id="food-done"></ul>
+          </div>
+        </section>
+
+        <!-- Bills: today's takings from the bills, today's bills, CSV for any dates -->
+        <section class="con-view" id="v-bills" data-view="bills" aria-labelledby="h-bills" hidden>
+          <div class="con-head"><div><p class="eyebrow">MR. Gaming · MR. Sandwich</p><h1 class="con-title" id="h-bills">Bills</h1></div></div>
+          <p class="admin-note" id="bills-gst"></p>
+          <h2 class="admin-h">Today's takings <span class="admin-count" id="c-bills"></span></h2>
+          <div class="con-stats con-takings" id="takings"></div>
+          <h2 class="admin-h">Today's bills</h2>
+          <ul class="admin-list" id="bills-today"><li class="admin-empty">Loading…</li></ul>
+          <h2 class="admin-h">Download bills (CSV)</h2>
+          <form class="card con-export" id="export">
+            <label class="admin-pick"><span class="field-label">From</span><input class="field" id="ex-from" type="date" required></label>
+            <label class="admin-pick"><span class="field-label">To</span><input class="field" id="ex-to" type="date" required></label>
+            <button class="btn btn-accent press" id="ex-go" type="submit">Download CSV</button>
+            <p class="admin-msg" id="ex-msg" role="status"></p>
+          </form>
+        </section>
+
+        <!-- Settings (settings/shop): shop location, delivery radius, delivery on/off, tax details -->
+        <section class="con-view" id="v-settings" data-view="settings" aria-labelledby="h-settings" hidden>
+          <div class="con-head"><div><p class="eyebrow">MR. Sandwich</p><h1 class="con-title" id="h-settings">Settings</h1></div></div>
+          <form class="con-set" id="set-form" novalidate>
+            <div class="card con-set-card">
+              <h2 class="admin-h">Shop location</h2>
+              <p class="admin-note">Tap this once while you're standing in the shop. Delivery distance is measured from here, in a straight line. Until it's set, customers see "Delivery coming soon — pickup available".</p>
+              <p class="con-loc" id="set-loc">Loading…</p>
+              <div class="admin-actions">
+                <button class="btn btn-accent press" id="set-locate" type="button"><svg class="i"><use href="#i-pin"/></svg>Set shop location</button>
+                <a class="btn btn-ghost press" id="set-map" href="#" target="_blank" rel="noopener" hidden>Check on the map</a>
+              </div>
+            </div>
+            <div class="card con-set-card">
+              <h2 class="admin-h">Delivery</h2>
+              <label class="con-check"><input type="checkbox" id="set-deliv"><span>Delivery on <small>Turn off to take pickup orders only.</small></span></label>
+              <label class="admin-pick"><span class="field-label">Free delivery within (km)</span><input class="field" id="set-radius" type="number" inputmode="decimal" min="0.5" max="30" step="0.5" required></label>
+              <p class="admin-note">Beyond this, customers are told "We don't deliver there yet — ask us on WhatsApp".</p>
+            </div>
+            <div class="card con-set-card">
+              <h2 class="admin-h">Tax (GST)</h2>
+              <p class="admin-note">GST shows on bills only once a GSTIN is set. Without one, bills are titled "Bill", carry no GST lines and the total has no GST.</p>
+              <label class="admin-pick"><span class="field-label">GSTIN (empty = no GST)</span><input class="field" id="set-gstin" maxlength="15" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Empty until you have one"></label>
+              <label class="admin-pick"><span class="field-label">Legal name on bills</span><input class="field" id="set-legal" maxlength="100" autocomplete="off"></label>
+              <div class="con-set-row">
+                <label class="admin-pick"><span class="field-label">Food GST %</span><input class="field" id="set-food" type="number" inputmode="decimal" min="0" max="28" step="0.5" required></label>
+                <label class="admin-pick"><span class="field-label">Gaming GST %</span><input class="field" id="set-gaming" type="number" inputmode="decimal" min="0" max="28" step="0.5" required></label>
+              </div>
+              <label class="con-check"><input type="checkbox" id="set-excl"><span>Menu prices are before GST <small>The menu says "GST extra as applicable". Untick if the prices already include GST.</small></span></label>
+            </div>
+            <button class="btn btn-accent press" id="set-save" type="submit">Save settings</button>
+            <p class="admin-msg" id="set-msg" role="status"></p>
+          </form>
         </section>
 
         <!-- 2. Schedule -->
@@ -206,6 +280,37 @@
       <button class="btn btn-accent press" type="submit" id="bk-submit">Add booking</button>
       <p class="admin-msg" id="bk-msg" role="status"></p>
     </form>
+  </dialog>
+
+  <!-- Bill for a food order, booking, birthday, pass or meal plan (admin-shop.js) -->
+  <dialog class="card con-dialog" id="bill-dlg" aria-labelledby="bl-title">
+    <form class="con-bill-form" id="bill-form" novalidate>
+      <div class="con-dlg-head"><h2 class="admin-h" id="bl-title">Bill</h2><button class="icon-btn press" type="button" id="bl-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <p class="admin-item-meta" id="bl-for"></p>
+      <div class="con-bl-lines" id="bl-lines"></div>
+      <button class="btn btn-sm btn-ghost press" id="bl-add" type="button">Add a line</button>
+      <dl class="con-bl-sum" id="bl-sum"></dl>
+      <div>
+        <p class="field-label">Paid by</p>
+        <div class="seg con-chips" id="bl-method" role="group" aria-label="Paid by">
+          <button type="button" data-method="cash" aria-pressed="true">Cash</button>
+          <button type="button" data-method="upi" aria-pressed="false">UPI</button>
+          <button type="button" data-method="card" aria-pressed="false">Card</button>
+        </div>
+      </div>
+      <button class="btn btn-accent press" id="bl-submit" type="submit">Create bill</button>
+      <p class="admin-msg" id="bl-msg" role="status"></p>
+    </form>
+    <div class="con-bill-done" id="bl-done" hidden>
+      <div class="con-dlg-head"><h2 class="admin-h">Bill <span id="bl-no"></span></h2><button class="icon-btn press" type="button" data-close-bill aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <p class="admin-bk-total" id="bl-total"></p>
+      <div class="admin-actions">
+        <a class="btn btn-accent press" id="bl-open" href="/bill" target="_blank" rel="noopener">Open bill</a>
+        <a class="btn btn-ghost press" id="bl-receipt" href="/bill" target="_blank" rel="noopener">Print receipt</a>
+        <a class="btn btn-ghost press" id="bl-wa" href="#" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>Share on WhatsApp</a>
+        <button class="btn btn-ghost press" id="bl-copy" type="button">Copy link</button>
+      </div>
+    </div>
   </dialog>
 
   <!-- New order pop-up -->

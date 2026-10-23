@@ -1,11 +1,16 @@
 /* MR. Console (/admin): the manager's screens for MR. Gaming and MR. Sandwich, one at a time.
-   Orders      new website bookings pop up (sheet, optional chime, browser notification, "(2)" in the tab title);
-               Seen / Arrived / Done / No-show / Cancel. Summary numbers at the top, all from the database.
+   Orders      new website bookings and MR. Sandwich food orders pop up (sheet, optional chime, browser notification,
+               "(2)" in the tab title); bookings: Seen / Arrived / Done / No-show / Cancel; food orders (admin-shop.js):
+               accept → preparing → out for delivery / ready → delivered / picked up, or cancel with a reason.
+               Summary numbers at the top, all from the database.
+   Bills       (admin-shop.js) "Bill" on every food order, booking, birthday, pass and meal plan; today's takings by
+               kind and by cash / UPI / card, from the bills; CSV for any dates.
    Schedule    each day's grid per console (block / free hours) and that day's bookings.
    Passes      gaming passes and MR. Sandwich meal plans: add, use hours or meals, send the link.
    Birthdays   upcoming parties (station 'party') and "Add a birthday".
    Menu        today's price, "Sold out today" and "Hide" per item, saved in /menuOverrides (read by /menu, home, booking).
    Stock       expired, expiring in 3 days and running low, worked out like stock.js; the full stock page is /stock.
+   Settings    (admin-shop.js) the shop location for delivery, the free-delivery radius, delivery on/off, GSTIN and GST.
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
    Owners log in on /pass like everyone else; it sees their /admins entry and opens this page.
    Reads use Firestore Lite (plain HTTPS, no live listeners). A tiny "anything new?" query (requests created after the
@@ -18,6 +23,7 @@ import {
   runTransaction, serverTimestamp, Timestamp, increment
 } from '/assets/vendor/firebase-account.0e285128.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
+import { initShop } from '/assets/js/admin-shop.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] }), db = getFirestore(app);
@@ -95,8 +101,9 @@ onAuthStateChanged(auth, async (user) => {
   begin();
 });
 
-/* ---------- screens: #orders, #schedule, #passes, #birthdays, #menu, #stock ---------- */
-const VIEWS = ['orders', 'schedule', 'passes', 'birthdays', 'menu', 'stock'];
+/* ---------- screens: #orders, #schedule, #bills, #passes, #birthdays, #menu, #stock, #settings ---------- */
+const VIEWS = ['orders', 'schedule', 'bills', 'passes', 'birthdays', 'menu', 'stock', 'settings'];
+let shop = null;   // admin-shop.js: food orders, bills and settings
 let view = 'orders';
 const isView = (v) => () => view === v;
 function setView(v) {
@@ -105,6 +112,7 @@ function setView(v) {
   $$('.con-tab').forEach((a) => { const on = a.dataset.view === view; a.classList.toggle('is-active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (view === 'schedule') markDay();
   if (view === 'menu' && started) openMenu();
+  if (shop) shop.viewChanged(view);
   if (started) watchers.forEach((w) => { if (w.when() && Date.now() - w.at > 3000) w.run(); });   // the screen just opened: fresh data
   window.scrollTo({ top: 0 });
 }
@@ -112,11 +120,21 @@ window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
 $('#stats').addEventListener('click', (e) => {
   const a = e.target.closest('[data-jump]'); if (!a) return;
   e.preventDefault(); if (view !== 'orders') location.hash = 'orders';
+  // "New orders" with only food orders new opens the food list; the rest are gaming numbers
+  if (shop) shop.showOrders(a.dataset.jump === 'o-new' && !freshGaming && shop.freshFood() ? 'food' : 'gaming');
+  if (a.dataset.jump === 'o-new' && $('#o-gaming').hidden) return;
   $('#' + a.dataset.jump).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 });
 
 function startConsole() {
+  shop = shop || initShop({
+    db, me: () => me, watch, refreshAll, toast, esc, inr, pad, clock, dayName, timeOf, istKey, todayIst, nowIst, telHref, waDigits, firstName,
+    badge, countOf, loadScript, isView, popNew, registerPop, paintNew, NAMES, PASS, MEALS, BDAY, PLANS, KIND,
+    record: { requests: (id) => orders.get(id) || dayRequests.find((x) => x.id === id), passes: (id) => (passData[id] ? { id, ...passData[id] } : null) }
+  });
+  $('#gear').hidden = false;
   setView(location.hash.slice(1));
+  shop.start();
   startDays(); watchOrders(); watchPasses(); watchStock(); fillBookingForm(); alertsUi();
   $('#bday-rules').textContent = `Party package: ${BDAY.hours} hours in the game room, ${inr(BDAY.perChild)} per child, ${inr(BDAY.perAdult)} per adult, at least ${BDAY.minGuests} guests (more than ${BDAY.roomMax} takes the whole restaurant). ${inr(BDAY.advance)} advance to confirm.`;
 }
@@ -179,8 +197,13 @@ function orderCard(r, { day = true } = {}) {
       <button class="btn btn-sm btn-ghost press" data-act="noshow" data-id="${id}">No-show</button>
       <button class="btn btn-sm btn-ghost press con-danger" data-act="cancel" data-id="${id}">Cancel</button>
     </div>` : ''}
+    ${billActs('requests', r)}
   </li>`;
 }
+// "Bill" (admin-shop.js) on a booking, birthday or pass that went ahead; once billed, its number opens the bill
+const billActs = (col, r) => (r.status === 'cancelled' || r.status === 'no-show' ? '' : r.bill?.id
+  ? `<div class="admin-actions con-billed"><a class="btn btn-sm btn-ghost press" href="/bill?id=${esc(r.bill.id)}" target="_blank" rel="noopener">Bill ${esc(r.bill.no)}</a><button class="btn btn-sm btn-ghost press" data-share-bill="${esc(col)}" data-id="${esc(r.id)}">Share bill</button></div>`
+  : `<div class="admin-actions"><button class="btn btn-sm btn-ghost press" data-bill="${esc(col)}" data-id="${esc(r.id)}">Bill</button></div>`);
 const byWhen = (a, b) => a.date.localeCompare(b.date) || a.start - b.start;
 const fillList = (sel, rows, empty, opts) => { $(sel).innerHTML = rows.length ? rows.map((r) => orderCard(r, opts)).join('') : `<li class="admin-empty">${empty}</li>`; };
 const countOf = (sel, n) => { $(sel).textContent = n ? `(${n})` : ''; };
@@ -197,20 +220,28 @@ function renderOrders() {
 
   // Summary: numbers only from what the database returned
   const todayLive = all.filter((r) => r.date === today && r.status !== 'cancelled');
-  $('#st-new').textContent = fresh.length;
+  freshGaming = fresh.length;
   $('#st-today').textContent = todayLive.length;
   $('#st-rev').textContent = inr(todayLive.reduce((t, r) => t + (+r.total || 0), 0));
   const hr = nowIst().getHours();
   const next = all.filter((r) => LIVE.includes(r.status) && (r.date > today || r.start >= hr)).sort(byWhen)[0];
   $('#st-next').textContent = next ? `${next.date === today ? '' : dayName(next.date) + ', '}${clock(next.start)} · ${firstName(next.name)}` : 'None booked';
-  badge('#b-orders', fresh.length);
-  document.title = (fresh.length ? `(${fresh.length}) ` : '') + 'MR. Console';
+  paintNew();
 
   renderBirthdays(all);
   if (view === 'schedule') renderDayList();
-  popNew(fresh);
+  popNew('g', fresh);
 }
 const badge = (sel, n) => { const b = $(sel); b.hidden = !n; b.textContent = n > 99 ? '99+' : n; };
+// New gaming bookings + new food orders: the stat, the tab badges and "(3)" in the browser tab
+let freshGaming = 0;
+function paintNew() {
+  const g = freshGaming, f = shop ? shop.freshFood() : 0;
+  $('#st-new').textContent = loaded ? g + f : '–';
+  $('#st-new-split').textContent = f ? `${g} gaming · ${f} food` : '';
+  badge('#b-orders', g + f); badge('#sw-gaming', g); badge('#sw-food', f);
+  document.title = (g + f ? `(${g + f}) ` : '') + 'MR. Console';
+}
 
 // Seen / Arrived / Done / No-show / Cancel. Reads the hours from the database (not the on-screen schedule) and only
 // touches the ones this request still holds: an old stale 'pending' hold may since have gone to someone else.
@@ -247,47 +278,52 @@ document.addEventListener('click', async (e) => {
   await refreshAll();
 });
 
-/* ---------- new-order pop-up: sheet + optional chime + browser notification ---------- */
-const popped = new Set();
+/* ---------- new-order pop-up: sheet + optional chime + browser notification ----------
+   One queue for both kinds: 'g:<id>' gaming bookings (here) and 'f:<id>' food orders (admin-shop.js registers 'f'). */
+const popped = new Set(), popSrc = {};
 let popIds = [];
-function popNew(fresh) {
-  const ids = fresh.map((r) => r.id), arrived = ids.filter((id) => !popped.has(id));
-  arrived.forEach((id) => popped.add(id));
-  popIds = popIds.filter((id) => ids.includes(id));   // seen elsewhere (another phone) → gone from the sheet
-  arrived.reverse().forEach((id) => popIds.unshift(id));
+const registerPop = (kind, src) => { popSrc[kind] = src; };
+function popNew(kind, fresh) {
+  const keys = fresh.map((r) => `${kind}:${r.id}`), arrived = keys.filter((k) => !popped.has(k));
+  arrived.forEach((k) => popped.add(k));
+  popIds = popIds.filter((k) => !k.startsWith(kind + ':') || keys.includes(k));   // seen elsewhere (another phone) → gone from the sheet
+  arrived.reverse().forEach((k) => popIds.unshift(k));
   renderPop();
   if (!arrived.length) return;
   chime();
-  const r = orders.get(arrived[arrived.length - 1]);
+  const last = arrived[arrived.length - 1], r = popSrc[kind].get(last.slice(2));
   if ('Notification' in window && Notification.permission === 'granted' && r) {
     try {
-      const n = new Notification(arrived.length > 1 ? `${arrived.length} new bookings` : 'New booking', {
-        body: `${r.name} · ${dayName(r.date)} ${clock(r.start)} · ${NAMES[r.station] || r.station} · ${inr(r.total)}`,
-        icon: '/assets/images/logo-96.png', tag: 'mg-order-' + r.id
-      });
-      n.onclick = () => { window.focus(); location.hash = 'orders'; n.close(); };
+      const { title, body } = popSrc[kind].note(r, arrived.length);
+      const n = new Notification(title, { body, icon: '/assets/images/logo-96.png', tag: 'mg-order-' + r.id });
+      n.onclick = () => { window.focus(); location.hash = 'orders'; if (shop) shop.showOrders(kind === 'f' ? 'food' : 'gaming'); n.close(); };
     } catch (e) {}   // phones only allow notifications from an installed app's service worker; the sheet and title still show
   }
 }
 function renderPop() {
-  const pop = $('#pop'), r = orders.get(popIds[0]);
-  if (!r || !isNew(r)) { pop.hidden = true; return; }
-  pop.innerHTML = `
-    <div class="con-pop-top"><span class="pill">New booking${popIds.length > 1 ? ` · ${popIds.length}` : ''}</span><button class="icon-btn press" type="button" data-pop="close" aria-label="Hide"><svg class="i"><use href="#i-x"/></svg></button></div>
+  const pop = $('#pop'), k = popIds[0] || '', src = popSrc[k.slice(0, 1)], r = src && src.get(k.slice(2));
+  if (!r || !src.isNew(r)) { pop.hidden = true; return; }
+  pop.innerHTML = src.html(r, popIds.length);
+  pop.hidden = false;
+}
+registerPop('g', {
+  get: (id) => orders.get(id), isNew,
+  note: (r, n) => ({ title: n > 1 ? `${n} new bookings` : 'New booking', body: `${r.name} · ${dayName(r.date)} ${clock(r.start)} · ${NAMES[r.station] || r.station} · ${inr(r.total)}` }),
+  html: (r, n) => `
+    <div class="con-pop-top"><span class="pill">New booking${n > 1 ? ` · ${n}` : ''}</span><button class="icon-btn press" type="button" data-pop="close" aria-label="Hide"><svg class="i"><use href="#i-x"/></svg></button></div>
     <p class="con-pop-when">${esc(dayName(r.date))} · ${clock(r.start)} – ${clock(r.start + r.hours)}</p>
     <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(NAMES[r.station] || r.station)} · ${r.players} ${r.station === 'party' ? 'guests' : 'player' + (r.players > 1 ? 's' : '')}</span></p>
     <p class="admin-item-meta">${esc(sourceOf(r))}${r.food ? ' · ' + esc(r.food) : ''} · <b class="admin-left">${inr(r.total)}</b></p>
     <div class="admin-actions">
       <button class="btn btn-sm btn-accent press" data-act="seen" data-id="${esc(r.id)}">Seen</button>
       ${waDigits(r.phone) ? `<a class="btn btn-sm btn-ghost press" href="${esc(waHref(r))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-      <a class="btn btn-sm btn-ghost press" href="#orders" data-pop="open">Open orders</a>
-    </div>`;
-  pop.hidden = false;
-}
+      <a class="btn btn-sm btn-ghost press" href="#orders" data-pop="open" data-go="gaming">Open orders</a>
+    </div>`
+});
 $('#pop').addEventListener('click', (e) => {
   const b = e.target.closest('[data-pop]'); if (!b) return;
   if (b.dataset.pop === 'close') { popIds.shift(); renderPop(); }
-  if (b.dataset.pop === 'open') { popIds = []; renderPop(); }
+  if (b.dataset.pop === 'open') { popIds = []; renderPop(); if (shop && b.dataset.go) shop.showOrders(b.dataset.go); }
 });
 
 // Chime: browsers only allow sound after a tap, so it's a switch the owner turns on (remembered on this device;
@@ -313,7 +349,7 @@ function alertsUi() {
   };
   s.hidden = false; paint();
   s.onclick = () => { soundOn = !soundOn; store.set(SOUND_KEY, soundOn ? '1' : '0'); if (soundOn) { wake(); setTimeout(chime, 60); } paint(); toast(soundOn ? 'Chime on for new orders.' : 'Chime off.'); };
-  n.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} paint(); if (Notification.permission === 'granted') toast('Alerts on: new bookings show as notifications.'); };
+  n.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} paint(); if (Notification.permission === 'granted') toast('Alerts on: new bookings and food orders show as notifications.'); };
   if (soundOn) document.addEventListener('pointerdown', wake, { once: true });
 }
 
@@ -545,6 +581,7 @@ function renderPasses() {
         <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-send="1">Send link</button>
         <button class="btn btn-sm btn-ghost press con-danger" data-pass="${id}" data-del="1">Delete</button>
       </div>
+      ${billActs('passes', p)}
     </li>`;
   }).join('');
 }

@@ -1,51 +1,11 @@
 /* Sign-in and booking for /book: a booking is saved only by someone signed in with their mobile number (SMS code).
    Loaded by book.js when the visitor reaches the fare or confirm step, so the first paint never waits for it.
-   Same Firebase app and auth persistence as /pass (pass.js), so one sign-in serves both pages.
+   The sign-in itself is account.js (shared with food orders on /menu): same Firebase app and auth persistence as
+   /pass (pass.js), so one sign-in serves every page.
    firestore.rules accepts a website request only with uid == the caller and phone == the verified number, and each
    hold only next to a request of the caller's. */
-import {
-  initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
-  RecaptchaVerifier, signInWithPhoneNumber, signOut as fbSignOut, onAuthStateChanged,
-  getFirestore, collection, query, where, getDocs, doc, writeBatch, serverTimestamp
-} from '/assets/vendor/firebase-account.0e285128.js';
-import { firebaseConfig } from '/assets/js/firebase-config.js';
-
-const app = initializeApp(firebaseConfig), db = getFirestore(app);
-const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] });
-auth.languageCode = 'en';
-
-let user = null, verifier = null, confirmation = null;
-const listeners = new Set();
-// The header's "Log in" button reads this hint (main.js) without loading Firebase
-const hint = (u) => { try { if (u) localStorage.setItem('mg-auth', '1'); else localStorage.removeItem('mg-auth'); } catch (e) {} };
-// Resolves once Firebase knows whether this phone is already signed in
-const ready = new Promise((resolve) => onAuthStateChanged(auth, (u) => {
-  user = u && u.phoneNumber ? u : null; hint(user);
-  listeners.forEach((cb) => cb(user)); resolve(user);
-}));
-const onUser = (cb) => { listeners.add(cb); ready.then(() => cb(user)); };
-
-const resetVerifier = () => { if (verifier) { verifier.clear(); verifier = null; } };
-// phoneE164: "+91" and 10 digits. el: the element the invisible reCAPTCHA goes into
-async function sendCode(phoneE164, el) {
-  resetVerifier();
-  try {
-    verifier = new RecaptchaVerifier(auth, el, { size: 'invisible' });
-    confirmation = await signInWithPhoneNumber(auth, phoneE164, verifier);
-    return { ok: true };
-  } catch (err) {
-    resetVerifier();
-    if (err && err.code) console.warn('Sign-in code not sent:', err.code);
-    return { ok: false, code: (err && err.code) || '' };
-  }
-}
-async function confirmCode(code) {
-  if (!confirmation) return { ok: false, code: 'no-code' };
-  try { const cred = await confirmation.confirm(code); confirmation = null; resetVerifier(); return { ok: true, user: cred.user }; }
-  catch (err) { return { ok: false, code: (err && err.code) || '' }; }
-}
-const forgetCode = () => { confirmation = null; resetVerifier(); };
-const signOut = () => fbSignOut(auth);
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from '/assets/vendor/firebase-account.0e285128.js';
+import { db, ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser } from '/assets/js/account.js';
 
 // Taken "console_hour" keys on a day (holds are public; no names)
 async function takenFor(date) {
@@ -62,6 +22,7 @@ async function takenFor(date) {
 // Books it: the request (with the caller's uid and verified number) and one hold per console per hour in one batch,
 // both 'booked'. A slot someone already holds fails the batch.
 async function reserve(b) {
+  const user = currentUser();
   if (!user) return { ok: false, reason: 'signed-out' };
   const consoles = b.station === 'squad' ? ['ps5', 'xbox'] : [b.station];
   const hours = Array.from({ length: b.hours }, (_, i) => b.start + i);
@@ -88,5 +49,4 @@ async function reserve(b) {
   }
 }
 
-export { ready, onUser, sendCode, confirmCode, forgetCode, signOut, reserve };
-export const currentUser = () => user;
+export { ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser, reserve };

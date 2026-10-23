@@ -36,6 +36,8 @@
     <symbol id="i-food" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.02-3.68.18-7.4 5-12zm0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol id="i-loc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></symbol>
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
   </svg>
 
@@ -89,6 +91,8 @@
         <a class="pill" href="tel:+917337230311"><svg class="i"><use href="#i-phone"/></svg>Call</a>
         <a class="pill" data-wa="Hi MR. Sandwich! I have a question." href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>WhatsApp</a>
       </div>
+      <!-- Online ordering (order.js, once the live prices load): delivery or pickup, or when it opens -->
+      <p class="order-line" id="order-line" hidden></p>
     </div>
   </header>
 
@@ -169,6 +173,90 @@
 
     <p class="foot-links"><a href="/">MR. GAMING · PS5 &amp; Xbox room</a> · <a href="/pass">My pass</a> · <a href="#top">Back to top</a></p>
   </footer>
+
+  <!-- Food order (order.js): the cart bar above the tab bar, and the cart, checkout and order-tracking sheet -->
+  <div class="cartbar" id="cartbar" hidden>
+    <button class="cartbar-btn press" id="cartbar-btn" type="button">
+      <span class="cartbar-ic"><svg class="i"><use href="#i-bag"/></svg><b id="cartbar-n"></b></span>
+      <span class="cartbar-text" id="cartbar-text"></span>
+      <span class="cartbar-go" id="cartbar-go">View cart</span>
+    </button>
+  </div>
+  <dialog class="sheet" id="sheet" aria-labelledby="sheet-title">
+    <div class="sheet-in">
+      <header class="sheet-head">
+        <h2 class="sheet-title" id="sheet-title">Your order</h2>
+        <button class="sheet-x" id="sheet-x" type="button" aria-label="Close">&times;</button>
+      </header>
+
+      <!-- The cart and checkout -->
+      <form class="sheet-body" id="cart" novalidate>
+        <ul class="cart-list" id="cart-list"></ul>
+        <label class="o-field"><span class="o-label">Notes for the kitchen <i>optional</i></span><textarea class="o-input" id="o-note" maxlength="200" rows="2" placeholder="Less spicy, no onion…"></textarea></label>
+
+        <fieldset class="o-group">
+          <legend class="o-label">Delivery or pickup</legend>
+          <div class="o-seg" id="o-mode">
+            <button type="button" data-mode="delivery" aria-pressed="true">Delivery</button>
+            <button type="button" data-mode="pickup" aria-pressed="false">Pickup</button>
+          </div>
+          <p class="o-hint" id="o-radius" role="status"></p>
+          <div class="o-delivery" id="o-delivery">
+            <button class="pill" id="o-locate" type="button"><svg class="i"><use href="#i-loc"/></svg>Use my location</button>
+            <p class="o-dist" id="o-dist" role="status"></p>
+            <label class="o-field"><span class="o-label">Address</span><textarea class="o-input" id="o-address" maxlength="200" rows="2" autocomplete="street-address" placeholder="Flat, building, street, area"></textarea></label>
+            <label class="o-field"><span class="o-label">Landmark <i>optional</i></span><input class="o-input" id="o-landmark" maxlength="100" autocomplete="off" placeholder="Near…"></label>
+          </div>
+          <p class="o-hint o-pickup" id="o-pickup" hidden>Pick up at MR. Sandwich, <span id="o-addr"></span>.</p>
+        </fieldset>
+
+        <dl class="o-sum" id="o-sum"></dl>
+        <p class="o-hint">Pay on delivery or at pickup: cash or UPI.</p>
+
+        <div class="o-group">
+          <label class="o-field"><span class="o-label">Your name</span><input class="o-input" id="o-name" maxlength="40" autocomplete="given-name" placeholder="So we know whose order it is"></label>
+          <!-- The same sign-in as /book and My pass: the mobile number and an SMS code (account.js, loaded when the cart opens) -->
+          <div class="o-sign" id="o-sign">
+            <p class="o-hint" id="sg-checking">Checking sign-in…</p>
+            <div id="sg-phone" hidden>
+              <label class="o-label" for="o-phone">Mobile number</label>
+              <div class="o-phone"><span>+91</span><input class="o-input" id="o-phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="98765 43210" maxlength="16"></div>
+              <p class="o-hint">We text a code to confirm your number.</p>
+            </div>
+            <div id="sg-code" hidden>
+              <label class="o-label" for="o-code">6-digit code <span class="o-hint" id="sg-to"></span></label>
+              <input class="o-input" id="o-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" pattern="[0-9]{6}">
+              <button class="o-link" id="sg-change" type="button">Use a different number</button>
+            </div>
+            <div id="sg-done" hidden>
+              <p class="o-label">Mobile number</p>
+              <p class="o-verified"><b id="sg-phone-no"></b><span>Verified</span></p>
+              <button class="o-link" id="sg-out" type="button">Not you? Sign out</button>
+            </div>
+            <div id="o-recaptcha"></div>
+          </div>
+        </div>
+
+        <p class="o-err" id="o-err" role="alert"></p>
+        <button class="o-place press" id="o-place" type="submit">Place order</button>
+        <p class="o-hint o-center"><a id="o-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener">Rather order on WhatsApp?</a></p>
+      </form>
+
+      <!-- After placing: the order's progress, re-read every 15 seconds while this is open -->
+      <div class="sheet-body" id="track" hidden>
+        <p class="t-id">Order <b id="t-id"></b></p>
+        <p class="t-state" id="t-state" role="status"></p>
+        <ol class="t-steps" id="t-steps"></ol>
+        <ul class="t-items" id="t-items"></ul>
+        <p class="o-hint" id="t-meta"></p>
+        <div class="t-acts">
+          <a class="pill pill-solid" id="t-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>Message us on WhatsApp</a>
+          <a class="pill" id="t-bill" href="/bill" hidden>See your bill</a>
+        </div>
+        <button class="o-link" id="t-new" type="button">Start a new order</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- Phone tab bar: the five screens, the current one lit (same on every customer page) -->
   <nav class="tabbar" id="tabbar" aria-label="App">

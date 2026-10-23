@@ -209,3 +209,73 @@
   .con-pop-when { font-size: 18px; }
   .con-pop .admin-actions { margin-top: var(--s1); }
 }
+
+/* ================= MR. Sandwich in the console (admin-shop.js): food orders, bills, settings ================= */
+@media (max-width: 899px) { .con-nav { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.con-tab-rail { display: none; }
+.con-gear .i { width: 18px; height: 18px; }
+@media (min-width: 900px) { .con-tab-rail { display: flex; } .con-gear { display: none; } }
+@media (max-width: 379px) { .con-tab { font-size: 10px; } .con-ic { width: 40px; } }
+.con-switch { margin-top: var(--s5); width: fit-content; }
+#bill-dlg { width: min(760px, calc(100vw - var(--s4) * 2)); }
+.con-switch button { display: inline-flex; align-items: center; gap: var(--s2); padding-inline: var(--s5); }
+.con-switch .con-badge { position: static; box-shadow: none; }
+.con-stat small:empty { display: none; }
+/* a food order */
+.con-lines { display: grid; gap: 2px; font-size: 15px; }
+.con-lines li { display: flex; justify-content: space-between; gap: var(--s3); padding: 2px 0; border-bottom: 1px dashed var(--line); }
+.con-lines li > span { min-width: 0; overflow-wrap: anywhere; }
+.con-lines b { flex: none; font-variant-numeric: tabular-nums; }
+.con-warn { display: inline-block; margin-left: var(--s1); padding: 3px 7px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--danger) 18%, var(--surface)); color: var(--text); font: 600 11px/1.2 var(--f-mono); letter-spacing: .04em; vertical-align: 1px; }
+.admin-item-total small { font: 500 12px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; font-stretch: 100%; }
+.status-accepted .pill, .status-preparing .pill, .status-out .pill, .status-ready .pill { background: color-mix(in srgb, var(--xbox) 25%, transparent); color: var(--text); }
+.status-delivered, .status-picked { opacity: .7; }
+@media (min-width: 1280px) { #food-new, #food-live, #food-done, #bills-today { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+
+/* the bill dialog */
+.con-bill-form, .con-bill-done { padding: var(--s4) var(--s4) var(--s5); display: grid; gap: var(--s3); }
+.con-bl-lines { display: grid; gap: var(--s2); }
+.con-bl-line { display: grid; grid-template-columns: minmax(0, 1fr) 96px 44px; grid-template-areas: "name name rm" "tax qty price" "amt amt amt"; gap: var(--s1) var(--s2); padding-bottom: var(--s2); border-bottom: 1px solid var(--line); }
+.con-bl-line .field { min-height: 44px; max-width: none; padding-inline: var(--s3); font-size: 15px; }
+.con-bl-line [data-k="name"] { grid-area: name; }
+.con-bl-line [data-k="tax"] { grid-area: tax; }
+.con-bl-line [data-k="qty"] { grid-area: qty; }
+.con-bl-line [data-k="price"] { grid-area: price; min-width: 0; }
+.con-bl-line .icon-btn { grid-area: rm; width: 44px; height: 44px; }
+.con-bl-line .icon-btn .i { width: 16px; height: 16px; }
+.con-bl-amt { grid-area: amt; text-align: right; font-variant-numeric: tabular-nums; }
+@media (min-width: 560px) {
+  .con-bl-line { grid-template-columns: minmax(0, 1fr) 100px 64px 96px 72px 44px; grid-template-areas: "name tax qty price amt rm"; align-items: center; }
+}
+.con-bl-line .con-bl-amt { align-self: center; }
+.con-bl-sum { display: grid; gap: var(--s1); font-variant-numeric: tabular-nums; }
+.con-bl-sum div { display: flex; justify-content: space-between; gap: var(--s3); font-size: 15px; }
+.con-bl-sum dt { color: var(--muted); }
+.con-bl-sum .con-bl-total { padding-top: var(--s2); border-top: 1px solid var(--line-strong); font-weight: 900; font-stretch: 115%; font-size: 22px; }
+.con-bl-sum .con-bl-total dt { color: var(--text); }
+.con-bill-form .seg { margin-top: var(--s2); }
+.con-bill-form > .btn-sm { justify-self: start; }
+
+/* bills screen */
+.con-takings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.con-takings .con-stat { min-height: 76px; }
+@media (min-width: 720px) { .con-takings { grid-template-columns: repeat(4, minmax(0, 1fr)); } .con-takings .con-stat-wide { grid-column: span 4; } }
+@media (max-width: 719px) { .con-takings .con-stat-wide { grid-column: span 2; } }
+.con-export { padding: var(--s4); display: grid; gap: var(--s3); box-shadow: none; max-width: 640px; }
+@media (min-width: 560px) { .con-export { grid-template-columns: 1fr 1fr auto; align-items: end; } .con-export .admin-msg { grid-column: 1 / -1; } }
+
+/* settings */
+.con-set { display: grid; gap: var(--s4); max-width: 720px; }
+.con-set-card { padding: var(--s2) var(--s5) var(--s5); display: grid; gap: var(--s3); box-shadow: none; }
+.con-set-card .admin-h { margin-bottom: 0; }
+.con-set-card .admin-note { margin: 0; }
+.con-set-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.con-loc { font-size: 15px; overflow-wrap: anywhere; }
+.con-loc b { font-family: var(--f-mono); font-weight: 600; }
+.con-check { display: flex; align-items: flex-start; gap: var(--s3); cursor: pointer; font-weight: 600; }
+.con-check input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.con-check small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); }
+.con-set > .btn { justify-self: start; }
+.con-set .i { width: 18px; height: 18px; }
+/* narrow phones: the logo stays, the name gives way to Live, Settings and Sign out */
+@media (max-width: 419px) { .console .brand-name { display: none; } }
