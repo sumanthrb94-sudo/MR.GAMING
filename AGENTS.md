@@ -15,6 +15,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 - `public/pass.html`, `public/assets/js/pass.js` — "My pass": customer sign-in by mobile number, or the owner's link `/pass?id=…` (styles in style.css)
 - `public/assets/images/games/` — original game-card artwork (never official game art); cards in index.html `#game-cards`, `data-pick-game` feeds the booking form
 - Phones: bottom `.tabbar` (index.html and pass.html), open-now status (`CONFIG.open`/`close` in main.js), `public/manifest.webmanifest` for "Add to Home screen"
+- `public/assets/js/book-account.js` — /book's sign-in (number + SMS code inline at step 3) and the booking write (request with `uid` + verified `phone`, plus holds); loaded only from step 2. Bookings need a verified sign-in (firestore.rules)
 - `public/assets/js/booking-db.js`, `firebase-config.js`, `public/assets/vendor/firebase-{public,account}.<hash>.js` — Firestore Lite + phone sign-in (bundled SDK; rebuild with `scripts/build-firebase.mjs`, which renames by content hash and updates references — never rename by hand)
 - `firestore.rules`, `scripts/firebase_admin.py` — database access rules and one-off admin tasks
 
@@ -24,7 +25,7 @@ Static site, no build. Serve with `node server.js` (port 5173, serves `public/`)
 3. WhatsApp number lives in `CONFIG` (main.js) and `data-wa` links get their `href` from it; keep `href="https://wa.me/917337230311"` as the no-JS fallback.
 4. Colours/spacing via CSS variables only. One accent per page.
 5. Keep `prefers-reduced-motion` working; drop `filter` after reveals (final state `filter: none`).
-6. Never commit a service-account key or print its contents. Public visitors must never be able to read names (`requests` stay owner-only). `passCards` carry first name and hours or meals only; keep phones in `passes`. A signed-in customer may read only passes whose `phoneE164` equals their sign-in number.
+6. Never commit a service-account key or print its contents. Public visitors must never be able to read names (`requests` stay owner-only; a signed-in customer may read only requests whose `uid` is theirs — My bookings on /pass). `passCards` carry first name and hours or meals only; keep phones in `passes`. A signed-in customer may read only passes whose `phoneE164` equals their sign-in number.
 7. Availability must come from the database. Never show an hour as open when the database didn't answer. Booking urgency (hours left, "Full", "next free", "starts in", the 3-hour hold) must come from the database, the clock or firestore.rules: no viewer counts, fake countdowns or invented scarcity.
 8. Escape anything that came from the public form before putting it in HTML (admin.js `esc`).
 9. Before committing: screenshot `/` and `/menu` at 390px and 1440px (light + dark for home), check no horizontal overflow and no console errors.

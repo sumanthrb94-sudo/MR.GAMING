@@ -467,6 +467,22 @@ em { font-style: normal; color: var(--accent-text); }
 .pass-cards > .pass-card { width: 100%; }
 /* a long first name ("Hi Venkatasubramanian,") breaks inside the card instead of pushing the page sideways */
 .pass-cards .pass-hi { overflow-wrap: anywhere; }
+/* My bookings (/pass, signed in): one row per booking, upcoming first; past ones dimmed */
+.bookings-title { font-weight: 850; font-stretch: 115%; font-size: clamp(22px, 5vw, 28px); line-height: 1.1; letter-spacing: -.02em; }
+.my-bookings { width: 100%; }
+.booking-list { list-style: none; display: grid; }
+.booking-list:empty { display: none; }
+.booking-row { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); padding-block: var(--s3); border-top: 1px solid var(--line); }
+.booking-row:first-child { border-top: 0; padding-top: 0; }
+.booking-row > div { display: grid; gap: var(--s1); min-width: 0; }
+.booking-when { font-weight: 700; }
+.booking-what { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.booking-what .dim { white-space: nowrap; }
+.booking-right { justify-items: end; text-align: right; flex: none; }
+.booking-right b { font-variant-numeric: tabular-nums; }
+.booking-row .tag { justify-self: end; }
+.booking-row.is-past { opacity: .6; }
+.booking-row.is-past .tag, .booking-row.is-off .tag { background: var(--surface-2); color: var(--text); }
 
 /* sign-in pieces shared by /pass and /admin */
 select.field { appearance: none; cursor: pointer; }
@@ -613,6 +629,15 @@ select.field { appearance: none; cursor: pointer; }
 .sum-who .phone-row { max-width: none; }
 .field-err { font-size: 14px; font-weight: 600; color: var(--danger); }
 .field-err:empty { display: none; }
+/* /book step 3: sign in with the mobile number (SMS code), or the verified number once signed in */
+.sign-in { display: grid; gap: var(--s3); align-content: start; }
+.sign-in-phone, .sign-in-code, .sign-in-done { display: grid; gap: var(--s2); }
+.sign-in-checking { color: var(--muted); font-size: 14px; min-height: 52px; display: flex; align-items: center; }
+.sign-in-code .field { letter-spacing: .3em; font-variant-numeric: tabular-nums; }
+.sign-in-copy, .sign-in-wa { font-size: 14px; }
+.verified { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); min-height: 52px; font-size: 18px; }
+.verified b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+#book-recaptcha:empty { display: none; }
 .combo.is-out { opacity: .6; }
 .combo.is-out .combo-price b { text-decoration: line-through; }
 .tag-out { background: var(--surface-2); color: var(--text); }

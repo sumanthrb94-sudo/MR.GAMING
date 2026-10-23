@@ -1,8 +1,10 @@
 /* MR. GAMING booking (/book), in three steps like a flight: 1 slot, 2 fare (the 6-hr pass is the upgrade), 3 confirm.
-   "Book now" saves the booking to Firestore as 'booked' (booking-db.js) and shows the ticket, with a calendar file and
-   the same bill for WhatsApp. If the database can't be reached it falls back to a WhatsApp request, which is not
-   booked until we reply. Everything that sounds urgent is real: slots left and "last console" from the database,
-   "starts in" from the clock.
+   Booking needs a verified mobile: at step 3 a visitor who isn't signed in gets the number and SMS code right here
+   (same sign-in as My pass), then the booking is saved to Firestore as 'booked' (book-account.js, loaded at step 2 so
+   the first paint never waits for it) and the ticket shows, with a calendar file and the same bill for WhatsApp.
+   Live slots come from booking-db.js (no sign-in). If the database or the sign-in can't be reached it falls back to
+   a WhatsApp request (nothing saved), which is not booked until we reply. Everything that sounds urgent is real:
+   slots left and "last console" from the database, "starts in" from the clock.
    Deep links: /book?slot=2026-10-20_ps5_18&hrs=1 (the members' board), /book?pass=duo[&rate=member] (My pass),
    /book?game=FC%2027 (the game cards on the home page). */
 (function () {
@@ -85,8 +87,8 @@
   const slotParam = (params.get('slot') || '').match(/^(\d{4}-\d{2}-\d{2})_(ps5|xbox|squad)_(\d{1,2})$/);
   let pendingSlot = slotParam ? { date: slotParam[1], station: slotParam[2], hour: +slotParam[3], hours: Math.min(MAX_ONLINE_HOURS, Math.max(1, +(params.get('hrs') || 1))) } : null;
 
-  // Name and mobile: remembered on this phone for next time
-  const nameInput = $('#book-name'), phoneInput = $('#book-phone'), phoneErr = $('#phone-err');
+  // Name (and the number last used to sign in): remembered on this phone for next time
+  const nameInput = $('#book-name'), phoneInput = $('#book-phone'), codeInput = $('#book-code'), phoneErr = $('#phone-err');
   try { nameInput.value = localStorage.getItem('mg-name') || ''; phoneInput.value = localStorage.getItem('mg-phone') || ''; } catch (e) {}
   // A 10-digit Indian mobile (6-9 first), typed with or without +91, 0, spaces or dashes
   const mobile = (v) => { const d = String(v).replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, ''); return /^[6-9]\d{9}$/.test(d) ? d : null; };
@@ -100,8 +102,49 @@
   phoneInput.addEventListener('input', () => { phoneInput.value = phoneInput.value.replace(/[^\d+\s-]/g, ''); checkPhone(false); });
   phoneInput.addEventListener('blur', () => { if (phoneInput.value.trim()) checkPhone(true); });
   nameInput.addEventListener('input', () => { if (nameInput.value.trim()) { nameInput.removeAttribute('aria-invalid'); statusEl.textContent = ''; } });
-  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); phoneInput.focus(); } });
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (sign === 'phone') phoneInput.focus(); else if (sign === 'code') codeInput.focus(); else primary(); } });
   phoneInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); primary(); } });
+  // The SMS code: digits only; the sixth digit books it
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 6); phoneErr.textContent = ''; codeInput.removeAttribute('aria-invalid');
+    if (codeInput.value.length === 6 && !busy) primary();
+  });
+  codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); primary(); } });
+
+  /* ---------- sign-in (book-account.js): the same Firebase sign-in as My pass, so a signed-in phone just books ---------- */
+  // acct: the module (null while loading, false if it can't load); user: the signed-in phone user
+  // sign: checking / phone (type the number) / code (type the SMS code) / done (signed in) / offline
+  let acct = null, acctLoad = null, user = null, sign = 'checking';
+  const pretty = (p) => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : String(p || ''); };
+  const paintSign = () => {
+    $('#sign-checking').hidden = sign !== 'checking' && sign !== 'offline';
+    $('#sign-checking').textContent = sign === 'offline' ? "Sign-in isn't loading right now. You can still send the request on WhatsApp." : 'Checking sign-in…';
+    $('#sign-phone').hidden = sign !== 'phone';
+    $('#sign-code').hidden = sign !== 'code';
+    $('#sign-done').hidden = sign !== 'done';
+    $('#sign-copy').hidden = sign !== 'phone' && sign !== 'code';
+    $('#verified-phone').textContent = user ? pretty(user.phoneNumber) : '';
+    if (sign === 'done' || sign === 'offline') { phoneErr.textContent = ''; $('#sign-wa').hidden = true; }
+  };
+  const loadAccount = () => acctLoad || (acctLoad = import('/assets/js/book-account.js').then((m) => {
+    acct = m;
+    m.onUser((u) => {
+      user = u;
+      if (u && !nameInput.value.trim()) { try { nameInput.value = localStorage.getItem('mg-name') || ''; } catch (e) {} }
+      // The top bar's "Log in" follows (main.js labels it on the next page load)
+      const top = $('[data-login] span'), first = (nameInput.value.trim() || '').split(/\s+/)[0].slice(0, 20);
+      if (top) top.textContent = u ? first || 'My pass' : 'Log in';
+      sign = u ? 'done' : sign === 'code' ? 'code' : 'phone';
+      if (!state.booked) { paintSign(); render(); }
+    });
+    return m.ready.then(() => m);
+  }).catch(() => { acct = false; sign = 'offline'; paintSign(); render(); return null; }));
+  $('#change-number').addEventListener('click', () => {
+    if (acct) acct.forgetCode();
+    sign = 'phone'; codeInput.value = ''; phoneErr.textContent = ''; statusEl.textContent = '';
+    paintSign(); render(); phoneInput.focus();
+  });
+  $('#sign-out').addEventListener('click', () => { if (acct) acct.signOut(); });
 
   // Food: the menu's Top Combos, each with the gamer price (10% off, rounded to the rupee).
   // Live changes from the owner (menuOverrides: price, sold out, hidden) are applied once they load (menu-live.js).
@@ -158,7 +201,7 @@
     });
     return out;
   };
-  const canBook = () => !!window.MGDB && state.live !== false;
+  const canBook = () => !!window.MGDB && state.live !== false && acct !== false;
 
   const render = () => {
     const players = +state.players;
@@ -189,7 +232,8 @@
     $('#sum-food-row').hidden = $('#sum-perk-row').hidden = !P.foodPrice;
     $('#sum-food').textContent = inr(P.foodPrice); $('#sum-perk').textContent = '−' + inr(P.perk);
     setRoll($('#sum-total'), picked ? P.total : 0);
-    const cta = state.step === 3 ? (fallbackUrl ? 'Open WhatsApp' : canBook() ? 'Book now' : 'Send on WhatsApp') : 'Continue';
+    const cta = state.step < 3 ? 'Continue' : fallbackUrl ? 'Open WhatsApp' : !canBook() ? 'Send on WhatsApp'
+      : sign === 'phone' ? 'Send code' : sign === 'code' ? 'Verify & book' : 'Book now';
     $('#side-go').textContent = cta; $('#bar-go').textContent = cta;
     $('#side-go').disabled = !picked || busy; $('#bar-go').disabled = busy;
     $('#bar-price').textContent = picked ? inr(state.step === 1 ? price('hourly').total : P.total) : '';
@@ -307,7 +351,8 @@
       const top = (phone.matches ? $('#availability').getBoundingClientRect().top - $('#steps-bar').offsetHeight : $('#steps-bar').getBoundingClientRect().top) + scrollY - $('#topbar').offsetHeight - 12;
       if (Math.abs(top - scrollY) > 4) scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
     }
-    if (k === 3) setTimeout(() => { const empty = !nameInput.value.trim() ? nameInput : !mobile(phoneInput.value) ? phoneInput : null; if (empty) empty.focus({ preventScroll: true }); }, 400);
+    if (k >= 2) loadAccount();   // the sign-in code, only once the visitor is on the way to booking
+    if (k === 3) setTimeout(() => { const empty = !nameInput.value.trim() ? nameInput : sign === 'phone' && !mobile(phoneInput.value) ? phoneInput : sign === 'code' ? codeInput : null; if (empty) empty.focus({ preventScroll: true }); }, 400);
     render();
   }
   window.addEventListener('popstate', (e) => { if (e.state && e.state.mgStep) goStep(e.state.mgStep, false); else if (state.step > 1) goStep(1, false); });
@@ -378,6 +423,7 @@
   document.addEventListener('visibilitychange', refreshQuiet);
 
   /* ---------- the bill, for WhatsApp and the calendar ---------- */
+  // phoneNo: 10 digits, or '' when the visitor couldn't sign in (WhatsApp shows us their number anyway)
   const billLines = (st, id, name, phoneNo) => {
     const s0 = +st.start, d = st.day.date, p = +st.players, hh = hrs(st.hours);
     const who = st.squad ? `Whole room (PS5 + Xbox) · ${p} players, ${splitLabel[p]}` : `${names[st.station]} · ${KIND_LABEL[st.kind]}`;
@@ -387,7 +433,7 @@
       : `Gaming: ${inr(st.rate)}/hr × ${hh} = ${inr(st.gaming)}`;
     return [
       `Name: ${name}`,
-      `Mobile: +91 ${phoneNo.slice(0, 5)} ${phoneNo.slice(5)}`,
+      phoneNo ? `Mobile: +91 ${phoneNo.slice(0, 5)} ${phoneNo.slice(5)}${user ? ' (verified)' : ''}` : null,
       `When: ${dayLabel(d)}, ${clock(s0)} – ${clock(s0 + st.hours)}`,
       `Console: ${who}`,
       st.game !== 'any' ? `Game: ${st.game}` : null,
@@ -438,34 +484,75 @@
   // The main button: Continue (steps 1-2), Book now (step 3)
   const statusEl = $('#book-status');
   const withTimeout = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(() => r({ ok: false, reason: 'offline' }), ms))]);
+  const newId = (st) => { const d = st.day.date; return `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(+st.start)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`; };
+  // The WhatsApp request (nothing saved): for when booking online can't happen. It isn't booked until we reply.
+  const waRequestFor = (st, id, name, phoneNo) => waUrl([`Hi MR. GAMING! Booking request ${id}`, '', ...billLines(st, id, name, phoneNo), '', 'Please confirm my slot. (Not booked until you reply.)'].join('\n'));
+  const fallback = (why, url) => {
+    fallbackUrl = url;
+    statusEl.textContent = `${why} We've opened WhatsApp with your request. It isn't booked until we reply.`;
+    render();
+    // ('noopener' would make window.open return null, so the opener is cut by hand; blocked pop-up: go there)
+    const tab = window.open(url, '_blank');
+    if (tab) tab.opener = null; else window.location.href = url;
+  };
+  const SEND_ERR = { 'auth/too-many-requests': 'Too many tries. Wait a while and try again.', 'auth/invalid-phone-number': 'That number looks wrong. Check it and try again.' };
+  const CODE_ERR = { 'auth/invalid-verification-code': 'That code is wrong. Check the SMS and try again.', 'auth/code-expired': 'That code has expired. Use a different number or send it again.' };
   const primary = async () => {
     if (state.start === null || busy || state.booked) return;
     if (state.step < 3) return goStep(state.step + 1);
     if (fallbackUrl) { window.open(fallbackUrl, '_blank', 'noopener'); return; }
-    const name = nameInput.value.trim(), phoneNo = checkPhone(true);
+    const name = nameInput.value.trim();
     if (!name) { nameInput.focus(); nameInput.setAttribute('aria-invalid', 'true'); statusEl.textContent = 'Add your name to book.'; return; }
     nameInput.removeAttribute('aria-invalid');
-    if (!phoneNo) { phoneInput.focus(); statusEl.textContent = ''; return; }
-    try { localStorage.setItem('mg-name', name); localStorage.setItem('mg-phone', phoneNo); } catch (e) {}
-    const st = { ...state }, s0 = +st.start, d = st.day.date;
-    const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(s0)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    const bill = billLines(st, id, name, phoneNo);
-    const waBooked = waUrl([`Hi MR. GAMING! I booked online: ${id}`, '', ...bill, '', 'Paying at the venue.'].join('\n'));
-    const waRequest = waUrl([`Hi MR. GAMING! Booking request ${id}`, '', ...bill, '', 'Please confirm my slot.'].join('\n'));
-    // No database (it never loaded): the WhatsApp request, as before instant booking
-    const fallback = (why) => {
-      fallbackUrl = waRequest;
-      statusEl.textContent = `${why} We've opened WhatsApp with your request (${id}). It isn't booked until we reply.`;
+    try { localStorage.setItem('mg-name', name); } catch (e) {}
+    const st = { ...state };
+    const typed = () => mobile(phoneInput.value) || '';
+    // No database (it never loaded) or no sign-in: the WhatsApp request only
+    if (!canBook()) return fallback('Online booking isn\'t available right now.', waRequestFor(st, newId(st), name, user ? pretty(user.phoneNumber).replace(/\D/g, '').slice(-10) : typed()));
+    if (!acct || sign === 'checking') {
+      busy = true; render(); statusEl.textContent = 'Checking sign-in…';
+      await loadAccount(); busy = false; statusEl.textContent = '';
+      if (!acct) return fallback('Sign-in isn\'t available right now.', waRequestFor(st, newId(st), name, typed()));
       render();
-      // ('noopener' would make window.open return null, so the opener is cut by hand; blocked pop-up: go there)
-      const tab = window.open(waRequest, '_blank');
-      if (tab) tab.opener = null; else window.location.href = waRequest;
-    };
-    if (!canBook()) return fallback('Online booking isn\'t available right now.');
+      if (!user) return;   // now showing the number field
+    }
 
+    // Not signed in yet: send the code, then check it (the booking is saved straight after)
+    if (!user && sign === 'phone') {
+      const p = checkPhone(true);
+      if (!p) { phoneInput.focus(); statusEl.textContent = ''; return; }
+      try { localStorage.setItem('mg-phone', p); } catch (e) {}
+      busy = true; render(); statusEl.textContent = 'Sending code…';
+      const r = await acct.sendCode('+91' + p, $('#book-recaptcha'));
+      busy = false; statusEl.textContent = '';
+      if (!r.ok) {
+        phoneErr.textContent = SEND_ERR[r.code] || "We couldn't send a code right now. Try again in a minute.";
+        $('#sign-wa-link').href = waRequestFor(st, newId(st), name, p); $('#sign-wa').hidden = false;
+        render(); return;
+      }
+      sign = 'code'; $('#code-to').textContent = `sent to ${pretty(p)}`; codeInput.value = '';
+      paintSign(); render(); codeInput.focus();
+      return;
+    }
+    if (!user && sign === 'code') {
+      const c = codeInput.value.replace(/\D/g, '');
+      if (c.length !== 6) { phoneErr.textContent = 'Enter the 6-digit code from the SMS.'; codeInput.focus(); return; }
+      busy = true; render(); statusEl.textContent = 'Checking the code…';
+      const r = await acct.confirmCode(c);
+      if (!r.ok) {
+        busy = false; statusEl.textContent = ''; codeInput.setAttribute('aria-invalid', 'true');
+        phoneErr.textContent = CODE_ERR[r.code] || "We couldn't check the code. Try again.";
+        render(); codeInput.focus(); return;
+      }
+      busy = false; user = r.user; sign = 'done'; paintSign();
+    }
+    if (!user) return;
+
+    const phoneNo = pretty(user.phoneNumber).replace(/\D/g, '').slice(-10), s0 = +st.start, id = newId(st);
+    const waBooked = waUrl([`Hi MR. GAMING! I booked online: ${id}`, '', ...billLines(st, id, name, phoneNo), '', 'Paying at the venue.'].join('\n'));
     busy = true; render(); statusEl.textContent = 'Booking your slot…';
-    const res = await withTimeout(window.MGDB.reserve({
-      id, name, phone: '+91' + phoneNo, date: st.date, start: s0, hours: st.hours, station: st.station, players: +st.players, plan: st.plan,
+    const res = await withTimeout(acct.reserve({
+      id, name, date: st.date, start: s0, hours: st.hours, station: st.station, players: +st.players, plan: st.plan,
       game: st.game === 'any' ? '' : st.game, food: foodLines().map((c) => `${c.qty} × ${c.name}`).join('; ').slice(0, 300), total: st.total
     }), 15000);
     busy = false;
@@ -476,7 +563,7 @@
       return;
     }
     render();
-    fallback("We couldn't reach our booking system.");
+    fallback("We couldn't reach our booking system.", waRequestFor(st, id, name, phoneNo));
   };
   $('#bar-go').addEventListener('click', primary);
   $('#side-go').addEventListener('click', primary);

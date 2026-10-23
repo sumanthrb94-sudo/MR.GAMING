@@ -102,7 +102,18 @@
 
     <!-- One card per pass or meal plan, filled by pass.js -->
     <div class="pass-cards" id="cards" aria-live="polite"></div>
+
+    <!-- Signed in: the gaming bookings made with this sign-in, upcoming first (firestore.rules lets a customer read only
+         requests carrying their own uid). Changes and cancellations go through us on WhatsApp. -->
+    <section class="card pass-card my-bookings" id="bookings" hidden aria-labelledby="bookings-title">
+      <p class="eyebrow">My bookings</p>
+      <h2 class="bookings-title" id="bookings-title">Your gaming slots</h2>
+      <ul class="booking-list" id="booking-list"></ul>
+      <p class="pass-note" id="bookings-note"></p>
+    </section>
     <p class="pass-note pass-foot" id="foot" hidden>Updates on its own when we add or use hours or meals.</p>
+    <!-- Phones: the theme switch lives here (the top bar keeps Log in and Book) -->
+    <div class="theme-row"><button class="link-btn" type="button" data-theme-toggle><span>Switch theme</span></button></div>
   </main>
 
   <!-- Phone tab bar: the five screens, the current one lit (same on every customer page) -->

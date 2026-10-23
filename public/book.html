@@ -70,6 +70,7 @@
           <svg class="i i-sun"><use href="#i-sun"/></svg>
           <svg class="i i-moon"><use href="#i-moon"/></svg>
         </button>
+        <a class="btn btn-sm btn-ghost press topbar-login" href="/pass" data-login><span>Log in</span></a>
         <a class="btn btn-sm btn-accent press topbar-book" href="/book">Book</a>
       </div>
     </div>
@@ -164,13 +165,31 @@
                   <label class="field-label" for="book-name">Your name</label>
                   <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40" enterkeyhint="next">
                 </div>
-                <div class="sum-name">
-                  <label class="field-label" for="book-phone">Mobile number <span class="field-note">to reach you</span></label>
-                  <div class="phone-row">
-                    <span class="phone-cc">+91</span>
-                    <input class="field" id="book-phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="98765 43210" maxlength="16" enterkeyhint="done" aria-describedby="phone-err">
+                <!-- Bookings need a verified mobile: signed out, the number and the SMS code right here (book.js + book-account.js);
+                     signed in (same sign-in as My pass), just the verified number -->
+                <div class="sum-name sign-in" id="sign-in">
+                  <p class="sign-in-checking" id="sign-checking">Checking sign-in…</p>
+                  <div class="sign-in-phone" id="sign-phone" hidden>
+                    <label class="field-label" for="book-phone">Mobile number</label>
+                    <div class="phone-row">
+                      <span class="phone-cc">+91</span>
+                      <input class="field" id="book-phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="98765 43210" maxlength="16" enterkeyhint="send" aria-describedby="phone-err sign-copy">
+                    </div>
                   </div>
+                  <div class="sign-in-code" id="sign-code" hidden>
+                    <label class="field-label" for="book-code">6-digit code <span class="field-note" id="code-to"></span></label>
+                    <input class="field" id="book-code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" pattern="[0-9]{6}" enterkeyhint="done" aria-describedby="phone-err">
+                    <button class="link-btn" id="change-number" type="button">Use a different number</button>
+                  </div>
+                  <div class="sign-in-done" id="sign-done" hidden>
+                    <p class="field-label">Mobile number</p>
+                    <p class="verified"><b id="verified-phone"></b><span class="tag">Verified</span></p>
+                    <button class="link-btn" id="sign-out" type="button">Not you? Sign out</button>
+                  </div>
+                  <p class="field-note sign-in-copy" id="sign-copy" hidden>Sign in with your mobile to confirm — we text a code.</p>
                   <p class="field-err" id="phone-err" aria-live="polite"></p>
+                  <p class="field-note sign-in-wa" id="sign-wa" hidden>No code coming? <a class="text-link" id="sign-wa-link" href="https://wa.me/917337230311" target="_blank" rel="noopener">Send the request on WhatsApp</a>. It isn't booked until we reply.</p>
+                  <div id="book-recaptcha"></div>
                 </div>
               </div>
               <details class="sum-extras" id="sum-game">
@@ -184,7 +203,7 @@
                 </div>
               </details>
               <p class="book-status" id="book-status" role="status"></p>
-              <p class="summary-note">Booked the moment you tap Book now. No advance for gaming: you pay at the venue.</p>
+              <p class="summary-note">Booked as soon as you confirm. No advance for gaming: you pay at the venue.</p>
             </div>
 
             <!-- Booked: the ticket, calendar and WhatsApp (book.js) -->

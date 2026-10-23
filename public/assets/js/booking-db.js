@@ -1,8 +1,8 @@
-/* Booking database for the public form (Firestore Lite).
-   Loaded on demand by book.js (and home.js for the hours left today) as window.MGDB. A booking from the form is
-   saved as 'booked' straight away and keeps its hours. If Firestore is unreachable the form falls back to a plain
-   WhatsApp request; it just cannot show taken slots or book. */
-import { initializeApp, getFirestore, collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from '/assets/vendor/firebase-public.2b1547c7.js';
+/* Live availability for the public pages (Firestore Lite, no sign-in): which console hours are taken, never names.
+   Loaded on demand by book.js and home.js (the hours left today) as window.MGDB. Saving a booking needs a verified
+   mobile number, so it lives in book-account.js, which /book loads only at the fare and confirm steps.
+   If Firestore is unreachable the form falls back to a plain WhatsApp request, which is not booked until we reply. */
+import { initializeApp, getFirestore, collection, query, where, getDocs } from '/assets/vendor/firebase-public.2b1547c7.js';
 import { firebaseConfig } from '/assets/js/firebase-config.js';
 
 const db = getFirestore(initializeApp(firebaseConfig));
@@ -37,33 +37,5 @@ async function takenRange(from, to) {
   return week;
 }
 
-// Books it: saves the request and one hold per console per hour in one batch, both 'booked'.
-// A slot someone already holds fails the batch. b.phone is "+91" and 10 digits.
-async function reserve(b) {
-  const consoles = b.station === 'squad' ? ['ps5', 'xbox'] : [b.station];
-  const hours = Array.from({ length: b.hours }, (_, i) => b.start + i);
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'requests', b.id), {
-    id: b.id, name: b.name, phone: b.phone, date: b.date, start: b.start, hours: b.hours, station: b.station,
-    players: b.players, plan: b.plan, game: b.game, food: b.food, total: b.total,
-    status: 'booked', createdAt: serverTimestamp()
-  });
-  consoles.forEach((c) => hours.forEach((h) => batch.set(doc(db, 'holds', `${b.date}_${c}_${h}`), {
-    date: b.date, console: c, hour: h, requestId: b.id, status: 'booked', createdAt: serverTimestamp()
-  })));
-  try {
-    await batch.commit();
-    return { ok: true };
-  } catch (err) {
-    // A clash shows up as permission-denied: check whether the slot really is held now
-    try {
-      const taken = await takenFor(b.date);
-      if (consoles.some((c) => hours.some((h) => taken.has(`${c}_${h}`)))) return { ok: false, reason: 'taken', taken };
-    } catch (e) { /* fall through */ }
-    console.warn('Booking database unavailable, sending on WhatsApp only:', err && err.code);
-    return { ok: false, reason: 'offline' };
-  }
-}
-
-window.MGDB = { takenFor, takenRange, reserve };
+window.MGDB = { takenFor, takenRange };
 window.dispatchEvent(new Event('mgdb-ready'));

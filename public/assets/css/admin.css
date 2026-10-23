@@ -129,6 +129,9 @@
 .con-item-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2) var(--s3); }
 .con-contact { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .con-contact .i { width: 18px; height: 18px; }
+/* a website booking made signed in: the phone above is the number the SMS code verified */
+.con-verified { display: inline-flex; align-items: center; gap: var(--s1); align-self: center; font: 600 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent-text); }
+.con-verified .i { width: 14px; height: 14px; stroke-width: 3; }
 @media (min-width: 1280px) { #list-today, #list-up, #list-new, #list-bdays { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 
 /* new-order pop-up and toast: above the tab bar on phones */

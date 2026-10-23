@@ -5,7 +5,9 @@
                    under that number (firestore.rules lets a signed-in number read only its own passes).
                    The same login serves the owner: a number listed in /admins is sent to /admin,
                    and stock staff (listed in /stockStaff) are sent to /stock.
-   Hours and meals are re-read every 30 seconds and when the page comes back into view. */
+   Signed in, "My bookings" lists the gaming bookings made with this sign-in (requests whose uid is the caller's;
+   firestore.rules allows no others), upcoming first. Changes and cancellations go through us on WhatsApp.
+   Hours, meals and bookings are re-read every 30 seconds and when the page comes back into view. */
 import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
   RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
@@ -24,6 +26,7 @@ const firstName = (n) => String(n || '').trim().split(/\s+/)[0].slice(0, 20);
 const prettyPhone = (p) => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : p; };
 const waLink = (text) => `https://wa.me/${WA}?text=${encodeURIComponent(text)}`;
 const isMeals = (p) => p.type === 'meals';
+const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // What a pass holds: hours on a gaming pass, meals on a meal plan
 const count = (p) => { const total = (isMeals(p) ? p.mealsTotal : p.hoursTotal) || 0; return { total, left: Math.max(0, total - ((isMeals(p) ? p.mealsUsed : p.hoursUsed) || 0)) }; };
 
@@ -116,6 +119,45 @@ async function loadLink() {
   } catch (e) { if (!loaded) showStatus("Couldn't load your pass right now. Try again in a minute.", true); }
 }
 
+/* ---------- My bookings (signed in) ---------- */
+const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const CONSOLE = { ps5: 'PS5', xbox: 'Xbox', squad: 'Whole room' };
+const STATUS = { booked: 'Booked', pending: 'Requested', confirmed: 'Confirmed', done: 'Done', 'no-show': 'No-show', cancelled: 'Cancelled' };
+const OFF = ['done', 'no-show', 'cancelled'];
+const hr = (h) => `${h % 12 || 12} ${h < 12 || h === 24 ? 'am' : 'pm'}`;
+const dayOf = (key) => { const [y, m, d] = String(key).split('-').map(Number); return new Date(y, m - 1, d); };
+// "Now" in Hyderabad as "YYYY-MM-DD" and the hour, whatever the phone's timezone
+const istNow = () => { const d = new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000); return { key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`, hour: d.getHours() }; };
+const isPast = (r, now) => OFF.includes(r.status) || r.date < now.key || (r.date === now.key && +r.start + +r.hours <= now.hour);
+function renderBookings(rows) {
+  const now = istNow(), list = rows.map((r) => ({ ...r, past: isPast(r, now) }));
+  const at = (r) => `${r.date}_${String(r.start).padStart(2, '0')}`;
+  const upcoming = list.filter((r) => !r.past).sort((a, b) => at(a).localeCompare(at(b)));
+  const past = list.filter((r) => r.past).sort((a, b) => at(b).localeCompare(at(a))).slice(0, 5);
+  $('#booking-list').innerHTML = [...upcoming, ...past].map((r) => {
+    const d = dayOf(r.date), s0 = +r.start, n = +r.hours, players = +r.players || 1;
+    return `<li class="booking-row${r.past ? ' is-past' : ''}${OFF.includes(r.status) ? ' is-off' : ''}">
+      <div><span class="booking-when">${esc(DAY[d.getDay()])} ${d.getDate()} ${esc(MON[d.getMonth()])} · ${esc(hr(s0))} – ${esc(hr(s0 + n))}</span>
+        <span class="booking-what">${esc(CONSOLE[r.station] || r.station)} · ${players} player${players > 1 ? 's' : ''} · <span class="dim">${esc(r.id)}</span></span></div>
+      <div class="booking-right"><span class="tag">${esc(STATUS[r.status] || r.status)}</span><b>₹${Math.round(+r.total || 0).toLocaleString('en-IN')}</b></div>
+    </li>`;
+  }).join('');
+  $('#bookings-note').innerHTML = !list.length ? 'No bookings with this number yet. <a class="text-link" href="/book">Book a slot</a>.'
+    : `Pay at the venue. To change or cancel, <a class="text-link" href="${esc(waLink('Hi MR. GAMING! About my booking'))}" target="_blank" rel="noopener">message us on WhatsApp</a>.`;
+  $('#bookings').hidden = false;
+}
+let bookingsLoaded = false;
+async function loadBookings() {
+  if (!user) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'requests'), where('uid', '==', user.uid)));
+    if (!user) return;
+    renderBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); bookingsLoaded = true;
+  } catch (e) {
+    if (!bookingsLoaded) { $('#booking-list').innerHTML = ''; $('#bookings-note').textContent = "Couldn't load your bookings right now. Try again in a minute."; $('#bookings').hidden = false; }
+  }
+}
+
 /* ---------- way 2: sign in with mobile number ---------- */
 let user = null, verifier = null, confirmation = null;
 const msg = (t) => { $('#login-msg').textContent = t; };
@@ -170,12 +212,14 @@ function startAccount() {
   });
   $('#signout').addEventListener('click', () => signOut(auth));
   onAuthStateChanged(auth, (u) => {
-    user = u && u.phoneNumber ? u : null; loaded = false;
+    user = u && u.phoneNumber ? u : null; loaded = false; bookingsLoaded = false;
+    // The top bar's "Log in" reads this on every page (main.js), without loading Firebase
+    try { if (user) localStorage.setItem('mg-auth', '1'); else localStorage.removeItem('mg-auth'); } catch (e) {}
     $('#who').textContent = user ? prettyPhone(user.phoneNumber) : '';
     $('#foot').textContent = user ? `Signed in as ${prettyPhone(user.phoneNumber)}. Updates on its own when we add or use hours or meals.` : '';
     $('#signout').hidden = !user;
     $('#login').hidden = !!user;
-    if (!user) { $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
+    if (!user) { $('#bookings').hidden = true; $('#booking-list').innerHTML = ''; $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
     showStatus('Loading your hours and meals…', false);
     // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead,
     // and one on the stock list (/stockStaff, and not an owner) opens the stock page.
@@ -185,12 +229,12 @@ function startAccount() {
     Promise.all([has('admins'), has('stockStaff')]).then(([owner, stock]) => {
       if (owner) { try { localStorage.setItem('mg-owner', u.uid); } catch (e) {} showStatus('Opening the owner dashboard…', false); location.replace('/admin'); }
       else if (stock) { try { localStorage.setItem('mg-stock', u.uid); } catch (e) {} showStatus('Opening the stock page…', false); location.replace('/stock'); }
-      else loadMine(passes);
+      else { loadMine(passes); loadBookings(); }
     });
   });
 }
 
-const refresh = () => { if (document.visibilityState === 'visible') (linkId !== null ? loadLink : loadMine)(); };
+const refresh = () => { if (document.visibilityState !== 'visible') return; if (linkId !== null) loadLink(); else { loadMine(); loadBookings(); } };
 if (linkId !== null) loadLink(); else startAccount();
 setInterval(refresh, 30000);
 document.addEventListener('visibilitychange', refresh);

@@ -69,6 +69,12 @@
 .nav a[aria-current="page"] { color: var(--text); background: var(--surface-2); }
 .nav-ind { display: none; }
 .topbar-actions { display: flex; align-items: center; gap: var(--s3); }
+/* "Log in", or the signed-in first name: the one piece of the bar that gives way (ellipsis) so the brand never gets covered */
+.topbar-actions { min-width: 0; }
+.topbar-login { min-width: 0; flex: 0 1 auto; }
+.topbar-login span { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 12ch; }
+.topbar-actions > :not(.topbar-login), .topbar .brand { flex: none; }
+.theme-row { display: none; }
 #theme-toggle .i-sun { display: none; }
 :root[data-theme="light"] #theme-toggle .i-sun { display: block; }
 :root[data-theme="light"] #theme-toggle .i-moon { display: none; }
@@ -78,18 +84,23 @@
 }
 @media (min-width: 900px) { .nav { display: flex; } }
 @media (min-width: 900px) and (max-width: 1099px) { .topbar-in { gap: var(--s3); } .brand { flex: none; } .nav a { padding-inline: var(--s3); } }
+/* Phones: brand, "Log in" (or the first name) and Book. The theme switch moves to My pass (.theme-row on /pass) */
 @media (max-width: 899px) {
   .topbar { padding-top: env(safe-area-inset-top); background: color-mix(in srgb, var(--bg) 88%, transparent); }
   .topbar-in { gap: var(--s3); } .topbar-actions { gap: var(--s2); }
   .brand { gap: var(--s2); } .brand-name { font-size: 17px; }
+  .topbar #theme-toggle { display: none; }
+  .topbar-login span { max-width: 9ch; }
+  .theme-row { display: flex; justify-content: center; }
 }
 @media (max-width: 379px) {
   .topbar-actions { gap: 6px; }
   .brand-name { font-size: 15px; }
-  #theme-toggle { width: 36px; height: 36px; }
-  .topbar-book { min-height: 36px; padding-inline: 14px; }
+  .topbar-login, .topbar-book { min-height: 36px; padding-inline: 14px; }
+  .topbar-login span { max-width: 8ch; }
+  .topbar-login { min-width: 64px; }   /* "Log in" stays whole */
 }
-@media (max-width: 339px) { #theme-toggle { display: none; } }
+@media (max-width: 339px) { .topbar .brand img { display: none; } }   /* very narrow phones: the name, Log in and Book still fit */
 
 /* ---------- phone tab bar: one tab per screen, the current one lit ---------- */
 .tabbar {

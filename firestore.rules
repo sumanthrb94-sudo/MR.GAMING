@@ -1,9 +1,10 @@
 rules_version = '2';
 
 // MR. GAMING booking database.
-// Public visitors may: read which slots are taken (no names), create a booking request
-// with the hold documents for the hours it needs, open their own pass card by its link, and,
-// once signed in with their mobile number, read the passes saved under that number.
+// Public visitors may: read which slots are taken (no names) and open their own pass card by its link.
+// Once signed in with their mobile number (SMS code) they may also book (a request carrying their uid and verified
+// number, with the hold documents for the hours it needs), read their own bookings, and read the passes saved
+// under that number.
 // Everything else is owner-only.
 // An owner is a signed-in user whose uid has a document in /admins (created with the admin key, never from the site).
 service cloud.firestore {
@@ -14,11 +15,14 @@ service cloud.firestore {
     }
     function isDate(d) { return d is string && d.matches('^20[0-9]{2}-[01][0-9]-[0-3][0-9]$'); }
     function isOpenHour(h) { return h is int && h >= 11 && h <= 22; }   // starts 11 am to 10 pm; the room closes at 11 pm
+    // Signed in with a mobile number verified by SMS code
+    function isVerified() { return request.auth != null && request.auth.token.phone_number != null; }
 
-    // A public hold: one console, one hour, tied to a request created in the same batch
+    // A public hold: one console, one hour, tied to the caller's own request created in the same batch
     function validPublicHold(holdId) {
       let h = request.resource.data;
-      return h.keys().hasOnly(['date', 'console', 'hour', 'requestId', 'status', 'createdAt'])
+      return isVerified()
+        && h.keys().hasOnly(['date', 'console', 'hour', 'requestId', 'status', 'createdAt'])
         && h.status in ['pending', 'booked']
         && h.console in ['ps5', 'xbox']
         && isOpenHour(h.hour)
@@ -26,7 +30,8 @@ service cloud.firestore {
         && holdId == h.date + '_' + h.console + '_' + string(h.hour)
         && h.createdAt == request.time
         && h.requestId is string
-        && existsAfter(/databases/$(database)/documents/requests/$(h.requestId));
+        && existsAfter(/databases/$(database)/documents/requests/$(h.requestId))
+        && getAfter(/databases/$(database)/documents/requests/$(h.requestId)).data.uid == request.auth.uid;
     }
     // An old-style unconfirmed ('pending') hold stops blocking the slot after 3 hours, so a request nobody confirmed
     // can be replaced. A 'booked' hold (website bookings now) never expires; only the owner frees it.
@@ -42,12 +47,16 @@ service cloud.firestore {
     }
 
     match /requests/{requestId} {
-      // The owner adds phone and walk-in bookings from /admin. Website bookings arrive as 'booked' (old cached pages
-      // still send 'pending'); the console marks them seen with ack/ackAt/ackBy, which only an owner can set.
-      allow create: if isAdmin() || request.resource.data.keys().hasOnly(['id', 'name', 'phone', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
+      // The owner adds phone and walk-in bookings from /admin. Website bookings need a verified sign-in: uid is the
+      // caller's and phone is the number the SMS code verified. They arrive as 'booked' ('pending' is the old,
+      // pre-instant status, still read as such); the console marks them seen with ack/ackAt/ackBy, which only an owner can set.
+      allow create: if isAdmin() || isVerified()
+        && request.resource.data.keys().hasOnly(['id', 'uid', 'name', 'phone', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['uid', 'phone'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.phone == request.auth.token.phone_number
         && request.resource.data.id == requestId
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
-        && (!('phone' in request.resource.data) || (request.resource.data.phone is string && request.resource.data.phone.size() <= 15))
         && isDate(request.resource.data.date)
         && isOpenHour(request.resource.data.start)
         && request.resource.data.hours in [1, 2, 3]
@@ -60,7 +69,10 @@ service cloud.firestore {
         && request.resource.data.total is int && request.resource.data.total >= 0 && request.resource.data.total <= 20000
         && request.resource.data.status in ['pending', 'booked']
         && request.resource.data.createdAt == request.time;
-      allow read, update, delete: if isAdmin();
+      // A signed-in customer reads their own bookings (My bookings on /pass lists them with where('uid', '==', uid));
+      // everyone else's, with names, stays owner-only. Only the owner changes or cancels a booking.
+      allow get, list: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     // A customer signed in with their mobile number (SMS code) can read the passes saved under that number
@@ -90,7 +102,7 @@ service cloud.firestore {
     // ---- Members' board (/pass after sign-in): threads with a photo, replies, and the leaderboard the owner keeps.
     // A member is anyone signed in with their mobile number. Posts carry a first name the member typed, never a phone.
     // Images live in Firestore: a small thumbnail on the post, the full picture in postImages/{postId} (no Storage bucket needed).
-    function isMember() { return request.auth != null && request.auth.token.phone_number != null; }
+    function isMember() { return isVerified(); }
     function validPost() {
       let p = request.resource.data;
       return p.keys().hasOnly(['uid', 'first', 'text', 'thumb', 'hasImage', 'replies', 'hidden', 'createdAt'])

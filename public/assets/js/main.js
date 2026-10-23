@@ -92,6 +92,16 @@
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
+  /* ---------- top bar "Log in" (to My pass): the first name, or "My pass", once this phone is signed in. /pass and /book
+     leave a hint (mg-auth) when Firebase signs someone in or out, so no Firebase code loads here ---------- */
+  $$('[data-login]').forEach((a) => {
+    let signed = false, first = '';
+    try { signed = localStorage.getItem('mg-auth') === '1'; first = (localStorage.getItem('mg-name') || '').trim().split(/\s+/)[0].slice(0, 20); } catch (e) {}
+    if (!signed) return;
+    $('span', a).textContent = first || 'My pass';
+    a.setAttribute('aria-label', first ? `My pass, signed in as ${first}` : 'My pass');
+  });
+
   /* ---------- open now? (Hyderabad time, from CONFIG.open/close) ---------- */
   const statuses = $$('#open-status, [data-open-status]');
   if (statuses.length) {
@@ -105,17 +115,19 @@
   }
 
   /* ---------- theme (same "theme" key on every screen) ---------- */
-  const themeBtn = $('#theme-toggle'), metaTheme = $('meta[name="theme-color"]');
+  // #theme-toggle in the top bar (laptops); on phones the switch lives on My pass ([data-theme-toggle], with its label)
+  const themeBtns = $$('#theme-toggle, [data-theme-toggle]'), metaTheme = $('meta[name="theme-color"]');
   const effectiveTheme = () => root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
   // the browser bar takes the page background (lime pages and the menu's paper alike)
   const paintMeta = () => { if (metaTheme) metaTheme.content = getComputedStyle(root).getPropertyValue('--bg').trim() || metaTheme.content; };
-  paintMeta();
-  if (themeBtn) themeBtn.addEventListener('click', () => {
+  const paintLabels = () => $$('[data-theme-toggle] span').forEach((el) => { el.textContent = effectiveTheme() === 'light' ? 'Switch to dark theme' : 'Switch to light theme'; });
+  paintMeta(); paintLabels();
+  themeBtns.forEach((btn) => btn.addEventListener('click', () => {
     const next = effectiveTheme() === 'light' ? 'dark' : 'light';
     root.dataset.theme = next;
     try { localStorage.setItem('theme', next); } catch (e) {}
-    paintMeta();
-  });
+    paintMeta(); paintLabels();
+  }));
 
   window.MG = { CONFIG, $, $$, inr, waUrl, wireWa, setRoll, reveal, reduced, clock12, nowIst };
 })();

@@ -168,6 +168,7 @@ function orderCard(r, { day = true } = {}) {
       <p class="admin-item-total">${inr(r.total)}</p>
       ${r.phone ? `<div class="con-contact">
         <a class="btn btn-sm btn-ghost press" href="${esc(telHref(r.phone))}"><svg class="i"><use href="#i-phone"/></svg>${esc(r.phone)}</a>
+        ${r.uid ? '<span class="con-verified" title="Booked while signed in with this number (SMS code)"><svg class="i"><use href="#i-check"/></svg>verified</span>' : ''}
         ${wa ? `<a class="btn btn-sm btn-ghost press" href="${esc(waHref(r))}" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>WhatsApp</a>` : ''}
       </div>` : ''}
     </div>
