@@ -1,7 +1,7 @@
 // Renders print/mr-gaming-flyer.html (A5) to a print PDF, a 300 dpi PNG and a 1080px JPG for WhatsApp.
 // Regenerate the QR first if the site URL changes:
-//   python3 -c "import segno; segno.make('https://mr-gaming-rho.vercel.app/?src=flyer', error='h').save('print/qr-site.svg', scale=10, border=0, dark='#0B0B0A', light=None)"
-//   (then add viewBox="0 0 W H" to the <svg> tag so it scales)
+//   python3 -c "import segno; segno.make('https://mr-gaming-rho.vercel.app/book?src=flyer', error='h').save('print/qr-site.svg', scale=10, border=0, dark='#0B0B0A', light=None)"
+//   (then add viewBox="0 0 W H" to the <svg> tag so it scales; the QR opens /book, the booking screen, not the home page)
 // Run: node scripts/make-gaming-flyer.mjs   (needs Playwright + Chromium; PIL for the JPG is optional: see the end)
 import { chromium } from 'playwright';
 import { fileURLToPath, pathToFileURL } from 'node:url';
