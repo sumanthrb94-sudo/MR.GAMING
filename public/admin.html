@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Owner · MR. GAMING</title>
+  <title>MR. Console</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#0B0B0A">
   <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
@@ -15,20 +15,37 @@
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
   <link rel="stylesheet" href="/assets/css/admin.css">
+  <script>
+    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
 </head>
-<body class="admin">
+<body class="admin console">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10 5a2 2 0 1 1 4 0 7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2-3v-3a7 7 0 0 1 4-6"/><path d="M9 17v1a3 3 0 0 0 6 0v-1"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4M8 3v4M4 11h16"/></symbol>
+    <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
+    <symbol id="i-cake" viewBox="0 0 24 24"><path d="M3 20h18v-8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3z"/><path d="M3 14.8c.3.13.65.2 1 .2a2.4 2.4 0 0 0 2-1 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 2 1c.35 0 .7-.07 1-.2"/><path d="M12 4l1.47 1.64a2 2 0 1 1-3.02.1z"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.02-3.68.18-7.4 5-12zm0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M15 8a5 5 0 0 1 0 8M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l3.5-4.5A.8.8 0 0 1 11 5v14a.8.8 0 0 1-1.5.5z"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M6 15H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h2l3.5-4.5A.8.8 0 0 1 11 5v14a.8.8 0 0 1-1.5.5z"/><path d="M16 10l4 4m0-4l-4 4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+  </svg>
+
   <header class="topbar is-scrolled">
-    <div class="wrap topbar-in">
-      <a class="brand" href="/"><img src="/assets/images/logo-96.webp" width="36" height="36" alt=""><span class="brand-name">MR. GAMING</span></a>
+    <div class="wrap topbar-in con-top">
+      <a class="brand" href="/"><img src="/assets/images/logo-96.webp" width="36" height="36" alt=""><span class="brand-name">MR. Console</span></a>
       <div class="topbar-actions">
-        <a class="btn btn-sm btn-ghost press" href="/stock">Stock</a>
+        <span class="con-live" id="live" role="status" hidden></span>
         <span class="admin-who" id="who"></span>
         <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
       </div>
     </div>
   </header>
 
-  <main class="wrap admin-main">
+  <main class="wrap admin-main con-main">
     <!-- Signed out: sent to the one login on /pass -->
     <section class="card admin-login" id="login" hidden>
       <h1 class="h2">Taking you to log in…</h1>
@@ -43,60 +60,156 @@
       <p class="admin-msg"><a class="text-link" href="/pass">Go to My pass</a></p>
     </section>
 
-    <!-- Dashboard -->
-    <section id="dash" hidden>
-      <h2 class="admin-h">Upcoming <span class="admin-count" id="up-count"></span></h2>
-      <ul class="admin-up" id="upcoming"></ul>
+    <!-- The console: one screen at a time, switched by the rail (laptop) or the tab bar (phone) -->
+    <div class="con-shell" id="dash" hidden>
+      <nav class="con-nav" id="nav" aria-label="Console">
+        <a class="con-tab" href="#orders" data-view="orders"><span class="con-ic"><svg class="i"><use href="#i-bell"/></svg><b class="con-badge" id="b-orders" hidden></b></span><span>Orders</span></a>
+        <a class="con-tab" href="#schedule" data-view="schedule"><span class="con-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Schedule</span></a>
+        <a class="con-tab" href="#passes" data-view="passes"><span class="con-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>Passes</span></a>
+        <a class="con-tab" href="#birthdays" data-view="birthdays"><span class="con-ic"><svg class="i"><use href="#i-cake"/></svg><b class="con-badge is-quiet" id="b-bdays" hidden></b></span><span>Birthdays</span></a>
+        <a class="con-tab" href="#menu" data-view="menu"><span class="con-ic"><svg class="i"><use href="#i-food"/></svg><b class="con-badge is-quiet" id="b-menu" hidden></b></span><span>Menu</span></a>
+        <a class="con-tab" href="#stock" data-view="stock"><span class="con-ic"><svg class="i"><use href="#i-box"/></svg><b class="con-badge" id="b-stock" hidden></b></span><span>Stock</span></a>
+      </nav>
 
-      <div class="admin-dayrow">
-        <div class="seg seg-wrap admin-days" id="days"><span class="seg-ind" aria-hidden="true"></span></div>
-        <label class="admin-pick"><span class="field-label">Other day</span><input class="field" id="day-pick" type="date"></label>
+      <div class="con-views">
+        <p class="con-offline" id="offline" role="alert" hidden>Can't reach the database. Showing what was last loaded; retrying.</p>
+
+        <!-- 1. Orders -->
+        <section class="con-view" id="v-orders" data-view="orders" aria-labelledby="h-orders">
+          <div class="con-head">
+            <div><p class="eyebrow">MR. Gaming</p><h1 class="con-title" id="h-orders">Orders</h1></div>
+            <div class="con-head-acts">
+              <button class="btn btn-sm btn-ghost press con-sound" id="sound" type="button" aria-pressed="false" hidden><svg class="i i-off"><use href="#i-mute"/></svg><svg class="i i-on"><use href="#i-sound"/></svg><span>Chime</span></button>
+              <button class="btn btn-sm btn-ghost press" id="notify" type="button" hidden><svg class="i"><use href="#i-bell"/></svg><span>Turn on alerts</span></button>
+            </div>
+          </div>
+          <div class="con-stats" id="stats">
+            <a class="con-stat" href="#orders" data-jump="o-new"><span class="con-stat-k">New orders</span><b id="st-new">–</b></a>
+            <a class="con-stat" href="#orders" data-jump="o-today"><span class="con-stat-k">Today's bookings</span><b id="st-today">–</b></a>
+            <a class="con-stat" href="#orders" data-jump="o-today"><span class="con-stat-k">Booked today</span><b id="st-rev">–</b><small>not cancelled</small></a>
+            <a class="con-stat con-stat-wide" href="#orders" data-jump="o-today"><span class="con-stat-k">Next booking</span><b class="con-stat-next" id="st-next">–</b></a>
+            <a class="con-stat" href="#stock"><span class="con-stat-k">Stock alerts</span><b id="st-stock">–</b></a>
+          </div>
+          <h2 class="admin-h" id="o-new">New <span class="admin-count" id="c-new"></span></h2>
+          <ul class="admin-list" id="list-new"><li class="admin-empty">Loading…</li></ul>
+          <h2 class="admin-h" id="o-today">Today <span class="admin-count" id="c-today"></span></h2>
+          <ul class="admin-list" id="list-today"></ul>
+          <h2 class="admin-h">Coming up <span class="admin-count" id="c-up"></span></h2>
+          <ul class="admin-list" id="list-up"></ul>
+        </section>
+
+        <!-- 2. Schedule -->
+        <section class="con-view" id="v-schedule" data-view="schedule" aria-labelledby="h-sched" hidden>
+          <div class="con-head">
+            <div><p class="eyebrow">MR. Gaming</p><h1 class="con-title" id="h-sched">Schedule</h1></div>
+            <button class="btn btn-accent press" type="button" data-add="booking">Add a booking</button>
+          </div>
+          <div class="admin-dayrow">
+            <div class="seg seg-scroll admin-days" id="days"><span class="seg-ind" aria-hidden="true"></span></div>
+            <label class="admin-pick"><span class="field-label">Other day</span><input class="field" id="day-pick" type="date"></label>
+          </div>
+          <div class="admin-grid">
+            <div>
+              <h2 class="admin-h"><span id="sched-day"></span></h2>
+              <p class="admin-note">Tap a free hour to block it. Tap a blocked hour to free it.</p>
+              <div class="sched" id="sched"></div>
+            </div>
+            <div>
+              <h2 class="admin-h">Bookings <span class="admin-count" id="req-count"></span></h2>
+              <ul class="admin-list" id="requests"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Passes & meal plans -->
+        <section class="con-view" id="v-passes" data-view="passes" aria-labelledby="h-passes" hidden>
+          <div class="con-head"><div><p class="eyebrow">MR. Gaming · MR. Sandwich</p><h1 class="con-title" id="h-passes">Passes &amp; meal plans</h1></div></div>
+          <p class="con-note-box"><b>Payments:</b> when the gateway is live, paid passes will appear here automatically. Until then, add each pass or meal plan below after the customer pays.</p>
+          <p class="admin-note">Customers see their hours or meals at /pass: they sign in with the mobile number on the pass or meal plan, or open the link you send.</p>
+          <form class="card admin-pass-form" id="pass-form">
+            <input class="field" id="pass-name" placeholder="Name" required maxlength="40" autocomplete="off">
+            <input class="field" id="pass-phone" placeholder="Mobile (for sign-in)" inputmode="tel" maxlength="15" autocomplete="off">
+            <select class="field" id="pass-type" aria-label="Pass or meal plan">
+              <optgroup label="Gaming passes"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></optgroup>
+              <optgroup label="MR. Sandwich meal plans" id="pass-meals"></optgroup>
+            </select>
+            <label class="admin-hours" id="pass-hours-wrap"><input class="field" id="pass-hours" type="number" min="1" max="99" value="6" required aria-label="Hours"><span>hrs</span></label>
+            <button class="btn btn-accent press" id="pass-submit" type="submit">Add pass</button>
+          </form>
+          <div class="con-filter">
+            <input class="field" id="pass-search" type="search" placeholder="Find by name or mobile" aria-label="Find a pass or meal plan" autocomplete="off">
+            <span class="admin-count" id="pass-count"></span>
+          </div>
+          <ul class="admin-list" id="passes"><li class="admin-empty">Loading…</li></ul>
+        </section>
+
+        <!-- 4. Birthdays -->
+        <section class="con-view" id="v-birthdays" data-view="birthdays" aria-labelledby="h-bdays" hidden>
+          <div class="con-head">
+            <div><p class="eyebrow">MR. Gaming · MR. Sandwich</p><h1 class="con-title" id="h-bdays">Birthdays</h1></div>
+            <button class="btn btn-accent press" type="button" data-add="party">Add a birthday</button>
+          </div>
+          <p class="admin-note" id="bday-rules"></p>
+          <h2 class="admin-h">Upcoming parties <span class="admin-count" id="c-bdays"></span></h2>
+          <ul class="admin-list" id="list-bdays"><li class="admin-empty">Loading…</li></ul>
+        </section>
+
+        <!-- 5. Menu (MR. Sandwich): today's prices, sold out, hidden -->
+        <section class="con-view" id="v-menu" data-view="menu" aria-labelledby="h-menu" hidden>
+          <div class="con-head">
+            <div><p class="eyebrow">MR. Sandwich</p><h1 class="con-title" id="h-menu">Menu</h1></div>
+            <button class="btn btn-ghost press" id="menu-reset-sold" type="button" disabled>Reset all sold-out</button>
+          </div>
+          <p class="admin-note">Changes show on /menu, the home page and booking. Price empty = the printed price. "Sold out today" stays until you clear it (Reset all sold-out, next morning).</p>
+          <div class="con-filter">
+            <input class="field" id="menu-search" type="search" placeholder="Find an item" aria-label="Find a menu item" autocomplete="off">
+            <span class="admin-count" id="menu-count"></span>
+          </div>
+          <div class="seg seg-scroll seg-chips con-chips" id="menu-sections"></div>
+          <div id="menu-list"><p class="admin-empty">Loading the menu…</p></div>
+        </section>
+
+        <!-- 6. Stock (MR. Sandwich) -->
+        <section class="con-view" id="v-stock" data-view="stock" aria-labelledby="h-stock" hidden>
+          <div class="con-head">
+            <div><p class="eyebrow">MR. Sandwich</p><h1 class="con-title" id="h-stock">Stock alerts</h1></div>
+            <a class="btn btn-accent press" href="/stock">Open stock</a>
+          </div>
+          <p class="admin-note">From the stock page: batches by expiry date (India time). Add stock, use it or throw it away on /stock.</p>
+          <div class="con-alerts">
+            <div class="card con-alert-card is-bad"><h2 class="admin-h">Expired <span class="admin-count" id="c-exp"></span></h2><ul class="con-rows" id="s-exp"></ul></div>
+            <div class="card con-alert-card is-soon"><h2 class="admin-h">Expiring in 3 days <span class="admin-count" id="c-soon"></span></h2><ul class="con-rows" id="s-soon"></ul></div>
+            <div class="card con-alert-card"><h2 class="admin-h">Running low <span class="admin-count" id="c-low"></span></h2><ul class="con-rows" id="s-low"></ul></div>
+          </div>
+        </section>
       </div>
-
-      <div class="admin-grid">
-        <div>
-          <h2 class="admin-h">Requests <span class="admin-count" id="req-count"></span></h2>
-          <ul class="admin-list" id="requests"></ul>
-          <details class="card admin-add" id="add-booking">
-            <summary>Add a booking <span class="dim">phone or walk-in, for <span id="bk-day"></span></span></summary>
-            <form class="admin-book-form" id="book-form">
-              <input class="field" id="bk-name" placeholder="Name" required maxlength="40" autocomplete="off">
-              <input class="field" id="bk-phone" placeholder="Phone (optional)" inputmode="tel" maxlength="15" autocomplete="off">
-              <select class="field" id="bk-station" aria-label="Console"><option value="ps5">PS5</option><option value="xbox">Xbox</option><option value="squad">Whole room (both consoles)</option><option value="party">Birthday party (game room, 3 hrs)</option></select>
-              <select class="field" id="bk-players" aria-label="Players"><option value="1">1 player</option><option value="2">2 players</option><option value="3">3 players</option><option value="4">4 players</option></select>
-              <label class="admin-hours" id="bk-kids-wrap" hidden><input class="field" id="bk-kids" type="number" min="1" max="99" value="10" aria-label="Children (₹675 each)"><span>children</span></label>
-              <label class="admin-hours" id="bk-adults-wrap" hidden><input class="field" id="bk-adults" type="number" min="0" max="99" value="0" aria-label="Adults (₹399 each)"><span>adults</span></label>
-              <select class="field" id="bk-start" aria-label="Start time"></select>
-              <select class="field" id="bk-hours" aria-label="Hours"></select>
-              <select class="field" id="bk-plan" aria-label="Pays with"><option value="hourly">Pays hourly</option><option value="use-pass">Uses a pass</option><option value="buy-pass">Buys a pass</option><option value="member">Member rate (pass used up)</option></select>
-              <p class="admin-bk-total" id="bk-total"></p>
-              <button class="btn btn-accent press" type="submit">Add booking</button>
-              <p class="admin-msg" id="bk-msg" role="status"></p>
-            </form>
-          </details>
-        </div>
-        <div>
-          <h2 class="admin-h">Schedule</h2>
-          <p class="admin-note">Tap a free hour to block it. Tap a blocked hour to free it.</p>
-          <div class="sched" id="sched"></div>
-        </div>
-      </div>
-
-      <h2 class="admin-h">Passes &amp; meal plans</h2>
-      <p class="admin-note">Customers see their hours or meals at /pass: they sign in with the mobile number on the pass or meal plan, or open the link you send.</p>
-      <form class="card admin-pass-form" id="pass-form">
-        <input class="field" id="pass-name" placeholder="Name" required maxlength="40">
-        <input class="field" id="pass-phone" placeholder="Mobile (for sign-in)" inputmode="tel" maxlength="15">
-        <select class="field" id="pass-type" aria-label="Pass or meal plan">
-          <optgroup label="Gaming passes"><option value="solo">Solo pass · ₹899</option><option value="duo">Duo pass · ₹1,499</option></optgroup>
-          <optgroup label="MR. Sandwich meal plans" id="pass-meals"></optgroup>
-        </select>
-        <label class="admin-hours" id="pass-hours-wrap"><input class="field" id="pass-hours" type="number" min="1" max="99" value="6" required aria-label="Hours"><span>hrs</span></label>
-        <button class="btn btn-accent press" id="pass-submit" type="submit">Add pass</button>
-      </form>
-      <ul class="admin-list" id="passes"></ul>
-    </section>
+    </div>
   </main>
+
+  <!-- Add a booking / birthday (phone, walk-in): confirmed straight away -->
+  <dialog class="card con-dialog" id="book-dlg" aria-labelledby="bk-title">
+    <form class="admin-book-form" id="book-form">
+      <div class="con-dlg-head"><h2 class="admin-h" id="bk-title">Add a booking</h2><button class="icon-btn press" type="button" id="bk-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div>
+      <label class="admin-pick"><span class="field-label">Day</span><input class="field" id="bk-date" type="date" required></label>
+      <label class="admin-pick"><span class="field-label">Starts</span><select class="field" id="bk-start"></select></label>
+      <label class="admin-pick"><span class="field-label">Name</span><input class="field" id="bk-name" required maxlength="40" autocomplete="off"></label>
+      <label class="admin-pick"><span class="field-label">Phone (optional)</span><input class="field" id="bk-phone" inputmode="tel" maxlength="15" autocomplete="off"></label>
+      <label class="admin-pick"><span class="field-label">What</span><select class="field" id="bk-station"><option value="ps5">PS5</option><option value="xbox">Xbox</option><option value="squad">Whole room (both consoles)</option><option value="party">Birthday party (game room, 3 hrs)</option></select></label>
+      <label class="admin-pick"><span class="field-label">Came in by</span><select class="field" id="bk-source"><option value="phone">Phone call</option><option value="walk-in">Walk-in</option><option value="whatsapp">WhatsApp</option></select></label>
+      <label class="admin-pick" id="bk-players-wrap"><span class="field-label">Players</span><select class="field" id="bk-players"><option value="1">1 player</option><option value="2">2 players</option><option value="3">3 players (whole room)</option><option value="4">4 players (whole room)</option></select></label>
+      <label class="admin-pick" id="bk-kids-wrap" hidden><span class="field-label">Children · ₹675 each</span><input class="field" id="bk-kids" type="number" inputmode="numeric" min="1" max="99" value="10"></label>
+      <label class="admin-pick" id="bk-adults-wrap" hidden><span class="field-label">Adults · ₹399 each</span><input class="field" id="bk-adults" type="number" inputmode="numeric" min="0" max="99" value="0"></label>
+      <label class="admin-pick"><span class="field-label">Hours</span><select class="field" id="bk-hours"></select></label>
+      <label class="admin-pick" id="bk-plan-wrap"><span class="field-label">Pays with</span><select class="field" id="bk-plan"><option value="hourly">Pays hourly</option><option value="use-pass">Uses a pass</option><option value="buy-pass">Buys a pass</option><option value="member">Member rate (pass used up)</option></select></label>
+      <p class="admin-bk-total" id="bk-total"></p>
+      <button class="btn btn-accent press" type="submit" id="bk-submit">Add booking</button>
+      <p class="admin-msg" id="bk-msg" role="status"></p>
+    </form>
+  </dialog>
+
+  <!-- New order pop-up -->
+  <aside class="card con-pop" id="pop" role="alert" aria-live="assertive" hidden></aside>
+  <p class="con-toast" id="toast" role="status" aria-live="polite" hidden></p>
 
   <script type="module" src="/assets/js/admin.js"></script>
 </body>

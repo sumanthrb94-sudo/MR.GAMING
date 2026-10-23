@@ -12,7 +12,9 @@
   <link rel="icon" type="image/png" href="/assets/images/mr-sandwich-160.png">
   <link rel="preload" href="/assets/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/shell.css">
   <link rel="stylesheet" href="/assets/css/menu.css">
+  <link rel="manifest" href="/manifest.webmanifest">
   <script>
     // Before first paint: the theme saved on the home page (same "theme" key as main.js), and the table-QR layout (?src=qr)
     (function (r) {
@@ -20,8 +22,10 @@
       if (/[?&]src=qr(&|$)/.test(location.search)) r.classList.add('qr');
     })(document.documentElement);
   </script>
+  <!-- Same-site screens: fetch the next one when a link is about to be tapped, and have /book ready -->
+  <script type="speculationrules">{"prefetch":[{"where":{"href_matches":["/","/birthdays","/menu","/pass"]},"eagerness":"moderate"}],"prerender":[{"where":{"href_matches":"/book"},"eagerness":"moderate"}]}</script>
 </head>
-<body>
+<body class="menu-page">
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></symbol>
     <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
@@ -30,24 +34,34 @@
     <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4M8 3v4M4 11h16M10 16h4M12 14v4"/></symbol>
     <symbol id="i-cake" viewBox="0 0 24 24"><path d="M3 20h18v-8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3z"/><path d="M3 14.8c.3.13.65.2 1 .2a2.4 2.4 0 0 0 2-1 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 2 1c.35 0 .7-.07 1-.2"/><path d="M12 4l1.47 1.64a2 2 0 1 1-3.02.1z"/></symbol>
     <symbol id="i-food" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.02-3.68.18-7.4 5-12zm0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
   </svg>
 
   <a class="skip" href="#menu">Skip to the menu</a>
 
-  <!-- Top bar: same family as the MR. GAMING home -->
-  <header class="mbar">
-    <div class="mbar-in">
-      <a class="brand" href="#top" aria-label="MR. Sandwich, back to the top">
-        <img src="/assets/images/mr-sandwich-192.webp" width="32" height="32" alt="">
-        <span class="brand-name">MR. Sandwich</span>
+  <!-- Top bar and tab bar: the same app shell as every MR. GAMING screen (shell.css), in this page's yellow -->
+  <header class="topbar" id="topbar">
+    <div class="wrap topbar-in">
+      <a class="brand" href="/" aria-label="MR. GAMING home">
+        <img src="/assets/images/logo-96.webp" width="36" height="36" alt="">
+        <span class="brand-name">MR. GAMING</span>
       </a>
-      <nav class="mbar-nav" aria-label="Site">
-        <a href="/">MR. GAMING</a>
-        <a href="/#birthday">Birthdays</a>
+      <nav class="nav" aria-label="Screens">
+        <a href="/">Home</a>
+        <a href="/book">Book</a>
+        <a href="/birthdays">Birthdays</a>
+        <a href="/menu" aria-current="page">Food menu</a>
         <a href="/pass">My pass</a>
       </nav>
-      <a class="mbar-book" href="/#book"><svg class="i"><use href="#i-calendar"/></svg><span>Book<span class="mbar-a"> a</span> PS5 / Xbox</span></a>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
+          <svg class="i i-sun"><use href="#i-sun"/></svg>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+        </button>
+        <a class="btn btn-sm btn-accent press topbar-book" href="/book">Book</a>
+      </div>
     </div>
   </header>
 
@@ -86,7 +100,7 @@
         <a class="pill" href="#combos">Top Combos <span aria-hidden="true">↓</span></a>
       </div>
     </div>
-    <p class="perk-line"><a href="#meal-plans">Meal plans</a> · <a href="/#book">10% off when you play</a> · <a href="/#birthday">Birthdays</a></p>
+    <p class="perk-line"><a href="#meal-plans">Meal plans</a> · <a href="/book">10% off when you play</a> · <a href="/birthdays">Birthdays</a></p>
   </div>
 
   <div class="perks">
@@ -95,12 +109,12 @@
       <span class="perk-copy">Meals for the month, for less.</span>
       <span class="perk-arrow" aria-hidden="true">↓</span>
     </a>
-    <a class="perk" href="/#book">
+    <a class="perk" href="/book">
       <span class="perk-tag">Playing here?</span>
       <span class="perk-copy"><strong>10% off</strong> all food &amp; drinks when you book a PS5 or Xbox</span>
       <span class="perk-arrow" aria-hidden="true">→</span>
     </a>
-    <a class="perk perk-bday" href="/#birthday">
+    <a class="perk perk-bday" href="/birthdays">
       <span class="perk-tag">Birthdays</span>
       <span class="perk-copy"><strong>₹675 per child</strong>: 3 hours, food and PS5 &amp; Xbox (min 10)</span>
       <span class="perk-arrow" aria-hidden="true">→</span>
@@ -155,16 +169,17 @@
     <p class="foot-links"><a href="/">MR. GAMING · PS5 &amp; Xbox room</a> · <a href="/pass">My pass</a> · <a href="#top">Back to top</a></p>
   </footer>
 
-  <!-- Phone tab bar: the same as the MR. GAMING home, Food is this page -->
-  <nav class="tabbar" aria-label="App">
+  <!-- Phone tab bar: the five screens, the current one lit (same on every customer page) -->
+  <nav class="tabbar" id="tabbar" aria-label="App">
     <a class="tab" href="/"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
-    <a class="tab" href="/#book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
-    <a class="tab" href="/#birthday"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
-    <a class="tab is-active" href="#top" aria-current="page"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
+    <a class="tab" href="/book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
+    <a class="tab" href="/birthdays"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
+    <a class="tab" href="/menu" aria-current="page"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
     <a class="tab" href="/pass"><span class="tab-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>My pass</span></a>
   </nav>
 
   <script src="/assets/js/menu-data.js"></script>
+  <script src="/assets/js/main.js"></script>
   <script src="/assets/js/menu.js"></script>
 </body>
 </html>

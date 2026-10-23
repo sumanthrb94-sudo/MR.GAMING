@@ -14,6 +14,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/shell.css">
   <link rel="stylesheet" href="/assets/css/style.css">
   <link rel="modulepreload" href="/assets/vendor/firebase-account.0e285128.js">
   <link rel="modulepreload" href="/assets/js/firebase-config.js">
@@ -23,11 +24,15 @@
   <script>
     try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
   </script>
+  <!-- Same-site screens: fetch the next one when a link is about to be tapped, and have /book ready -->
+  <script type="speculationrules">{"prefetch":[{"where":{"href_matches":["/","/birthdays","/menu","/pass"]},"eagerness":"moderate"}],"prerender":[{"where":{"href_matches":"/book"},"eagerness":"moderate"}]}</script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M17 7L7 17"/><path d="M8 7h9v9"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4M8 3v4M4 11h16M10 16h4M12 14v4"/></symbol>
     <symbol id="i-cake" viewBox="0 0 24 24"><path d="M3 20h18v-8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3z"/><path d="M3 14.8c.3.13.65.2 1 .2a2.4 2.4 0 0 0 2-1 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 2 1c.35 0 .7-.07 1-.2"/><path d="M12 4l1.47 1.64a2 2 0 1 1-3.02.1z"/></symbol>
@@ -35,20 +40,32 @@
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
   </svg>
 
-  <header class="topbar is-scrolled">
+  <header class="topbar" id="topbar">
     <div class="wrap topbar-in">
       <a class="brand" href="/" aria-label="MR. GAMING home">
         <img src="/assets/images/logo-96.webp" width="36" height="36" alt="">
         <span class="brand-name">MR. GAMING</span>
       </a>
+      <nav class="nav" aria-label="Screens">
+        <a href="/">Home</a>
+        <a href="/book">Book</a>
+        <a href="/birthdays">Birthdays</a>
+        <a href="/menu">Food menu</a>
+        <a href="/pass" aria-current="page">My pass</a>
+      </nav>
       <div class="topbar-actions">
         <span class="pass-who" id="who"></span>
         <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
+          <svg class="i i-sun"><use href="#i-sun"/></svg>
+          <svg class="i i-moon"><use href="#i-moon"/></svg>
+        </button>
+        <a class="btn btn-sm btn-accent press topbar-book" href="/book">Book</a>
       </div>
     </div>
   </header>
 
-  <main class="wrap pass-main">
+  <main class="wrap pass-main" id="main">
     <!-- Sign in: mobile number + SMS code -->
     <section class="card pass-card" id="login" hidden>
       <p class="eyebrow">My pass</p>
@@ -70,7 +87,7 @@
       </form>
       <p class="pass-msg" id="login-msg" role="status"></p>
       <div id="recaptcha"></div>
-      <p class="pass-note">No pass yet? Choose the 6-hr pass fare when you <a class="text-link" href="/#book">book a slot</a>, or see the <a class="text-link" href="/menu#meal-plans">MR. Sandwich meal plans</a>.</p>
+      <p class="pass-note">No pass yet? Choose the 6-hr pass fare when you <a class="text-link" href="/book">book a slot</a>, or see the <a class="text-link" href="/menu#meal-plans">MR. Sandwich meal plans</a>.</p>
     </section>
 
     <!-- Loading, or a message with no pass to show -->
@@ -78,7 +95,7 @@
       <p class="eyebrow">My pass</p>
       <h1 class="pass-hi" id="status-text">Loading your hours and meals…</h1>
       <div class="actions" id="status-actions" hidden>
-        <a class="btn btn-accent press" href="/#book">Book a slot <svg class="i"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-accent press" href="/book">Book a slot <svg class="i"><use href="#i-arrow"/></svg></a>
         <a class="btn btn-ghost press" id="status-wa" href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp us</a>
       </div>
     </section>
@@ -88,15 +105,16 @@
     <p class="pass-note pass-foot" id="foot" hidden>Updates on its own when we add or use hours or meals.</p>
   </main>
 
-  <!-- Phone tab bar, same as the home page -->
-  <nav class="tabbar" aria-label="App">
-    <a class="tab" href="/#top"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
-    <a class="tab" href="/#book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
-    <a class="tab" href="/#birthday"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
-    <a class="tab" href="/#food"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
-    <a class="tab is-active" href="/pass" aria-current="page"><span class="tab-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>My pass</span></a>
+  <!-- Phone tab bar: the five screens, the current one lit (same on every customer page) -->
+  <nav class="tabbar" id="tabbar" aria-label="App">
+    <a class="tab" href="/"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
+    <a class="tab" href="/book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
+    <a class="tab" href="/birthdays"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
+    <a class="tab" href="/menu"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
+    <a class="tab" href="/pass" aria-current="page"><span class="tab-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>My pass</span></a>
   </nav>
 
+  <script src="/assets/js/main.js"></script>
   <script type="module" src="/assets/js/pass.js"></script>
 </body>
 </html>

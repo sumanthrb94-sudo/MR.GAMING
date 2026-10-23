@@ -19,7 +19,7 @@ service cloud.firestore {
     function validPublicHold(holdId) {
       let h = request.resource.data;
       return h.keys().hasOnly(['date', 'console', 'hour', 'requestId', 'status', 'createdAt'])
-        && h.status == 'pending'
+        && h.status in ['pending', 'booked']
         && h.console in ['ps5', 'xbox']
         && isOpenHour(h.hour)
         && isDate(h.date)
@@ -28,7 +28,8 @@ service cloud.firestore {
         && h.requestId is string
         && existsAfter(/databases/$(database)/documents/requests/$(h.requestId));
     }
-    // An unconfirmed hold stops blocking the slot after 3 hours, so a request nobody confirmed can be replaced
+    // An old-style unconfirmed ('pending') hold stops blocking the slot after 3 hours, so a request nobody confirmed
+    // can be replaced. A 'booked' hold (website bookings now) never expires; only the owner frees it.
     function isStalePending() {
       return resource.data.status == 'pending' && request.time > resource.data.createdAt + duration.value(3, 'h');
     }
@@ -41,7 +42,8 @@ service cloud.firestore {
     }
 
     match /requests/{requestId} {
-      // The owner adds phone and walk-in bookings from /admin
+      // The owner adds phone and walk-in bookings from /admin. Website bookings arrive as 'booked' (old cached pages
+      // still send 'pending'); the console marks them seen with ack/ackAt/ackBy, which only an owner can set.
       allow create: if isAdmin() || request.resource.data.keys().hasOnly(['id', 'name', 'phone', 'date', 'start', 'hours', 'station', 'players', 'plan', 'game', 'food', 'total', 'status', 'createdAt'])
         && request.resource.data.id == requestId
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
@@ -56,7 +58,7 @@ service cloud.firestore {
         && request.resource.data.game is string && request.resource.data.game.size() <= 30
         && request.resource.data.food is string && request.resource.data.food.size() <= 300
         && request.resource.data.total is int && request.resource.data.total >= 0 && request.resource.data.total <= 20000
-        && request.resource.data.status == 'pending'
+        && request.resource.data.status in ['pending', 'booked']
         && request.resource.data.createdAt == request.time;
       allow read, update, delete: if isAdmin();
     }
@@ -202,6 +204,21 @@ service cloud.firestore {
         && isMe(request.resource.data.by);
       allow update: if false;
       allow delete: if isAdmin();
+    }
+    // ---- MR. Sandwich menu changes for today, made from the console (/admin, Menu): a price that differs from the
+    // printed menu, sold out today, or hidden. Doc id = slug of the item name ('paneer-pizza'; two-price items add
+    // '-0' / '-1' per column). Everyone reads them (/menu, home and booking apply them); owners and stock staff write.
+    match /menuOverrides/{itemId} {
+      allow get, list: if true;
+      allow create, update: if canStock()
+        && itemId.matches('^[a-z0-9]+(-[a-z0-9]+)*$') && itemId.size() <= 80
+        && request.resource.data.keys().hasOnly(['price', 'soldOut', 'hidden', 'updatedAt', 'by'])
+        && (!('price' in request.resource.data) || (request.resource.data.price is int && request.resource.data.price >= 1 && request.resource.data.price <= 10000))
+        && (!('soldOut' in request.resource.data) || request.resource.data.soldOut is bool)
+        && (!('hidden' in request.resource.data) || request.resource.data.hidden is bool)
+        && request.resource.data.updatedAt == request.time
+        && isMe(request.resource.data.by);
+      allow delete: if canStock();
     }
   }
 }

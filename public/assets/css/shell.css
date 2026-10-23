@@ -1,0 +1,123 @@
+/* MR. GAMING app shell: the top bar, the phone tab bar, buttons and page-to-page transitions shared by every
+   customer screen (/, /book, /birthdays, /menu, /pass). Colours come from the page's own tokens
+   (--bg, --surface, --surface-2, --line, --line-strong, --text, --muted, --accent, --accent-ink, --accent-text):
+   style.css sets the MR. GAMING lime, menu.css maps the MR. Sandwich paper and yellow onto the same names.
+   style.css @imports this file too, so the owner pages that load only style.css keep their top bar and buttons. */
+
+@font-face { font-family: "Archivo"; src: url("/assets/fonts/archivo.woff2") format("woff2"); font-weight: 400 900; font-stretch: 96% 125%; font-display: swap; }
+
+:root {
+  /* 4px spacing scale */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px; --s10: 128px;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px; --r-pill: 999px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --shell-gutter: clamp(16px, 4vw, 40px);   /* the bars keep this one, whatever gutter a page uses */
+  --wrap: 1200px;
+  --topbar: 64px;
+  --tabbar-h: 0px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+@media (max-width: 899px) { :root { --topbar: calc(60px + env(safe-area-inset-top)); --tabbar-h: 74px; } }
+
+.wrap { width: 100%; max-width: calc(var(--wrap) + var(--gutter) * 2); margin-inline: auto; padding-inline: var(--gutter); }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 52px; padding: 0 var(--s5); border-radius: var(--r-pill);
+  border: 0; cursor: pointer; font: 700 16px/1.2 "Archivo", system-ui, sans-serif; letter-spacing: -.005em; white-space: nowrap; text-decoration: none;
+  transition: transform .45s var(--ease-spring), background-color .25s, color .25s, border-color .25s, box-shadow .3s;
+}
+.btn-sm { min-height: 40px; padding: 0 var(--s4); font-size: 15px; }
+.btn-block { width: 100%; }
+.btn-accent { background: var(--accent); color: var(--accent-ink); }
+.btn-accent:hover { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); }
+.btn-ghost { border: 1px solid var(--line-strong); color: var(--text); }
+.btn-ghost:hover { border-color: var(--text); }
+.btn-dark { background: var(--accent-ink); color: var(--accent); }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+.press:active { transform: scale(.96); transition-duration: .12s; }
+@media (hover: hover) { .btn:hover { transform: translateY(-2px); } .btn:active { transform: scale(.96); } .btn:disabled:hover { transform: none; } }
+
+.icon-btn {
+  width: 40px; height: 40px; display: grid; place-items: center; flex: none; color: var(--text); background: transparent; cursor: pointer;
+  border-radius: var(--r-pill); border: 1px solid var(--line-strong);
+  transition: transform .45s var(--ease-spring), border-color .25s;
+}
+.icon-btn:hover { border-color: var(--text); }
+.icon-btn-lg { width: 52px; height: 52px; }
+
+/* ---------- top bar: brand, the five screens (laptops), theme, Book ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 50; height: var(--topbar);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid transparent; transition: border-color .3s;
+  view-transition-name: topbar;
+}
+.topbar.is-scrolled { border-bottom-color: var(--line); }
+.topbar > .wrap { max-width: calc(var(--wrap) + var(--shell-gutter) * 2); padding-inline: var(--shell-gutter); }
+.topbar-in { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--s5); }
+.topbar .i { width: 20px; height: 20px; }
+.brand { display: inline-flex; align-items: center; gap: var(--s3); color: var(--text); text-decoration: none; }
+.brand img { border-radius: 8px; }
+.brand-name { font: 900 18px/1 "Archivo", system-ui, sans-serif; font-stretch: 120%; letter-spacing: -.02em; white-space: nowrap; }
+.nav { position: relative; display: none; gap: var(--s1); }
+.nav a { position: relative; z-index: 1; padding: var(--s2) var(--s4); font: 600 15px/1.4 "Archivo", system-ui, sans-serif; color: var(--muted); text-decoration: none; border-radius: var(--r-pill); white-space: nowrap; transition: color .25s, background-color .25s; }
+.nav a:hover { color: var(--text); }
+.nav a[aria-current="page"] { color: var(--text); background: var(--surface-2); }
+.nav-ind { display: none; }
+.topbar-actions { display: flex; align-items: center; gap: var(--s3); }
+#theme-toggle .i-sun { display: none; }
+:root[data-theme="light"] #theme-toggle .i-sun { display: block; }
+:root[data-theme="light"] #theme-toggle .i-moon { display: none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) #theme-toggle .i-sun { display: block; }
+  :root:not([data-theme]) #theme-toggle .i-moon { display: none; }
+}
+@media (min-width: 900px) { .nav { display: flex; } }
+@media (min-width: 900px) and (max-width: 1099px) { .topbar-in { gap: var(--s3); } .brand { flex: none; } .nav a { padding-inline: var(--s3); } }
+@media (max-width: 899px) {
+  .topbar { padding-top: env(safe-area-inset-top); background: color-mix(in srgb, var(--bg) 88%, transparent); }
+  .topbar-in { gap: var(--s3); } .topbar-actions { gap: var(--s2); }
+  .brand { gap: var(--s2); } .brand-name { font-size: 17px; }
+}
+@media (max-width: 379px) {
+  .topbar-actions { gap: 6px; }
+  .brand-name { font-size: 15px; }
+  #theme-toggle { width: 36px; height: 36px; }
+  .topbar-book { min-height: 36px; padding-inline: 14px; }
+}
+@media (max-width: 339px) { #theme-toggle { display: none; } }
+
+/* ---------- phone tab bar: one tab per screen, the current one lit ---------- */
+.tabbar {
+  position: fixed; z-index: 60; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: var(--s2) max(var(--s2), env(safe-area-inset-left)) calc(var(--s2) + env(safe-area-inset-bottom)) max(var(--s2), env(safe-area-inset-right));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-top: 1px solid var(--line);
+  transition: transform .4s var(--ease-out);
+  view-transition-name: tabbar;
+}
+.tab { display: grid; justify-items: center; gap: var(--s1); padding-block: var(--s1); font: 600 11px/1.3 "Archivo", system-ui, sans-serif; letter-spacing: .01em; color: var(--muted); text-decoration: none; transition: color .25s; }
+.tab > span:last-child { white-space: nowrap; }
+.tab-ic { position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--r-pill); }
+.tab-ic::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: color-mix(in srgb, var(--accent) 24%, transparent); opacity: 0; transform: scaleX(.4); transition: transform .5s var(--ease-spring), opacity .25s; }
+.tab-ic .i { position: relative; width: 22px; height: 22px; transition: transform .45s var(--ease-spring); }
+.tab:active .tab-ic .i { transform: scale(.88); }
+.tab[aria-current="page"] { color: var(--text); font-weight: 700; }
+.tab[aria-current="page"] .tab-ic { color: var(--accent-text); }
+.tab[aria-current="page"] .tab-ic::before { opacity: 1; transform: none; }
+@media (min-width: 900px) { .tabbar { display: none; } }
+
+/* ---------- screens of one app: a quick cross-fade between pages (Chrome, Edge, Safari 18+); bars stay put ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vt-out .14s var(--ease-out) both; }
+  ::view-transition-new(root) { animation: vt-in .22s var(--ease-out) both; }
+  ::view-transition-group(topbar), ::view-transition-group(tabbar) { animation-duration: 0s; }
+}
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } }

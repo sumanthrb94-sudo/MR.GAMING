@@ -3,13 +3,14 @@
 Static site, no build. Serve with `node server.js` (port 5173, serves `public/`).
 
 ## Where things live
-- `public/index.html`, `public/assets/css/style.css`, `public/assets/js/main.js` — MR. GAMING home
+- Customer app = separate screens sharing `public/assets/css/shell.css` (top bar, tab bar, transitions): `/` index.html + home.js, `/book` book.html + book.js, `/birthdays` birthdays.html + birthday.js, `/menu`, `/pass`. `main.js` is the shared core (CONFIG, WhatsApp links, open-now, theme, reveals); `style.css` styles the screens. index.html's head script redirects old one-page anchors (`/#book`, `/?slot=`, `/#birthday`…)
+- Online gaming bookings are saved as `booked` (no advance, pay at the venue); only old `pending` holds go stale after 3 h. Max 2 players per console; 3–4 players = Whole room
 - `public/menu.html`, `public/assets/css/menu.css`, `public/assets/js/menu.js` — MR. Sandwich menu (QR target)
-- `public/assets/js/menu-data.js` — the menu, single source for both pages
+- `public/assets/js/menu-data.js` — the menu, single source for both pages; live price / sold-out / hidden changes from the console are `menuOverrides` docs applied by `menu-live.js` (ids from `idsFor`/`docIds`)
 - MR. Sandwich meal plans — `MENU.mealPlans` in menu-data.js (home, /menu and the flyer compute from it; one meal = a Top Combo at `mealValue`); `MEALS` in admin.js mirrors it; /pass shows them as `type: 'meals'` passes
 - `print/` + `scripts/make-qr-card.mjs` — printable QR table card; `print/mr-sandwich-meal-plans.html` + `scripts/make-meal-flyer.mjs` — meal plans flyer
 - `brand/` — master logo files (not served)
-- `public/admin.html`, `public/assets/js/admin.js`, `public/assets/css/admin.css` — owner page (no login form: owners log in on /pass, which sends `/admins` accounts here)
+- `public/admin.html`, `public/assets/js/admin.js`, `public/assets/css/admin.css` — MR. Console, the manager app (Orders with pop-up for new bookings, Schedule, Passes & meal plans, Birthdays, Menu overrides, Stock alerts) (no login form: owners log in on /pass, which sends `/admins` accounts here)
 - `public/stock.html`, `public/assets/js/stock.js`, `public/assets/css/stock.css` — MR. Sandwich stock (batches by expiry, first expiry first out; `stockProducts`/`stockBatches`/`stockMoves`). Owners and `/stockStaff` accounts only; /pass sends stock staff here
 - `public/pass.html`, `public/assets/js/pass.js` — "My pass": customer sign-in by mobile number, or the owner's link `/pass?id=…` (styles in style.css)
 - `public/assets/images/games/` — original game-card artwork (never official game art); cards in index.html `#game-cards`, `data-pick-game` feeds the booking form

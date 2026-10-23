@@ -1,10 +1,17 @@
-/* MR. GAMING owner page: upcoming bookings, each day's requests, adding phone / walk-in bookings,
-   schedule (block / free hours), gaming passes and MR. Sandwich meal plans (add or use hours or meals,
-   send the customer their link).
+/* MR. Console (/admin): the manager's screens for MR. Gaming and MR. Sandwich, one at a time.
+   Orders      new website bookings pop up (sheet, optional chime, browser notification, "(2)" in the tab title);
+               Seen / Arrived / Done / No-show / Cancel. Summary numbers at the top, all from the database.
+   Schedule    each day's grid per console (block / free hours) and that day's bookings.
+   Passes      gaming passes and MR. Sandwich meal plans: add, use hours or meals, send the link.
+   Birthdays   upcoming parties (station 'party') and "Add a birthday".
+   Menu        today's price, "Sold out today" and "Hide" per item, saved in /menuOverrides (read by /menu, home, booking).
+   Stock       expired, expiring in 3 days and running low, worked out like stock.js; the full stock page is /stock.
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
    Owners log in on /pass like everyone else; it sees their /admins entry and opens this page.
-   Reads use Firestore Lite (small, plain HTTPS): bookings re-read every 20 s and passes every minute while the
-   page is on screen, everything re-reads when it comes back into view and right after any change made here. */
+   Reads use Firestore Lite (plain HTTPS, no live listeners). A tiny "anything new?" query (requests created after the
+   newest one we have, usually 0 documents) runs every 6 s while the page is on screen and every 30 s in a background tab,
+   so a website booking pops up within about 10 s without re-reading every booking. The full lists re-read on slower
+   timers, when the page comes back into view, and right after any change made here. */
 import {
   initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, signOut, onAuthStateChanged,
   getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, setDoc, deleteDoc, writeBatch,
@@ -15,6 +22,7 @@ import { firebaseConfig } from '/assets/js/firebase-config.js';
 const app = initializeApp(firebaseConfig);
 const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] }), db = getFirestore(app);
 const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const inr = (n) => '₹' + Math.round(n || 0).toLocaleString('en-IN');
 const pad = (n) => String(n).padStart(2, '0');
@@ -22,54 +30,302 @@ const clock = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
 const OPEN = 11, CLOSE = 23, PASS = { solo: { price: 899, label: 'Solo pass' }, duo: { price: 1499, label: 'Duo pass' } };
 const MEALS = { days: 30, plans: [{ meals: 5, price: 1350 }, { meals: 8, price: 2040 }, { meals: 10, price: 2400 }] };   // same as MENU.mealPlans in menu-data.js
 const MEMBER = { solo: 169, duo: 279 };   // member rate once a pass's hours are used (CONFIG.memberRates in main.js)
-const RATES = { solo: 199, duo: 320, trio: 420, quad: 499 }, KIND = { 1: 'solo', 2: 'duo', 3: 'trio', 4: 'quad' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] };   // same as CONFIG in main.js
-const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // unconfirmed holds stop counting after 3 hours (firestore.rules)
+// Two controllers per console: one console takes 1-2 players; 3-4 players take the whole room (both consoles), 2 hours or more
+const RATES = { solo: 199, duo: 320 }, KIND = { 1: 'solo', 2: 'duo' }, SQUAD = { 2: ['solo', 'solo'], 3: ['duo', 'solo'], 4: ['duo', 'duo'] }, SQUAD_MIN = 2;   // same as CONFIG in main.js
+const STALE_MS = 3 * 60 * 60 * 1000, DAY_MS = 24 * 60 * 60 * 1000;   // old 'pending' holds stop counting after 3 hours (firestore.rules); 'booked' never do
 const NAMES = { ps5: 'PS5', xbox: 'Xbox', squad: 'Whole room', party: 'Birthday party' };
 const BDAY = { perChild: 675, perAdult: 399, hours: 3, minGuests: 10, roomMax: 15, advance: 4000, cancelFee: 1000 };   // same as CONFIG.birthday in main.js
+const LIVE = ['booked', 'pending', 'confirmed'];   // still going ahead
 const nowIst = () => { const d = new Date(); return new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000); };
 const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const dateOf = (key) => { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); };
 const dayName = (key) => dateOf(key).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+const todayIst = () => keyOf(nowIst());
+const timeOf = (ts) => { if (!ts?.toMillis) return ''; const d = new Date(ts.toMillis() + 330 * 60000), h = d.getUTCHours(); return `${h % 12 || 12}:${pad(d.getUTCMinutes())} ${h < 12 ? 'am' : 'pm'}`; };
 const show = (id) => ['login', 'denied', 'dash'].forEach((x) => { $('#' + x).hidden = x !== id; });
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
 
 /* ---------- sign in happens on /pass (one login for everyone); it sends owners here ---------- */
 $('#signout').addEventListener('click', () => signOut(auth));
 
 /* ---------- reads: Firestore Lite has no live listeners, so each list re-reads on a timer ---------- */
 const watchers = new Set();
-// Runs the query now, then every `every` ms while the page is on screen, and on refreshAll();
-// a reply that arrives after a newer one, or after unwatching, is ignored
-function watch(q, cb, every = 20000) {
-  const w = { seq: 0, done: 0, at: 0, every, run() { const n = ++w.seq; w.at = Date.now(); getDocs(q).then((s) => { if (watchers.has(w) && n > w.done) { w.done = n; cb(s); } }).catch((e) => console.warn('read failed', e.code || e)); } };
-  watchers.add(w); w.run();
-  return () => watchers.delete(w);
+// Runs the query now, then every `every` ms while the page is on screen (`hidden` ms in a background tab; 0 = not then),
+// only while `when()` is true (e.g. its screen is open), and on refreshAll(). `q` may be a function, so a query that
+// names today's date is rebuilt after midnight. A reply that arrives after a newer one, or after unwatching, is ignored.
+function watch(q, cb, { every = 20000, hidden = 0, when = () => true } = {}) {
+  const w = { seq: 0, done: 0, at: 0, when, run() {
+    const n = ++w.seq; w.at = Date.now();
+    return getDocs(typeof q === 'function' ? q() : q).then((s) => { if (watchers.has(w) && n > w.done) { w.done = n; online(true); cb(s); } })
+      .catch((e) => { console.warn('read failed', e.code || e); online(false); });
+  } };
+  w.due = () => w.when() && (document.visibilityState === 'visible' ? Date.now() - w.at >= every - 500 : hidden && Date.now() - w.at >= hidden - 500);
+  watchers.add(w); if (when()) w.run();
+  return w;
 }
-const refreshAll = () => watchers.forEach((w) => w.run());
-setInterval(() => { if (document.visibilityState === 'visible') watchers.forEach((w) => { if (Date.now() - w.at >= w.every - 1000) w.run(); }); }, 5000);
+const refreshAll = () => watchers.forEach((w) => { if (w.when()) w.run(); });
+setInterval(() => watchers.forEach((w) => { if (w.due()) w.run(); }), 2000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAll(); });
+window.addEventListener('focus', refreshAll);
+let lastOk = 0;
+function online(ok) {
+  $('#offline').hidden = ok;
+  if (ok) lastOk = Date.now();
+  const live = $('#live'); live.hidden = false;
+  live.classList.toggle('is-off', !ok);
+  live.textContent = ok ? 'Live' : 'Offline';
+  live.title = lastOk ? `Last checked ${new Date(lastOk).toLocaleTimeString('en-IN')}` : '';
+}
 
-// This device signed in as an owner before: show the dashboard straight away (data follows; the rules still decide)
+// This device signed in as an owner before: show the console straight away (data follows; the rules still decide)
 const OWNER_KEY = 'mg-owner';
-let knownOwner = null; try { knownOwner = localStorage.getItem(OWNER_KEY); } catch (e) {}
-let unsub = [], started = false;
-const stopAll = () => { unsub.forEach((u) => u()); unsub = []; watchers.clear(); started = false; };
-const begin = () => { if (!started) { started = true; show('dash'); startDashboard(); } };
-if (knownOwner) queueMicrotask(begin);   // after this file has finished setting up (the dashboard code is further down)
+let knownOwner = store.get(OWNER_KEY), started = false, me = '';
+const stopAll = () => { watchers.clear(); started = false; menuReady = null; };
+const begin = () => { if (!started) { started = true; show('dash'); startConsole(); } };
+if (knownOwner) queueMicrotask(begin);   // after this file has finished setting up (the console code is further down)
 onAuthStateChanged(auth, async (user) => {
   $('#signout').hidden = !user; $('#who').textContent = user ? (user.phoneNumber || '') : '';
-  if (!user) { stopAll(); try { localStorage.removeItem(OWNER_KEY); } catch (e) {} show('login'); location.replace('/pass'); return; }
+  me = user?.phoneNumber || '';
+  if (!user) { stopAll(); store.del(OWNER_KEY); show('login'); location.replace('/pass'); return; }
   if (knownOwner && knownOwner !== user.uid) stopAll();
   const owner = getDoc(doc(db, 'admins', user.uid)).then((a) => a.exists()).catch(() => false);
   if (knownOwner === user.uid) begin();   // reads go out alongside the owner check (Firestore waits for the sign-in itself)
-  if (!(await owner)) { stopAll(); try { localStorage.removeItem(OWNER_KEY); } catch (e) {} $('#uid').textContent = user.uid; return show('denied'); }
-  try { localStorage.setItem(OWNER_KEY, user.uid); } catch (e) {}
+  if (!(await owner)) { stopAll(); store.del(OWNER_KEY); $('#uid').textContent = user.uid; return show('denied'); }
+  store.set(OWNER_KEY, user.uid);
   begin();
 });
 
-/* ---------- dashboard ---------- */
-let day = keyOf(nowIst()), requests = [], holds = [], passData = {};
+/* ---------- screens: #orders, #schedule, #passes, #birthdays, #menu, #stock ---------- */
+const VIEWS = ['orders', 'schedule', 'passes', 'birthdays', 'menu', 'stock'];
+let view = 'orders';
+const isView = (v) => () => view === v;
+function setView(v) {
+  view = VIEWS.includes(v) ? v : 'orders';
+  $$('.con-view').forEach((s) => { s.hidden = s.dataset.view !== view; });
+  $$('.con-tab').forEach((a) => { const on = a.dataset.view === view; a.classList.toggle('is-active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (view === 'schedule') markDay();
+  if (view === 'menu' && started) openMenu();
+  if (started) watchers.forEach((w) => { if (w.when() && Date.now() - w.at > 3000) w.run(); });   // the screen just opened: fresh data
+  window.scrollTo({ top: 0 });
+}
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+$('#stats').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-jump]'); if (!a) return;
+  e.preventDefault(); if (view !== 'orders') location.hash = 'orders';
+  $('#' + a.dataset.jump).scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
 
-function startDashboard() {
+function startConsole() {
+  setView(location.hash.slice(1));
+  startDays(); watchOrders(); watchPasses(); watchStock(); fillBookingForm(); alertsUi();
+  $('#bday-rules').textContent = `Party package: ${BDAY.hours} hours in the game room, ${inr(BDAY.perChild)} per child, ${inr(BDAY.perAdult)} per adult, at least ${BDAY.minGuests} guests (more than ${BDAY.roomMax} takes the whole restaurant). ${inr(BDAY.advance)} advance to confirm.`;
+}
+
+/* ---------- orders: every booking from today on ---------- */
+let orders = new Map(), loaded = false, newest = 0;
+const isNew = (r) => (r.status === 'booked' || r.status === 'pending') && r.ack !== true;
+const createdMs = (r) => r.createdAt?.toMillis?.() || 0;
+const holdIds = (r) => (r.station === 'squad' || r.station === 'party' ? ['ps5', 'xbox'] : [r.station])
+  .flatMap((c) => Array.from({ length: r.hours }, (_, i) => `${r.date}_${c}_${r.start + i}`));
+const telHref = (p) => 'tel:' + String(p).replace(/[^\d+]/g, '');
+const waDigits = (p) => { let d = String(p || '').replace(/\D/g, '').replace(/^0/, ''); if (d.length === 10) d = '91' + d; return d.length === 12 ? d : ''; };
+const firstName = (n) => String(n).trim().split(/\s+/)[0].slice(0, 20);
+const waHref = (r) => `https://wa.me/${waDigits(r.phone)}?text=${encodeURIComponent(`Hi ${firstName(r.name)}, your MR. GAMING booking on ${dayName(r.date)} ${clock(r.start)} is confirmed`)}`;
+const SOURCES = { owner: 'added by you', phone: 'phone call', 'walk-in': 'walk-in', whatsapp: 'WhatsApp' };
+const sourceOf = (r) => SOURCES[r.source] || 'website';
+const PLANS = { hourly: 'hourly', 'use-pass': 'uses pass', 'buy-pass': 'buys pass', member: 'member rate', party: 'birthday package' };
+const statusText = (r) => (isNew(r) ? 'new' : r.status === 'confirmed' && r.arrivedAt ? 'playing' : r.status);
+
+function mergeOrders(docs) {
+  docs.forEach((d) => { const r = d.data(); orders.set(r.id || d.id, { ...r, id: r.id || d.id }); newest = Math.max(newest, createdMs(r)); });
+}
+function watchOrders() {
+  // The full list: re-read every 90 s on screen (and after any change); a background tab relies on the probe below
+  watch(() => query(collection(db, 'requests'), where('date', '>=', todayIst())), (s) => {
+    orders = new Map(); mergeOrders(s.docs); loaded = true; renderOrders();
+  }, { every: 90000 });
+  // "Anything new?": requests created after the newest one we have. Usually 0 documents (billed as one read)
+  watch(() => query(collection(db, 'requests'), where('createdAt', '>', Timestamp.fromMillis(newest || Date.now() - 10 * 60000))), (s) => {
+    if (!loaded || s.empty) return;
+    mergeOrders(s.docs.filter((d) => d.data().date >= todayIst())); renderOrders();
+  }, { every: 6000, hidden: 30000, when: () => loaded });
+}
+
+function orderCard(r, { day = true } = {}) {
+  const id = esc(r.id), party = r.station === 'party', live = LIVE.includes(r.status), wa = waDigits(r.phone);
+  const who = party ? `${r.players} guests${r.adults ? ` (${r.players - r.adults} children + ${r.adults} adults)` : ''}${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}`
+    : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(PLANS[r.plan] || r.plan)}`;
+  return `<li class="card admin-item status-${esc(r.status)}${isNew(r) ? ' is-new' : ''}" data-order="${id}">
+    <div class="admin-item-top">
+      <strong>${day ? esc(dayName(r.date)) + ' · ' : ''}${clock(r.start)} – ${clock(r.start + r.hours)}</strong>
+      <span class="pill">${esc(statusText(r))}</span>
+    </div>
+    <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(NAMES[r.station] || r.station)}</span></p>
+    <p class="admin-item-meta">${who}${r.game ? ' · ' + esc(r.game) : ''}</p>
+    ${r.food ? `<p class="admin-item-meta con-food">Food: ${esc(r.food)}</p>` : ''}
+    <p class="admin-item-meta">${esc(sourceOf(r))}${r.createdAt?.toMillis ? ' · booked ' + esc(dayName(istKey(r.createdAt.toMillis()))) + ', ' + esc(timeOf(r.createdAt)) : ''}${r.arrivedAt ? ' · arrived ' + esc(timeOf(r.arrivedAt)) : ''} · <span class="dim">${id}</span></p>
+    <div class="con-item-foot">
+      <p class="admin-item-total">${inr(r.total)}</p>
+      ${r.phone ? `<div class="con-contact">
+        <a class="btn btn-sm btn-ghost press" href="${esc(telHref(r.phone))}"><svg class="i"><use href="#i-phone"/></svg>${esc(r.phone)}</a>
+        ${wa ? `<a class="btn btn-sm btn-ghost press" href="${esc(waHref(r))}" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>WhatsApp</a>` : ''}
+      </div>` : ''}
+    </div>
+    ${live ? `<div class="admin-actions">
+      ${isNew(r) ? `<button class="btn btn-sm btn-accent press" data-act="seen" data-id="${id}">Seen</button>` : ''}
+      ${!r.arrivedAt ? `<button class="btn btn-sm ${isNew(r) ? 'btn-ghost' : 'btn-accent'} press" data-act="arrived" data-id="${id}">Arrived</button>` : ''}
+      <button class="btn btn-sm btn-ghost press" data-act="done" data-id="${id}">Done</button>
+      <button class="btn btn-sm btn-ghost press" data-act="noshow" data-id="${id}">No-show</button>
+      <button class="btn btn-sm btn-ghost press con-danger" data-act="cancel" data-id="${id}">Cancel</button>
+    </div>` : ''}
+  </li>`;
+}
+const byWhen = (a, b) => a.date.localeCompare(b.date) || a.start - b.start;
+const fillList = (sel, rows, empty, opts) => { $(sel).innerHTML = rows.length ? rows.map((r) => orderCard(r, opts)).join('') : `<li class="admin-empty">${empty}</li>`; };
+const countOf = (sel, n) => { $(sel).textContent = n ? `(${n})` : ''; };
+
+function renderOrders() {
+  const all = [...orders.values()], today = todayIst();
+  const fresh = all.filter(isNew).sort((a, b) => createdMs(b) - createdMs(a));   // newest first
+  const todays = all.filter((r) => r.date === today && !isNew(r)).sort(byWhen);
+  const later = all.filter((r) => r.date > today && !isNew(r) && LIVE.includes(r.status) && r.station !== 'party').sort(byWhen);
+  fillList('#list-new', fresh, 'No new orders. New website bookings pop up here.');
+  fillList('#list-today', todays, 'Nothing else booked today.', { day: false });
+  fillList('#list-up', later.slice(0, 40), 'Nothing booked after today yet.');
+  countOf('#c-new', fresh.length); countOf('#c-today', todays.length); countOf('#c-up', later.length);
+
+  // Summary: numbers only from what the database returned
+  const todayLive = all.filter((r) => r.date === today && r.status !== 'cancelled');
+  $('#st-new').textContent = fresh.length;
+  $('#st-today').textContent = todayLive.length;
+  $('#st-rev').textContent = inr(todayLive.reduce((t, r) => t + (+r.total || 0), 0));
+  const hr = nowIst().getHours();
+  const next = all.filter((r) => LIVE.includes(r.status) && (r.date > today || r.start >= hr)).sort(byWhen)[0];
+  $('#st-next').textContent = next ? `${next.date === today ? '' : dayName(next.date) + ', '}${clock(next.start)} · ${firstName(next.name)}` : 'None booked';
+  badge('#b-orders', fresh.length);
+  document.title = (fresh.length ? `(${fresh.length}) ` : '') + 'MR. Console';
+
+  renderBirthdays(all);
+  if (view === 'schedule') renderDayList();
+  popNew(fresh);
+}
+const badge = (sel, n) => { const b = $(sel); b.hidden = !n; b.textContent = n > 99 ? '99+' : n; };
+
+// Seen / Arrived / Done / No-show / Cancel. Reads the hours from the database (not the on-screen schedule) and only
+// touches the ones this request still holds: an old stale 'pending' hold may since have gone to someone else.
+async function act(r, what) {
+  if (what === 'cancel' && !confirm(`Cancel ${r.name}'s booking and free the slot?`)) return false;
+  if (what === 'noshow' && !confirm(`Mark ${r.name} as a no-show and free the slot?`)) return false;
+  const seen = { ack: true, ackAt: serverTimestamp(), ackBy: me };
+  await runTransaction(db, async (tx) => {
+    const snaps = await Promise.all(holdIds(r).map((id) => tx.get(doc(db, 'holds', id))));
+    const mine = snaps.filter((x) => x.exists() && x.data().requestId === r.id).map((x) => x.ref);
+    const ref = doc(db, 'requests', r.id), ackNow = r.ack === true ? {} : seen;
+    if (what === 'seen') {
+      // A website booking stays 'booked'. An old-style 'pending' one is confirmed, so its hours no longer expire
+      if (r.status === 'pending') { tx.update(ref, { status: 'confirmed', ...seen }); mine.forEach((h) => tx.update(h, { status: 'confirmed' })); }
+      else tx.update(ref, seen);
+    } else if (what === 'arrived') {
+      tx.update(ref, { status: 'confirmed', arrivedAt: serverTimestamp(), ...ackNow });
+      mine.forEach((h) => tx.update(h, { status: 'confirmed' }));
+    } else {
+      tx.update(ref, { status: { done: 'done', noshow: 'no-show', cancel: 'cancelled' }[what], ...ackNow });
+      if (what !== 'done') mine.forEach((h) => tx.delete(h));
+    }
+  });
+  return true;
+}
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const r = orders.get(b.dataset.id) || dayRequests.find((x) => x.id === b.dataset.id); if (!r) return;
+  b.disabled = true;
+  try {
+    if (await act(r, b.dataset.act)) toast({ seen: 'Marked as seen.', arrived: `${firstName(r.name)} has arrived.`, done: 'Marked done.', noshow: 'No-show. The hours are free again.', cancel: 'Cancelled. The hours are free again.' }[b.dataset.act]);
+    else b.disabled = false;
+  } catch (err) { console.warn(err); alert('Could not save. Check your connection.'); b.disabled = false; }
+  await refreshAll();
+});
+
+/* ---------- new-order pop-up: sheet + optional chime + browser notification ---------- */
+const popped = new Set();
+let popIds = [];
+function popNew(fresh) {
+  const ids = fresh.map((r) => r.id), arrived = ids.filter((id) => !popped.has(id));
+  arrived.forEach((id) => popped.add(id));
+  popIds = popIds.filter((id) => ids.includes(id));   // seen elsewhere (another phone) → gone from the sheet
+  arrived.reverse().forEach((id) => popIds.unshift(id));
+  renderPop();
+  if (!arrived.length) return;
+  chime();
+  const r = orders.get(arrived[arrived.length - 1]);
+  if ('Notification' in window && Notification.permission === 'granted' && r) {
+    try {
+      const n = new Notification(arrived.length > 1 ? `${arrived.length} new bookings` : 'New booking', {
+        body: `${r.name} · ${dayName(r.date)} ${clock(r.start)} · ${NAMES[r.station] || r.station} · ${inr(r.total)}`,
+        icon: '/assets/images/logo-96.png', tag: 'mg-order-' + r.id
+      });
+      n.onclick = () => { window.focus(); location.hash = 'orders'; n.close(); };
+    } catch (e) {}   // phones only allow notifications from an installed app's service worker; the sheet and title still show
+  }
+}
+function renderPop() {
+  const pop = $('#pop'), r = orders.get(popIds[0]);
+  if (!r || !isNew(r)) { pop.hidden = true; return; }
+  pop.innerHTML = `
+    <div class="con-pop-top"><span class="pill">New booking${popIds.length > 1 ? ` · ${popIds.length}` : ''}</span><button class="icon-btn press" type="button" data-pop="close" aria-label="Hide"><svg class="i"><use href="#i-x"/></svg></button></div>
+    <p class="con-pop-when">${esc(dayName(r.date))} · ${clock(r.start)} – ${clock(r.start + r.hours)}</p>
+    <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(NAMES[r.station] || r.station)} · ${r.players} ${r.station === 'party' ? 'guests' : 'player' + (r.players > 1 ? 's' : '')}</span></p>
+    <p class="admin-item-meta">${esc(sourceOf(r))}${r.food ? ' · ' + esc(r.food) : ''} · <b class="admin-left">${inr(r.total)}</b></p>
+    <div class="admin-actions">
+      <button class="btn btn-sm btn-accent press" data-act="seen" data-id="${esc(r.id)}">Seen</button>
+      ${waDigits(r.phone) ? `<a class="btn btn-sm btn-ghost press" href="${esc(waHref(r))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      <a class="btn btn-sm btn-ghost press" href="#orders" data-pop="open">Open orders</a>
+    </div>`;
+  pop.hidden = false;
+}
+$('#pop').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-pop]'); if (!b) return;
+  if (b.dataset.pop === 'close') { popIds.shift(); renderPop(); }
+  if (b.dataset.pop === 'open') { popIds = []; renderPop(); }
+});
+
+// Chime: browsers only allow sound after a tap, so it's a switch the owner turns on (remembered on this device;
+// after a reload the first tap anywhere wakes the sound up again)
+const SOUND_KEY = 'mg-console-sound';
+let audio = null, soundOn = store.get(SOUND_KEY) === '1';
+const wake = () => { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) {} };
+function chime() {
+  if (!soundOn || !audio || audio.state !== 'running') return;
+  const t = audio.currentTime;
+  [[880, 0], [1320, 0.18]].forEach(([f, at]) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t + at); g.gain.exponentialRampToValueAtTime(0.3, t + at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.35);
+    o.connect(g).connect(audio.destination); o.start(t + at); o.stop(t + at + 0.4);
+  });
+}
+function alertsUi() {
+  const s = $('#sound'), n = $('#notify');
+  const paint = () => {
+    s.setAttribute('aria-pressed', String(soundOn)); $('span', s).textContent = soundOn ? 'Chime on' : 'Chime off';
+    n.hidden = !('Notification' in window) || Notification.permission !== 'default';
+  };
+  s.hidden = false; paint();
+  s.onclick = () => { soundOn = !soundOn; store.set(SOUND_KEY, soundOn ? '1' : '0'); if (soundOn) { wake(); setTimeout(chime, 60); } paint(); toast(soundOn ? 'Chime on for new orders.' : 'Chime off.'); };
+  n.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} paint(); if (Notification.permission === 'granted') toast('Alerts on: new bookings show as notifications.'); };
+  if (soundOn) document.addEventListener('pointerdown', wake, { once: true });
+}
+
+let toastT = 0;
+function toast(text) {
+  if (!text) return;
+  const t = $('#toast'); t.textContent = text; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3500);
+}
+
+/* ---------- schedule: one day ---------- */
+let day = todayIst(), dayRequests = [], holds = [];
+function startDays() {
   // Day chips: yesterday to 7 days ahead; "Other day" picks any date
   const t = nowIst(), days = $('#days');
   days.querySelectorAll('button').forEach((b) => b.remove());
@@ -80,9 +336,16 @@ function startDashboard() {
   }
   days.onclick = (e) => { const b = e.target.closest('button'); if (b) setDay(b.dataset.value); };
   $('#day-pick').onchange = (e) => { if (e.target.value) setDay(e.target.value); };
-  setDay(day); watchUpcoming(); watchPasses(); fillBookingForm();
+  watch(() => query(collection(db, 'requests'), where('date', '==', day)), (s) => { dayRequests = s.docs.map((d) => d.data()); renderDayList(); renderSched(); }, { every: 20000, when: isView('schedule') });
+  watch(() => query(collection(db, 'holds'), where('date', '==', day)), (s) => { holds = s.docs.map((d) => ({ id: d.id, ...d.data() })); renderSched(); }, { every: 20000, when: isView('schedule') });
+  setDay(day);
 }
-function setDay(key) { day = key; markDay(); watchDay(); $('#bk-day').textContent = dayName(day); }
+function setDay(key) {
+  if (key !== day) { dayRequests = []; holds = []; }
+  day = key; markDay(); $('#sched-day').textContent = key === todayIst() ? 'Today' : dayName(key);
+  renderSched(); renderDayList();
+  if (view === 'schedule') refreshAll();
+}
 function markDay() {
   const days = $('#days'), ind = $('.seg-ind', days);
   days.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.value === day)));
@@ -91,155 +354,15 @@ function markDay() {
   ind.style.opacity = on ? 1 : 0;
   if (on) Object.assign(ind.style, { width: on.offsetWidth + 'px', height: on.offsetHeight + 'px', transform: `translate(${on.offsetLeft}px, ${on.offsetTop}px)` });
 }
-
-let dayUnsub = [];
-function watchDay() {
-  dayUnsub.forEach((u) => u());
-  dayUnsub = [
-    watch(query(collection(db, 'requests'), where('date', '==', day)), (s) => { requests = s.docs.map((d) => d.data()); renderRequests(); renderSched(); }),
-    watch(query(collection(db, 'holds'), where('date', '==', day)), (s) => { holds = s.docs.map((d) => ({ id: d.id, ...d.data() })); renderSched(); })
-  ];
-  unsub.push(...dayUnsub);
+function renderDayList() {
+  // The day's bookings: from the day's own read, with anything fresher from the orders list
+  const rows = dayRequests.map((r) => orders.get(r.id) || r).sort((a, b) => a.start - b.start);
+  countOf('#req-count', rows.length);
+  fillList('#requests', rows, 'No bookings this day.', { day: false });
 }
-
-/* upcoming: every live booking from today on, all days */
-function watchUpcoming() {
-  unsub.push(watch(query(collection(db, 'requests'), where('date', '>=', keyOf(nowIst()))), (s) => {
-    const rows = s.docs.map((d) => d.data()).filter((r) => ['pending', 'confirmed'].includes(r.status))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start);
-    $('#up-count').textContent = rows.length ? `(${rows.length})` : '';
-    $('#upcoming').innerHTML = rows.length ? rows.map((r) => `
-      <li><button type="button" class="admin-up-row status-${esc(r.status)}" data-day="${esc(r.date)}">
-        <span class="admin-up-when">${esc(dayName(r.date))} · ${clock(r.start)} – ${clock(r.start + r.hours)}</span>
-        <span class="admin-up-who">${esc(NAMES[r.station] || r.station)} · ${esc(r.name)}</span>
-        <span class="pill">${esc(r.status)}</span>
-      </button></li>`).join('') : '<li class="admin-empty">No upcoming bookings.</li>';
-  }));
-}
-$('#upcoming').addEventListener('click', (e) => { const b = e.target.closest('[data-day]'); if (b) setDay(b.dataset.day); });
-
-/* requests */
-const holdIds = (r) => (r.station === 'squad' || r.station === 'party' ? ['ps5', 'xbox'] : [r.station])
-  .flatMap((c) => Array.from({ length: r.hours }, (_, i) => `${r.date}_${c}_${r.start + i}`));
-const telHref = (p) => 'tel:' + String(p).replace(/[^\d+]/g, '');
-
-function renderRequests() {
-  const list = $('#requests');
-  const rows = requests.slice().sort((a, b) => a.start - b.start);
-  $('#req-count').textContent = rows.length ? `(${rows.length})` : '';
-  if (!rows.length) { list.innerHTML = '<li class="admin-empty">No requests for this day.</li>'; return; }
-  list.innerHTML = rows.map((r) => `
-    <li class="card admin-item status-${esc(r.status)}">
-      <div class="admin-item-top">
-        <strong>${clock(r.start)} – ${clock(r.start + r.hours)}</strong>
-        <span class="pill">${esc(r.status)}</span>
-      </div>
-      <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(r.id)}</span></p>
-      <p class="admin-item-meta">${esc(NAMES[r.station] || r.station)} · ${r.station === 'party' ? `${r.players} guests${r.adults ? ` (${r.players - r.adults} children + ${r.adults} adults)` : ''}${r.players > BDAY.roomMax ? ' · whole restaurant' : ''}` : `${r.players} player${r.players > 1 ? 's' : ''} · ${esc(r.plan === 'use-pass' ? 'uses pass' : r.plan === 'buy-pass' ? 'buys pass' : r.plan === 'member' ? 'member rate' : 'hourly')}`}${r.game ? ' · ' + esc(r.game) : ''}${r.food ? ' · ' + esc(r.food) : ''}${r.source === 'owner' ? ' · added by you' : ''}</p>
-      ${r.phone ? `<p class="admin-item-meta"><a class="admin-tel" href="${esc(telHref(r.phone))}">${esc(r.phone)}</a></p>` : ''}
-      <p class="admin-item-total">${inr(r.total)}</p>
-      <div class="admin-actions">
-        ${r.status === 'pending' ? `<button class="btn btn-sm btn-accent press" data-act="confirm" data-id="${esc(r.id)}">Confirm</button>` : ''}
-        ${['pending', 'confirmed'].includes(r.status) ? `<button class="btn btn-sm btn-ghost press" data-act="done" data-id="${esc(r.id)}">Done</button>
-        <button class="btn btn-sm btn-ghost press" data-act="noshow" data-id="${esc(r.id)}">No-show</button>
-        <button class="btn btn-sm btn-ghost press" data-act="cancel" data-id="${esc(r.id)}">Cancel</button>` : ''}
-      </div>
-    </li>`).join('');
-}
-$('#requests').addEventListener('click', async (e) => {
-  const b = e.target.closest('button[data-act]'); if (!b) return;
-  const r = requests.find((x) => x.id === b.dataset.id); if (!r) return;
-  const act = b.dataset.act;
-  if (act === 'cancel' && !confirm(`Cancel ${r.name}'s booking and free the slot?`)) return;
-  b.disabled = true;
-  try {
-    // Read the hours from the database (not the on-screen schedule, which may still be loading) and only touch
-    // the ones this request still holds: a stale hold may since have gone to someone else
-    await runTransaction(db, async (tx) => {
-      const snaps = await Promise.all(holdIds(r).map((id) => tx.get(doc(db, 'holds', id))));
-      const mine = snaps.filter((x) => x.exists() && x.data().requestId === r.id).map((x) => x.ref);
-      tx.update(doc(db, 'requests', r.id), { status: { confirm: 'confirmed', done: 'done', noshow: 'no-show', cancel: 'cancelled' }[act] });
-      if (act === 'confirm') mine.forEach((ref) => tx.update(ref, { status: 'confirmed' }));
-      if (act === 'noshow' || act === 'cancel') mine.forEach((ref) => tx.delete(ref));
-    });
-  } catch (err) { alert('Could not save. Check your connection.'); b.disabled = false; }
-  refreshAll();
-});
-
-/* add a booking (phone or walk-in): confirmed straight away, shows as booked on the website */
-const bk = (id) => $('#bk-' + id);
-function fillBookingForm() {
-  const hrs = []; for (let h = OPEN; h < CLOSE; h++) hrs.push(h);
-  bk('start').innerHTML = hrs.map((h) => `<option value="${h}">${clock(h)}</option>`).join('');
-  bk('start').value = '18';
-  ['station', 'players', 'start', 'hours', 'plan', 'kids', 'adults'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
-  ['kids', 'adults'].forEach((k) => bk(k).addEventListener('input', bookingTotal));
-  bookingTotal();
-}
-function bookingDraft() {
-  const station = bk('station').value, squad = station === 'squad';
-  if (station === 'party') {
-    // Birthday package: fixed 3 hours, whole game room, ₹675 a child + ₹399 an adult, at least 10 guests in total
-    const adults = Math.max(0, Math.min(99, Math.round(+bk('adults').value) || 0));
-    const kids = Math.max(1, BDAY.minGuests - adults, Math.min(99, Math.round(+bk('kids').value) || 0));
-    const start = Math.min(+bk('start').value, CLOSE - BDAY.hours);
-    return { station, players: kids + adults, kids, adults, start, hours: BDAY.hours, plan: 'party', total: kids * BDAY.perChild + adults * BDAY.perAdult };
-  }
-  let players = +bk('players').value;
-  if (squad) players = Math.max(2, players);
-  const start = +bk('start').value, maxHours = CLOSE - start;
-  const hoursSel = bk('hours'), keep = +hoursSel.value || 2;
-  hoursSel.innerHTML = Array.from({ length: Math.min(6, maxHours) }, (_, i) => `<option value="${i + 1}">${i + 1} hr${i ? 's' : ''}</option>`).join('');
-  hoursSel.value = String(Math.min(keep, maxHours));
-  const hours = +hoursSel.value, plan = squad || players >= 3 ? 'hourly' : bk('plan').value;   // passes are for 1-2 players
-  const kind = squad ? 'solo' : KIND[players];
-  const rate = squad ? SQUAD[players].reduce((sum, k) => sum + RATES[k], 0) : RATES[kind];
-  const total = plan === 'buy-pass' ? PASS[kind].price : plan === 'use-pass' ? 0 : (plan === 'member' ? MEMBER[kind] : rate) * hours;
-  return { station, players, start, hours, plan, total };
-}
-function bookingTotal() {
-  const b = bookingDraft(), party = b.station === 'party';
-  bk('players').hidden = bk('plan').hidden = party; $('#bk-kids-wrap').hidden = $('#bk-adults-wrap').hidden = !party;
-  bk('hours').disabled = party;
-  if (party) {
-    bk('start').value = String(b.start);
-    bk('hours').innerHTML = `<option value="${BDAY.hours}">${BDAY.hours} hrs</option>`;
-    const raised = +bk('kids').value !== b.kids ? ` (children raised to ${b.kids} for the 10-guest minimum)` : '';
-    bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${b.players} guests · ${inr(b.total)} · ${b.players > BDAY.roomMax ? 'whole restaurant' : 'game room'} · ${inr(BDAY.advance)} advance${raised}`;
-    return;
-  }
-  bk('players').value = String(b.players); bk('plan').value = b.plan;
-  bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${inr(b.total)}`;
-}
-$('#book-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const b = bookingDraft(), name = bk('name').value.trim(), phone = bk('phone').value.trim(), msgEl = bk('msg');
-  if (day < keyOf(nowIst())) { msgEl.textContent = 'Pick today or a later day.'; return; }
-  const d = dateOf(day);
-  const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(b.start)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-  const r = { id, name, phone, date: day, start: b.start, hours: b.hours, station: b.station, players: b.players, plan: b.plan, game: '', food: '', total: b.total, status: 'confirmed', source: 'owner', ...(b.station === 'party' ? { adults: b.adults } : {}) };
-  msgEl.textContent = 'Saving…';
-  try {
-    await runTransaction(db, async (tx) => {
-      const ids = holdIds(r), snaps = await Promise.all(ids.map((hid) => tx.get(doc(db, 'holds', hid))));
-      const clash = snaps.find((x) => x.exists() && !(x.data().status === 'pending' && Date.now() - (x.data().createdAt?.toMillis?.() || Date.now()) > STALE_MS));
-      if (clash) { const [, c, h] = clash.id.split('_'); throw Object.assign(new Error('taken'), { slot: `${NAMES[c]} ${clock(+h)}` }); }
-      tx.set(doc(db, 'requests', id), { ...r, createdAt: serverTimestamp() });
-      // Same hour list as the clash check above: squad rooms and birthday parties take both consoles
-      ids.forEach((hid) => { const [, c, h] = hid.split('_'); tx.set(doc(db, 'holds', hid), { date: day, console: c, hour: +h, requestId: id, status: 'confirmed', createdAt: serverTimestamp() }); });
-    });
-    msgEl.textContent = `Added. ${name} is booked ${dayName(day)}, ${clock(b.start)} – ${clock(b.start + b.hours)}.`;
-    bk('name').value = ''; bk('phone').value = '';
-  } catch (err) {
-    msgEl.textContent = err.slot ? `${err.slot} is already taken that day. Pick another time.` : 'Could not save. Check your connection.';
-  }
-  refreshAll();
-});
-
-/* schedule */
 function renderSched() {
   const byId = Object.fromEntries(holds.map((h) => [h.id, h]));
-  const reqName = Object.fromEntries(requests.map((r) => [r.id, r.name]));
+  const reqName = Object.fromEntries(dayRequests.map((r) => [r.id, r.name]));
   const hours = []; for (let h = OPEN; h < CLOSE; h++) hours.push(h);
   $('#sched').innerHTML = `<div class="sched-head"><span></span><span>PS5</span><span>Xbox</span></div>` + hours.map((h) => `
     <div class="sched-row"><span class="sched-time">${clock(h)}</span>${['ps5', 'xbox'].map((c) => {
@@ -260,15 +383,115 @@ $('#sched').addEventListener('click', async (e) => {
   refreshAll();
 });
 
-/* passes and meal plans: /passes holds the owner's record (name, phone, price); /passCards is what the customer's link
-   shows (first name and hours or meals only). Every change writes both in one batch.
+/* ---------- add a booking or birthday (phone, walk-in, WhatsApp): confirmed straight away, shows as booked on the website ---------- */
+const bk = (id) => $('#bk-' + id);
+const dlg = $('#book-dlg');
+function fillBookingForm() {
+  const hrs = []; for (let h = OPEN; h < CLOSE; h++) hrs.push(h);
+  bk('start').innerHTML = hrs.map((h) => `<option value="${h}">${clock(h)}</option>`).join('');
+  bk('start').value = '18';
+  // 3-4 players don't fit one console (two controllers each): switch to the whole room; back to one console for 1 player
+  bk('players').addEventListener('change', () => { const n = +bk('players').value; if (n >= 3 && ['ps5', 'xbox'].includes(bk('station').value)) { bk('station').value = 'squad'; bk('msg').textContent = '3-4 players take the whole room (both consoles, 2 hours or more).'; } if (n === 1 && bk('station').value === 'squad') bk('station').value = 'ps5'; });
+  ['station', 'players', 'start', 'hours', 'plan', 'kids', 'adults'].forEach((k) => bk(k).addEventListener('change', bookingTotal));
+  ['kids', 'adults'].forEach((k) => bk(k).addEventListener('input', bookingTotal));
+  bookingTotal();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-add]'); if (!b) return;
+  const party = b.dataset.add === 'party';
+  bk('station').value = party ? 'party' : (bk('station').value === 'party' ? 'ps5' : bk('station').value);
+  if (party) bk('start').value = '16';
+  bk('date').min = todayIst();
+  bk('date').value = view === 'schedule' && day >= todayIst() ? day : todayIst();
+  $('#bk-title').textContent = party ? 'Add a birthday' : 'Add a booking';
+  bk('msg').textContent = ''; bookingTotal();
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
+  bk('name').focus();
+});
+bk('close').addEventListener('click', () => dlg.close());
+dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });   // tap outside the card
+function bookingDraft() {
+  const station = bk('station').value, squad = station === 'squad';
+  if (station === 'party') {
+    // Birthday package: fixed 3 hours, whole game room, ₹675 a child + ₹399 an adult, at least 10 guests in total
+    const adults = Math.max(0, Math.min(99, Math.round(+bk('adults').value) || 0));
+    const kids = Math.max(1, BDAY.minGuests - adults, Math.min(99, Math.round(+bk('kids').value) || 0));
+    const start = Math.min(+bk('start').value, CLOSE - BDAY.hours);
+    return { station, players: kids + adults, kids, adults, start, hours: BDAY.hours, plan: 'party', total: kids * BDAY.perChild + adults * BDAY.perAdult };
+  }
+  let players = +bk('players').value;
+  if (squad) players = Math.max(2, players);
+  else players = Math.min(2, players);   // one console: two controllers
+  const minHours = squad ? SQUAD_MIN : 1, start = Math.min(+bk('start').value, CLOSE - minHours), maxHours = CLOSE - start;
+  const hoursSel = bk('hours'), keep = +hoursSel.value || 2;
+  hoursSel.innerHTML = Array.from({ length: Math.min(6, maxHours) - minHours + 1 }, (_, i) => `<option value="${i + minHours}">${i + minHours} hr${i + minHours > 1 ? 's' : ''}</option>`).join('');
+  hoursSel.value = String(Math.max(minHours, Math.min(keep, maxHours)));
+  const hours = +hoursSel.value, plan = squad ? 'hourly' : bk('plan').value;   // passes are for 1-2 players on one console
+  const kind = squad ? 'solo' : KIND[players];
+  const rate = squad ? SQUAD[players].reduce((sum, k) => sum + RATES[k], 0) : RATES[kind];
+  const total = plan === 'buy-pass' ? PASS[kind].price : plan === 'use-pass' ? 0 : (plan === 'member' ? MEMBER[kind] : rate) * hours;
+  return { station, players, start, hours, plan, total };
+}
+function bookingTotal() {
+  const b = bookingDraft(), party = b.station === 'party';
+  $('#bk-players-wrap').hidden = $('#bk-plan-wrap').hidden = party; $('#bk-kids-wrap').hidden = $('#bk-adults-wrap').hidden = !party;
+  bk('hours').disabled = party;
+  bk('submit').textContent = party ? 'Add birthday' : 'Add booking';
+  if (party) {
+    bk('start').value = String(b.start);
+    bk('hours').innerHTML = `<option value="${BDAY.hours}">${BDAY.hours} hrs</option>`;
+    const raised = +bk('kids').value !== b.kids ? ` (children raised to ${b.kids} for the 10-guest minimum)` : '';
+    bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${b.players} guests · ${inr(b.total)} · ${b.players > BDAY.roomMax ? 'whole restaurant' : 'game room'} · ${inr(BDAY.advance)} advance${raised}`;
+    return;
+  }
+  bk('players').value = String(b.players); bk('plan').value = b.plan; bk('start').value = String(b.start);
+  bk('plan').disabled = b.station === 'squad';
+  bk('total').textContent = `${clock(b.start)} – ${clock(b.start + b.hours)} · ${inr(b.total)}${b.station === 'squad' ? ` · whole room, ${SQUAD_MIN} hrs or more` : ''}`;
+}
+$('#book-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const b = bookingDraft(), name = bk('name').value.trim(), phone = bk('phone').value.trim(), msgEl = bk('msg'), date = bk('date').value;
+  if (!date || date < todayIst()) { msgEl.textContent = 'Pick today or a later day.'; return; }
+  const d = dateOf(date);
+  const id = `MG-${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(b.start)}00-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const r = { id, name, phone, date, start: b.start, hours: b.hours, station: b.station, players: b.players, plan: b.plan, game: '', food: '', total: b.total, status: 'confirmed', source: bk('source').value, ack: true, ...(b.station === 'party' ? { adults: b.adults } : {}) };
+  msgEl.textContent = 'Saving…'; bk('submit').disabled = true;
+  try {
+    await runTransaction(db, async (tx) => {
+      const ids = holdIds(r), snaps = await Promise.all(ids.map((hid) => tx.get(doc(db, 'holds', hid))));
+      const clash = snaps.find((x) => x.exists() && !(x.data().status === 'pending' && Date.now() - (x.data().createdAt?.toMillis?.() || Date.now()) > STALE_MS));
+      if (clash) { const [, c, h] = clash.id.split('_'); throw Object.assign(new Error('taken'), { slot: `${NAMES[c]} ${clock(+h)}` }); }
+      tx.set(doc(db, 'requests', id), { ...r, createdAt: serverTimestamp(), ackAt: serverTimestamp(), ackBy: me });
+      // Same hour list as the clash check above: squad rooms and birthday parties take both consoles
+      ids.forEach((hid) => { const [, c, h] = hid.split('_'); tx.set(doc(db, 'holds', hid), { date, console: c, hour: +h, requestId: id, status: 'confirmed', createdAt: serverTimestamp() }); });
+    });
+    dlg.close();
+    toast(`Added. ${name} is booked ${dayName(date)}, ${clock(b.start)} – ${clock(b.start + b.hours)}.`);
+    bk('name').value = ''; bk('phone').value = ''; msgEl.textContent = '';
+  } catch (err) {
+    msgEl.textContent = err.slot ? `${err.slot} is already taken that day. Pick another time.` : 'Could not save. Check your connection.';
+  }
+  bk('submit').disabled = false;
+  refreshAll();
+});
+
+/* ---------- birthdays: upcoming parties ---------- */
+function renderBirthdays(all) {
+  const rows = all.filter((r) => r.station === 'party' && LIVE.includes(r.status)).sort(byWhen);
+  countOf('#c-bdays', rows.length); badge('#b-bdays', rows.filter((r) => r.date === todayIst()).length);
+  fillList('#list-bdays', rows, 'No birthday parties booked yet.');
+}
+
+/* ---------- passes and meal plans: /passes holds the owner's record (name, phone, price); /passCards is what the
+   customer's link shows (first name and hours or meals only). Every change writes both in one batch.
    A gaming pass (type 'solo' | 'duo') counts hoursTotal / hoursUsed and "Add hours" renews it.
    A MR. Sandwich meal plan (type 'meals', plan 5 | 8 | 10) counts mealsTotal / mealsUsed and has no hours. It is valid
-   MEALS.days from the day it's bought and its unused meals expire with it, so buying again starts a new plan. */
+   MEALS.days from the day it's bought and its unused meals expire with it, so buying again starts a new plan.
+   Payments: when the gateway is live, paid passes will be written here by it; nothing does that yet. ---------- */
+let passData = {}, passDocs = [];
 const passLink = (id) => `${location.origin}/pass?id=${id}`;
 // Indian mobile as +91XXXXXXXXXX: the customer signs in at /pass with this number to see their passes
 const toE164 = (p) => { let d = String(p || '').replace(/\D/g, '').replace(/^0/, ''); if (d.length === 12 && d.startsWith('91')) d = d.slice(2); return /^[6-9]\d{9}$/.test(d) ? '+91' + d : ''; };
-const firstName = (n) => String(n).trim().split(/\s+/)[0].slice(0, 20);
 const isMeals = (p) => p.type === 'meals';
 const mealPlan = (value) => MEALS.plans.find((m) => `meals-${m.meals}` === value);   // the form's option value, e.g. 'meals-8'
 const planName = (p) => `${+p.plan || +p.mealsTotal || 0}-meal plan`;
@@ -290,34 +513,41 @@ function addPass(pass) {
   return batch.commit();
 }
 function watchPasses() {
-  unsub.push(watch(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
-    const list = $('#passes');
+  watch(query(collection(db, 'passes'), orderBy('createdAt', 'desc')), (s) => {
     passData = Object.fromEntries(s.docs.map((d) => [d.id, d.data()]));
-    if (s.empty) { list.innerHTML = '<li class="admin-empty">No passes or meal plans yet.</li>'; return; }
-    const now = Date.now();
-    list.innerHTML = s.docs.map((d) => {
-      const p = d.data(), meals = isMeals(p), [tk, uk] = counts(p), total = +p[tk] || 0, left = total - (+p[uk] || 0), id = esc(d.id);
-      const exp = p.expires?.toDate ? p.expires.toDate() : null, expired = exp && exp.getTime() < now;
-      // Meal plans lead with "Use 1 meal": it's what the owner taps at the counter (not once the plan has expired).
-      // "Undo 1 meal" fixes a wrong tap; "New plan" is for buying again (meals don't carry over).
-      const acts = meals ? `
-          <button class="btn btn-sm btn-accent press" data-pass="${id}" data-use="1" ${left < 1 || expired ? 'disabled' : ''}>Use 1 meal</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="-1" ${+p.mealsUsed > 0 ? '' : 'disabled'}>Undo 1 meal</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-renew="1">New plan</button>` : `
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="1" ${left < 1 ? 'disabled' : ''}>Use 1 hr</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="2" ${left < 2 ? 'disabled' : ''}>Use 2 hrs</button>
-          <button class="btn btn-sm btn-accent press" data-pass="${id}" data-add="1">Add hours</button>`;
-      return `<li class="card admin-item ${expired || left <= 0 ? 'is-dim' : ''}">
-        <div class="admin-item-top"><strong>${esc(p.name)}</strong><span class="pill">${esc(meals ? planName(p) : PASS[p.type]?.label || p.type)}</span></div>
-        <p class="admin-item-meta">${p.phoneE164 ? esc(p.phone) + ' (can sign in) · ' : p.phone ? esc(p.phone) + ' · ' : 'no mobile, link only · '}<b class="admin-left">${left} of ${total} ${meals ? 'meals' : 'hrs'} left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + shortDate(exp) : ''}</p>
-        <div class="admin-actions">${acts}
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-send="1">Send link</button>
-          <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-del="1">Delete</button>
-        </div>
-      </li>`;
-    }).join('');
-  }, 60000));
+    passDocs = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderPasses();
+  }, { every: 60000, when: isView('passes') });
 }
+function renderPasses() {
+  const list = $('#passes'), qy = $('#pass-search').value.trim().toLowerCase(), digits = qy.replace(/\D/g, '');
+  const rows = passDocs.filter((p) => !qy || String(p.name).toLowerCase().includes(qy) || (digits.length >= 3 && String(p.phone || '').replace(/\D/g, '').includes(digits)));
+  $('#pass-count').textContent = passDocs.length ? `${rows.length} of ${passDocs.length}` : '';
+  if (!rows.length) { list.innerHTML = `<li class="admin-empty">${passDocs.length ? 'No pass or meal plan matches.' : 'No passes or meal plans yet.'}</li>`; return; }
+  const now = Date.now();
+  list.innerHTML = rows.map((p) => {
+    const meals = isMeals(p), [tk, uk] = counts(p), total = +p[tk] || 0, left = total - (+p[uk] || 0), id = esc(p.id);
+    const exp = p.expires?.toDate ? p.expires.toDate() : null, expired = exp && exp.getTime() < now;
+    // Meal plans lead with "Use 1 meal": it's what the owner taps at the counter (not once the plan has expired).
+    // "Undo 1 meal" fixes a wrong tap; "New plan" is for buying again (meals don't carry over).
+    const acts = meals ? `
+        <button class="btn btn-sm btn-accent press" data-pass="${id}" data-use="1" ${left < 1 || expired ? 'disabled' : ''}>Use 1 meal</button>
+        <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="-1" ${+p.mealsUsed > 0 ? '' : 'disabled'}>Undo 1 meal</button>
+        <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-renew="1">New plan</button>` : `
+        <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="1" ${left < 1 ? 'disabled' : ''}>Use 1 hr</button>
+        <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-use="2" ${left < 2 ? 'disabled' : ''}>Use 2 hrs</button>
+        <button class="btn btn-sm btn-accent press" data-pass="${id}" data-add="1">Add hours</button>`;
+    return `<li class="card admin-item ${expired || left <= 0 ? 'is-dim' : ''}">
+      <div class="admin-item-top"><strong>${esc(p.name)}</strong><span class="pill">${esc(meals ? planName(p) : PASS[p.type]?.label || p.type)}</span></div>
+      <p class="admin-item-meta">${p.phoneE164 ? esc(p.phone) + ' (can sign in) · ' : p.phone ? esc(p.phone) + ' · ' : 'no mobile, link only · '}<b class="admin-left">${left} of ${total} ${meals ? 'meals' : 'hrs'} left</b> · ${exp ? (expired ? 'expired ' : 'valid till ') + shortDate(exp) : ''}</p>
+      <div class="admin-actions">${acts}
+        <button class="btn btn-sm btn-ghost press" data-pass="${id}" data-send="1">Send link</button>
+        <button class="btn btn-sm btn-ghost press con-danger" data-pass="${id}" data-del="1">Delete</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+$('#pass-search').addEventListener('input', renderPasses);
 // Add form: the meal plans come from MEALS; a plan's meal count is fixed, so the hours box goes (disabled, so it isn't checked)
 $('#pass-meals').innerHTML = MEALS.plans.map((m) => `<option value="meals-${m.meals}">${m.meals} meals · ${inr(m.price)}</option>`).join('');
 function passType() {
@@ -336,7 +566,7 @@ $('#pass-form').addEventListener('submit', async (e) => {
   if (!phone && !confirm(`No mobile number: the customer can only see this ${what} through the link you send. Add it anyway?`)) return;
   const pass = plan ? mealPlanOf(name, phone, phoneE164, plan)
     : { name, phone, phoneE164, type, price: PASS[type].price, hoursTotal: hours, hoursUsed: 0, expires: Timestamp.fromMillis(Date.now() + 30 * DAY_MS) };
-  try { await addPass(pass); e.target.reset(); passType(); } catch (err) { alert(`Could not save the ${what}.`); }
+  try { await addPass(pass); e.target.reset(); passType(); toast(`${plan ? 'Meal plan' : 'Pass'} added for ${name}.`); } catch (err) { alert(`Could not save the ${what}.`); }
   refreshAll();
 });
 $('#passes').addEventListener('click', async (e) => {
@@ -381,8 +611,170 @@ function sendPass(pid, p) {
     ? `Hi ${firstName(p.name)}! Your MR. Sandwich ${planName(p)} ${isExpired(p) ? `expired on ${shortDate(p.expires.toDate())}` : `has ${left} meal${left === 1 ? '' : 's'} left`}. See your meals any time: ${link}`
     : `Hi ${firstName(p.name)}! Your MR. GAMING ${(PASS[p.type]?.label || 'pass').toLowerCase()} has ${left} hrs left. See your hours any time: ${link}`)
     + (p.phoneE164 ? ` or sign in with this number at ${location.origin}/pass` : '');
-  let digits = String(p.phone || '').replace(/\D/g, '').replace(/^0/, '');
-  if (digits.length === 10) digits = '91' + digits;
-  if (digits.length === 12) { window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); return; }
+  const digits = waDigits(p.phone);
+  if (digits) { window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener'); return; }
   (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => alert(`No phone number on this ${what}. Link copied:\n${link}`), () => prompt(`No phone number on this ${what}. Copy the link:`, link));
 }
+
+/* ---------- stock alerts (MR. Sandwich): the same sums as stock.js, on India-time calendar days ---------- */
+const SOON_DAYS = 3, WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const PLURAL = { packet: 'packets', carton: 'cartons', box: 'boxes', piece: 'pieces', bottle: 'bottles', tin: 'tins', bag: 'bags', litre: 'litres' };
+const istKey = (ms) => new Date(ms + 330 * 60000).toISOString().slice(0, 10);
+const keyMs = (key) => Date.UTC(+key.slice(0, 4), +key.slice(5, 7) - 1, +key.slice(8, 10));
+const expKey = (b) => (b.expiry?.toMillis ? istKey(b.expiry.toMillis()) : null);   // null = no expiry
+const daysLeft = (b) => { const k = expKey(b); return k === null ? Infinity : Math.round((keyMs(k) - keyMs(istKey(Date.now()))) / DAY_MS); };
+const stockDay = (key) => { const d = new Date(keyMs(key)); return `${WEEK[d.getUTCDay()]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
+const expiryText = (b) => { const n = daysLeft(b), k = expKey(b); return n < 0 ? `Expired ${stockDay(k)}` : n === 0 ? 'Expires today' : n === 1 ? 'Expires tomorrow' : `Expires in ${n} days · ${stockDay(k)}`; };
+const round = (q) => Math.round(q * 1000) / 1000;
+const qtyUnit = (q, unit) => `${round(+q || 0).toLocaleString('en-IN', { maximumFractionDigits: 3 })} ${q === 1 ? unit : PLURAL[unit] || unit}`;
+const fefo = (a, b) => (daysLeft(a) - daysLeft(b)) || ((a.addedAt?.toMillis?.() || 0) - (b.addedAt?.toMillis?.() || 0));
+let sProducts = null, sBatches = null;
+const ALERT_KEY = 'mg-console-stock-seen';
+function watchStock() {
+  // Stock changes slowly: every 3 minutes (and when the page comes back into view or the Stock screen opens)
+  watch(collection(db, 'stockProducts'), (s) => { sProducts = Object.fromEntries(s.docs.map((d) => [d.id, { id: d.id, ...d.data() }])); renderStock(); }, { every: 180000 });
+  watch(collection(db, 'stockBatches'), (s) => { sBatches = s.docs.map((d) => ({ id: d.id, ...d.data() })).filter((b) => b.qty > 0); renderStock(); }, { every: 180000 });
+}
+function renderStock() {
+  if (!sProducts || !sBatches) return;
+  const nameOf = (pid) => sProducts[pid]?.name || 'Unknown product', unitOf = (pid) => sProducts[pid]?.unit || '';
+  const expired = sBatches.filter((b) => daysLeft(b) < 0).sort(fefo);
+  const soon = sBatches.filter((b) => { const n = daysLeft(b); return n >= 0 && n <= SOON_DAYS; }).sort(fefo);
+  const low = Object.values(sProducts).map((p) => {
+    const total = round(sBatches.filter((b) => b.productId === p.id && daysLeft(b) >= 0).reduce((t, b) => t + b.qty, 0));
+    return { p, total, low: total <= (+p.low || 0) };
+  }).filter((x) => x.low).sort((a, b) => a.p.name.localeCompare(b.p.name, 'en', { sensitivity: 'base' }));
+  const row = (title, meta, cls = '') => `<li class="con-row ${cls}"><strong>${esc(title)}</strong><span class="admin-item-meta">${esc(meta)}</span></li>`;
+  const fill = (sel, items, empty) => { $(sel).innerHTML = items.length ? items.join('') : `<li class="admin-empty">${empty}</li>`; };
+  fill('#s-exp', expired.map((b) => row(nameOf(b.productId), `${qtyUnit(b.qty, unitOf(b.productId))} · ${expiryText(b)}`, 'is-bad')), 'Nothing expired.');
+  fill('#s-soon', soon.map((b) => row(nameOf(b.productId), `${qtyUnit(b.qty, unitOf(b.productId))} · ${expiryText(b)}`, 'is-soon')), 'Nothing expires in the next 3 days.');
+  fill('#s-low', low.map((x) => row(x.p.name, `${qtyUnit(x.total, x.p.unit)} left · alert at ${round(+x.p.low || 0)}`)), 'Nothing running low.');
+  countOf('#c-exp', expired.length); countOf('#c-soon', soon.length); countOf('#c-low', low.length);
+  [['#s-exp', expired], ['#s-soon', soon], ['#s-low', low]].forEach(([sel, xs]) => $(sel).closest('.con-alert-card').classList.toggle('is-on', xs.length > 0));
+  const n = expired.length + soon.length + low.length;
+  badge('#b-stock', n); $('#st-stock').textContent = n;
+
+  // Pop up only for alerts this device hasn't shown yet (remembered for the day, so a reload doesn't repeat them)
+  const keys = [...expired.map((b) => 'x' + b.id), ...soon.map((b) => 's' + b.id), ...low.map((x) => 'l' + x.p.id)];
+  let seen = {}; try { seen = JSON.parse(store.get(ALERT_KEY) || '{}'); } catch (e) {}
+  const today = istKey(Date.now()), before = new Set(seen.day === today ? seen.keys : []);
+  const fresh = keys.filter((k) => !before.has(k));
+  store.set(ALERT_KEY, JSON.stringify({ day: today, keys }));
+  if (fresh.length) {
+    const parts = [['x', 'expired'], ['s', 'expiring soon'], ['l', 'running low']].map(([p, w]) => [fresh.filter((k) => k[0] === p).length, w]).filter(([c]) => c).map(([c, w]) => `${c} ${w}`);
+    toast(`Stock: ${parts.join(', ')}. Open the Stock tab.`);
+  }
+}
+
+/* ---------- menu (MR. Sandwich): today's changes over the printed menu, in /menuOverrides ----------
+   Doc id per item (and per price column) comes from menu-live.js, the same module /menu, home and booking use, so the
+   two sides can't drift. Fields: price (int, only when it differs from the printed price), soldOut, hidden,
+   updatedAt, by. An item back to normal has no document. menu-data.js and menu-live.js load only when this screen opens. */
+let menuReady = null, menuRows = [], overrides = {}, edits = {}, menuSection = '';
+const loadScript = (src) => new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.append(s); });
+function openMenu() {
+  if (!menuReady) {
+    menuReady = Promise.all([window.MENU ? null : loadScript('/assets/js/menu-data.js'), import('/assets/js/menu-live.js')])
+      .then(([, live]) => { buildMenu(window.MENU, live); watch(collection(db, 'menuOverrides'), (s) => {
+        // A read that set off before a change made here may land after it: keep this device's last 15 s of edits
+        const next = Object.fromEntries(s.docs.map((d) => [d.id, d.data()]));
+        Object.entries(edits).forEach(([id, e]) => { if (Date.now() - e.at < 15000) { if (e.data) next[id] = e.data; else delete next[id]; } });
+        overrides = next; paintMenu();
+      }, { every: 60000, when: isView('menu') }); })
+      .catch((e) => { console.warn(e); menuReady = null; $('#menu-list').innerHTML = '<p class="admin-empty">Could not load the menu. Check your connection and open Menu again.</p>'; });
+  }
+  return menuReady;
+}
+// One row per price: { id, section, name, col, printed }
+function buildMenu(MENU, live) {
+  const ids = live.idsFor(MENU);   // item -> doc id; live.docIds adds '-0' / '-1' for a two-price item
+  menuRows = [];
+  MENU.sections.forEach((s) => s.groups.forEach((g) => g.items.forEach((it) => {
+    live.docIds(it, ids.get(it)).forEach((id, c) => menuRows.push({ id, section: s, group: g.title || '', name: it.name, col: it.prices ? g.cols?.[c] || `Price ${c + 1}` : '', printed: it.prices ? it.prices[c] : it.price }));
+  })));
+  $('#menu-sections').innerHTML = `<button type="button" data-sec="" aria-pressed="true">All</button>` + MENU.sections.map((s) => `<button type="button" data-sec="${esc(s.id)}" aria-pressed="false">${esc(s.title)}</button>`).join('');
+  $('#menu-list').innerHTML = MENU.sections.map((s) => `
+    <section class="mn-sec" data-sec="${esc(s.id)}"><h2 class="admin-h">${esc(s.title)}</h2><ul class="mn-list">${menuRows.filter((r) => r.section === s).map((r) => `
+      <li class="mn-row" data-id="${esc(r.id)}" data-find="${esc((r.name + ' ' + r.col + ' ' + r.group + ' ' + s.title).toLowerCase())}">
+        <div class="mn-name"><strong>${esc(r.name)}</strong>${r.col || r.group ? `<span class="admin-item-meta">${esc([r.group, r.col].filter(Boolean).join(' · '))}</span>` : ''}<span class="admin-item-meta mn-printed">Printed ${inr(r.printed)}</span></div>
+        <div class="mn-ctrl">
+          <label class="mn-price"><span>₹</span><input class="field" type="number" inputmode="numeric" min="1" max="10000" step="1" placeholder="${esc(r.printed)}" aria-label="Today's price for ${esc(r.name)}${r.col ? ' (' + esc(r.col) + ')' : ''}" data-price></label>
+          <button type="button" class="mn-tog press" data-tog="soldOut" aria-pressed="false" title="Sold out today">Sold out</button>
+          <button type="button" class="mn-tog press" data-tog="hidden" aria-pressed="false">Hide</button>
+          <button type="button" class="btn btn-sm btn-ghost press" data-reset>Reset</button>
+        </div>
+      </li>`).join('')}</ul></section>`).join('');
+  filterMenu();
+}
+const rowById = (id) => menuRows.filter((r) => r.id === id);
+function paintMenu() {
+  let changed = 0, sold = 0;
+  $$('.mn-row').forEach((li) => {
+    const o = overrides[li.dataset.id] || {}, input = $('[data-price]', li), r = rowById(li.dataset.id)[0];
+    if (document.activeElement !== input) input.value = o.price && o.price !== r?.printed ? o.price : '';
+    $('[data-tog="soldOut"]', li).setAttribute('aria-pressed', String(!!o.soldOut));
+    $('[data-tog="hidden"]', li).setAttribute('aria-pressed', String(!!o.hidden));
+    const on = !!(o.soldOut || o.hidden || (o.price && o.price !== r?.printed));
+    li.classList.toggle('is-changed', on); li.classList.toggle('is-sold', !!o.soldOut); li.classList.toggle('is-hidden', !!o.hidden);
+    $('[data-reset]', li).disabled = !on;
+  });
+  Object.values(overrides).forEach((o) => { changed++; if (o.soldOut) sold++; });
+  $('#menu-reset-sold').disabled = !sold;
+  $('#menu-reset-sold').textContent = sold ? `Reset all sold-out (${sold})` : 'Reset all sold-out';
+  badge('#b-menu', sold);
+  $('#menu-count').textContent = changed ? `${changed} changed today` : 'As printed';
+}
+// Writes one item's whole override (or deletes it when nothing differs from the printed menu)
+function saveOverride(id, next) {
+  const r = rowById(id)[0], price = +next.price && +next.price !== r?.printed ? Math.round(+next.price) : 0;
+  const data = { ...(price ? { price } : {}), ...(next.soldOut ? { soldOut: true } : {}), ...(next.hidden ? { hidden: true } : {}) };
+  const prev = overrides[id];
+  if (Object.keys(data).length) overrides[id] = data; else delete overrides[id];
+  edits[id] = { data: overrides[id], at: Date.now() };
+  paintMenu();
+  const ref = doc(db, 'menuOverrides', id);
+  return (Object.keys(data).length ? setDoc(ref, { ...data, updatedAt: serverTimestamp(), by: me }) : deleteDoc(ref))
+    .catch((e) => { console.warn(e); delete edits[id]; if (prev) overrides[id] = prev; else delete overrides[id]; paintMenu(); alert('Could not save. Check your connection.'); });
+}
+$('#menu-list').addEventListener('click', (e) => {
+  const li = e.target.closest('.mn-row'); if (!li) return;
+  const id = li.dataset.id, o = overrides[id] || {};
+  const t = e.target.closest('[data-tog]');
+  if (t) { const k = t.dataset.tog; saveOverride(id, { ...o, [k]: !o[k] }).then(() => toast(`${rowById(id)[0]?.name}: ${k === 'soldOut' ? (!o[k] ? 'sold out today' : 'back on') : (!o[k] ? 'hidden' : 'shown again')}.`)); }
+  if (e.target.closest('[data-reset]')) saveOverride(id, {}).then(() => toast(`${rowById(id)[0]?.name}: back to the printed menu.`));
+});
+$('#menu-list').addEventListener('change', (e) => {
+  const input = e.target.closest('[data-price]'); if (!input) return;
+  const id = input.closest('.mn-row').dataset.id, v = input.value.trim(), n = Math.round(+v);
+  if (v && !(n >= 1 && n <= 10000)) { alert('Price must be between ₹1 and ₹10,000.'); input.value = overrides[id]?.price || ''; return; }
+  saveOverride(id, { ...(overrides[id] || {}), price: v ? n : 0 }).then(() => toast(`${rowById(id)[0]?.name}: ${v ? inr(n) + ' today' : 'printed price'}.`));
+});
+$('#menu-list').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('[data-price]')) e.target.blur(); });
+$('#menu-reset-sold').addEventListener('click', async () => {
+  const ids = Object.keys(overrides).filter((id) => overrides[id].soldOut);
+  if (!ids.length || !confirm(`Put ${ids.length} sold-out item${ids.length > 1 ? 's' : ''} back on the menu?`)) return;
+  const batch = writeBatch(db);
+  ids.forEach((id) => {
+    const { soldOut, ...rest } = overrides[id], ref = doc(db, 'menuOverrides', id);
+    const keep = { ...(rest.price ? { price: rest.price } : {}), ...(rest.hidden ? { hidden: true } : {}) };
+    if (Object.keys(keep).length) batch.set(ref, { ...keep, updatedAt: serverTimestamp(), by: me }); else batch.delete(ref);
+    edits[id] = { data: Object.keys(keep).length ? keep : null, at: Date.now() };
+  });
+  try { await batch.commit(); toast('Every item is back on.'); } catch (e) { alert('Could not save. Check your connection.'); }
+  refreshAll();
+});
+function filterMenu() {
+  const qy = $('#menu-search').value.trim().toLowerCase();
+  $$('.mn-sec').forEach((sec) => {
+    let any = false;
+    $$('.mn-row', sec).forEach((li) => { const on = (!menuSection || sec.dataset.sec === menuSection) && (!qy || li.dataset.find.includes(qy)); li.hidden = !on; any ||= on; });
+    sec.hidden = !any;
+  });
+}
+$('#menu-search').addEventListener('input', filterMenu);
+$('#menu-sections').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-sec]'); if (!b) return;
+  menuSection = b.dataset.sec;
+  $$('#menu-sections button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  filterMenu();
+});

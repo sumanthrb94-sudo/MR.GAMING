@@ -47,7 +47,7 @@ const CARD = `
   <div class="pass-bar"><span data-f="fill"></span></div>
   <p class="pass-meta" data-f="meta"></p>
   <div class="actions">
-    <a class="btn btn-accent press" data-f="book" href="/#book">Book with my pass <svg class="i"><use href="#i-arrow"/></svg></a>
+    <a class="btn btn-accent press" data-f="book" href="/book">Book with my pass <svg class="i"><use href="#i-arrow"/></svg></a>
     <a class="btn btn-ghost press" data-f="wa" href="https://wa.me/${WA}" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp us</a>
   </div>`;
 
@@ -79,7 +79,7 @@ function renderPasses(passes) {
       : member ? `All hours used. Until ${date} you play at the member rate: ₹${MEMBER[kind]}/hr.` : exp ? `Valid till ${date}` : '';
     card.classList.toggle('is-dim', expired);
     f('book').hidden = expired;
-    f('book').href = `/?pass=${kind}${member ? '&rate=member' : ''}#book`;
+    f('book').href = `/book?pass=${kind}${member ? '&rate=member' : ''}`;
     f('book').firstChild.textContent = member ? 'Book at member rate ' : 'Book with my pass ';
     f('wa').href = waLink(`Hi MR. GAMING! About my ${label.toLowerCase()} (${left} hrs left).`);
   });

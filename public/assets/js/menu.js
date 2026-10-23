@@ -1,5 +1,6 @@
-/* MR. Sandwich menu page: renders window.MENU (meal plans after Top Combos), search, sticky category chips,
-   open-now status and WhatsApp links. The table-QR layout (?src=qr) is set before paint by the script in menu.html. */
+/* MR. Sandwich menu page (/menu, the Food tab): renders window.MENU (meal plans after Top Combos), search and sticky
+   category chips, then applies the owner's live changes (menuOverrides via menu-live.js: price, sold out today, hidden).
+   The table-QR layout (?src=qr) is set before paint by the script in menu.html. Runs after main.js (window.MG). */
 (function () {
   'use strict';
   const M = window.MENU;
@@ -10,25 +11,12 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const inr = (n) => '₹' + n.toLocaleString('en-IN');
-  const WA = '917337230311';   // same number as CONFIG.whatsapp in main.js
-  const HOURS = { open: 11, close: 23 };   // mirror CONFIG.open / CONFIG.close in main.js (24h clock): change both together
-  const waUrl = (text) => `https://wa.me/${WA}?text=${encodeURIComponent(text)}`;
-
-  /* ---------- WhatsApp links: data-wa holds the message (href without it is the no-JS fallback) ---------- */
-  $$('[data-wa]').forEach((a) => { a.href = waUrl(a.dataset.wa); });
-
-  /* ---------- hours and open now? (Hyderabad time, from HOURS) ---------- */
-  const clock12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
+  // The shell (main.js) wires WhatsApp links, the open-now status, the theme and the top bar; CONFIG lives there
+  const { CONFIG } = window.MG;
+  const waUrl = window.MG.waUrl;
+  const clock12 = window.MG.clock12;
   const hoursLine = $('#hours-line');
-  if (hoursLine) hoursLine.textContent = `Open ${clock12(HOURS.open)} – ${clock12(HOURS.close)}, every day`;
-  const statuses = $$('[data-open-status]');
-  const paintOpen = () => {
-    const d = new Date(), ist = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000), h = ist.getHours();
-    const open = h >= HOURS.open && h < HOURS.close;
-    const text = open ? `Open now · till ${clock12(HOURS.close)}` : h < HOURS.open ? `Opens today at ${clock12(HOURS.open)}` : `Closed now · opens ${clock12(HOURS.open)} tomorrow`;
-    statuses.forEach((el) => { el.classList.toggle('is-open', open); $('.open-text', el).textContent = text; });
-  };
-  if (statuses.length) { paintOpen(); setInterval(paintOpen, 60000); }
+  if (hoursLine) hoursLine.textContent = `Open ${clock12(CONFIG.open)} – ${clock12(CONFIG.close)}, every day`;
 
   const main = $('#menu'), chips = $('#chips'), ind = $('.chip-ind'), empty = $('#empty');
 
@@ -58,7 +46,7 @@
         <div>
           <h3 class="plan-head">What's a meal?</h3>
           <p class="plan-lede">Any one ${inr(P.mealValue)} <a href="#combos">Top Combo</a>:</p>
-          <ul class="plan-combos">${mealCombos.map((c) => `<li>${esc(c.name)}</li>`).join('')}</ul>
+          <ul class="plan-combos">${mealCombos.map((c) => `<li data-combo="${esc(c.name)}">${esc(c.name)}</li>`).join('')}</ul>
         </div>
         <div>
           <h3 class="plan-head">How to start</h3>
@@ -80,8 +68,8 @@
   if (planLine && !P) { planLine.nextSibling.remove(); planLine.remove(); }
 
   /* ---------- render ---------- */
-  const itemHtml = (it, two) => `
-    <li class="item" data-text="${esc((it.name + ' ' + (it.desc || '')).toLowerCase())}">
+  const itemHtml = (it, two, key) => `
+    <li class="item" data-k="${key}" data-text="${esc((it.name + ' ' + (it.desc || '')).toLowerCase())}">
       <div class="item-row">
         <span class="item-name">${esc(it.name)}</span><span class="leader" aria-hidden="true"></span>
         ${two ? `<span class="price price-2">${it.prices.map((p) => `<span>${inr(p)}</span>`).join('')}</span>` : `<span class="price">${inr(it.price)}</span>`}
@@ -93,15 +81,15 @@
   const at = M.sections.findIndex((s) => s.id === 'combos') + 1;
   const withPlans = (list, plan) => (P ? [...list.slice(0, at), plan, ...list.slice(at)] : list);
 
-  main.insertAdjacentHTML('beforeend', withPlans(M.sections.map((s) => `
+  main.insertAdjacentHTML('beforeend', withPlans(M.sections.map((s, si) => `
     <section class="sec" id="${s.id}" data-reveal>
       <header class="sec-head"><h2 class="sec-title">${esc(s.title)}</h2></header>
       ${s.note ? `<p class="sec-note">${esc(s.note)}</p>` : ''}
-      ${s.groups.map((g) => `
+      ${s.groups.map((g, gi) => `
         <div class="group">
           ${g.title ? `<h3 class="group-title">${esc(g.title)}${g.note ? `<small>${esc(g.note)}</small>` : ''}</h3>` : ''}
           ${g.cols ? `<div class="cols" aria-hidden="true">${g.cols.map((c) => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
-          <ul>${g.items.map((it) => itemHtml(it, !!g.cols)).join('')}</ul>
+          <ul>${g.items.map((it, k) => itemHtml(it, !!g.cols, `${si}.${gi}.${k}`)).join('')}</ul>
         </div>`).join('')}
     </section>`), plansHtml).join(''));
 
@@ -169,4 +157,29 @@
     $$('.chip', chips).forEach((c) => { c.hidden = !!document.getElementById(c.dataset.id).hidden; });
     active = null; pick(); paintEdges();
   });
+
+  /* ---------- live changes from the owner (menuOverrides), after the menu is on screen ----------
+     A new price replaces the shown one, "Sold out today" is tagged, hidden items go. If Firestore can't be read the
+     menu stays as in menu-data.js. */
+  const SOLD = '<span class="sold">Sold out today</span>';
+  const applyLive = (m, ov) => {
+    if (!ov.size) return;
+    const ids = m.idsFor(M);
+    M.sections.forEach((sec, si) => sec.groups.forEach((g, gi) => g.items.forEach((it, k) => {
+      const li = $(`.item[data-k="${si}.${gi}.${k}"]`, main); if (!li) return;
+      const live = m.liveItem(it, ids.get(it), ov);
+      if (live.hidden) { li.remove(); return; }
+      if (live.cols) $$('.price-2 span', li).forEach((sp, i) => { const c = live.cols[i]; sp.textContent = c.hidden ? '—' : inr(c.price); sp.classList.toggle('is-out', c.soldOut && !c.hidden); });
+      else $('.price', li).textContent = inr(live.price);
+      li.classList.toggle('is-out', live.soldOut);
+      if (live.soldOut) $('.item-name', li).insertAdjacentHTML('afterend', SOLD);
+      if (sec.id === 'combos') $$(`.plan-combos [data-combo="${CSS.escape(it.name)}"]`).forEach((c) => { if (live.hidden) c.remove(); else if (live.soldOut) c.insertAdjacentHTML('beforeend', ' ' + SOLD); });
+    })));
+    $$('.group', main).forEach((g) => { if (!$('.item', g)) g.remove(); });
+    sections.forEach((sec) => { if (!$('.item', sec)) { sec.hidden = true; const c = $(`.chip[data-id="${sec.id}"]`, chips); if (c) c.hidden = true; } });
+    if (q.value.trim()) q.dispatchEvent(new Event('input'));
+    active = null; pick(); paintEdges();
+  };
+  const goLive = () => import('/assets/js/menu-live.js').then((m) => m.loadOverrides().then((ov) => applyLive(m, ov))).catch(() => {});
+  if ('requestIdleCallback' in window) requestIdleCallback(goLive, { timeout: 1500 }); else setTimeout(goLive, 300);
 })();

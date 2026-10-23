@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#0B0B0A">
   <meta property="og:type" content="website">
   <meta property="og:title" content="MR. GAMING · PS5 & Xbox room in Gachibowli">
-  <meta property="og:description" content="Private room. PS5 &amp; Xbox. Game on. ₹199/hr solo, ₹320/hr for two, inside MR. Sandwich, Gachibowli.">
+  <meta property="og:description" content="A private PS5 &amp; Xbox gaming room inside MR. Sandwich, Gachibowli, Hyderabad. ₹199/hr solo, ₹320/hr for two on one console, 6-hour passes from ₹899, 10% off food served to your seat.">
   <meta property="og:image" content="/assets/images/og.jpg">
   <link rel="icon" type="image/png" href="/assets/images/logo-96.png">
   <link rel="apple-touch-icon" href="/assets/images/logo-192.png">
@@ -17,16 +17,25 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/shell.css">
   <link rel="stylesheet" href="/assets/css/style.css">
-  <!-- Availability: fetch the database code with the page (not after main.js runs) and open the database connection early -->
+  <script>
+    // Old one-page links (/#book, /?slot=…, /#birthday, /#food …) now open their own screens; the query string is kept
+    (function (l) {
+      var to = { '#book': '/book', '#availability': '/book', '#group-rates': '/book#group-rates', '#birthday': '/birthdays',
+        '#bday-plan': '/birthdays#bday-plan', '#birthday-terms': '/birthdays#birthday-terms', '#food': '/menu#meal-plans', '#meal-plans': '/menu#meal-plans' };
+      var go = function () {
+        var t = to[l.hash] || (/[?&](slot|pass|rate|hrs)=/.test(l.search) ? '/book' + l.hash.replace(/^#(book|top)?$/, '') : '');
+        if (t) { var p = t.split('#'); l.replace(p[0] + l.search + (p[1] ? '#' + p[1] : '')); }
+      };
+      go(); addEventListener('hashchange', go);
+    })(location);
+  </script>
+  <!-- Availability: fetch the database code with the page (not after the scripts run) and open the database connection early -->
   <link rel="modulepreload" href="/assets/js/booking-db.js">
   <link rel="modulepreload" href="/assets/vendor/firebase-public.2b1547c7.js">
   <link rel="modulepreload" href="/assets/js/firebase-config.js">
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
-  <script>
-    // Apply the saved theme before first paint to avoid a flash
-    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
-  </script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -48,6 +57,12 @@
     "paymentAccepted": "UPI, Cash, Card"
   }
   </script>
+  <script>
+    // Apply the saved theme before first paint to avoid a flash
+    try { var t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+  <!-- Same-site screens: fetch the next one when a link is about to be tapped, and have /book ready -->
+  <script type="speculationrules">{"prefetch":[{"where":{"href_matches":["/","/birthdays","/menu","/pass"]},"eagerness":"moderate"}],"prerender":[{"where":{"href_matches":"/book"},"eagerness":"moderate"}]}</script>
 </head>
 <body>
   <!-- Icon sprite (Tabler Icons, MIT) -->
@@ -58,50 +73,41 @@
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M17 7L7 17"/><path d="M8 7h9v9"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M3 12h1m8-9v1m8 8h1m-9 8v1M5.6 5.6l.7.7m12.1-.7l-.7.7m0 11.4l.7.7m-12.1-.7l-.7.7"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3h.39a7.5 7.5 0 0 0 7.92 12.45A9 9 0 1 1 12 3z"/></symbol>
-    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
-    <symbol id="i-user" viewBox="0 0 24 24"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 3v4M8 3v4M4 11h16M10 16h4M12 14v4"/></symbol>
     <symbol id="i-cake" viewBox="0 0 24 24"><path d="M3 20h18v-8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3z"/><path d="M3 14.8c.3.13.65.2 1 .2a2.4 2.4 0 0 0 2-1 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 4 0 2.4 2.4 0 0 1 4 0 2.4 2.4 0 0 0 2 1c.35 0 .7-.07 1-.2"/><path d="M12 4l1.47 1.64a2 2 0 1 1-3.02.1z"/></symbol>
     <symbol id="i-food" viewBox="0 0 24 24"><path d="M19 3v12h-5c-.02-3.68.18-7.4 5-12zm0 12v6h-1v-3M8 4v17M5 4v3a3 3 0 1 0 6 0V4"/></symbol>
     <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2"/></symbol>
-    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 21c.5-4.5 2.5-8 7-10"/><path d="M9 18c6.22 0 10.5-3.29 11-12V4h-4.01C7 4 4 8 4 13c0 1 0 3 2 5z"/></symbol>
-    <symbol id="i-card" viewBox="0 0 24 24"><path d="M3 8a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 10h18M7 15h.01M11 15h2"/></symbol>
     <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10M17 4v8a5 5 0 0 1-10 0V4"/><path d="M5 9a2 2 0 1 0 0-4h2M19 9a2 2 0 1 1 0-4h-2"/></symbol>
-    <symbol id="i-door" viewBox="0 0 24 24"><path d="M14 12v.01M3 21h18M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol>
   </svg>
 
   <a class="skip" href="#main">Skip to content</a>
 
   <header class="topbar" id="topbar">
     <div class="wrap topbar-in">
-      <a class="brand" href="#top" aria-label="MR. GAMING home">
+      <a class="brand" href="/" aria-label="MR. GAMING home">
         <img src="/assets/images/logo-96.webp" width="36" height="36" alt="">
         <span class="brand-name">MR. GAMING</span>
       </a>
-      <nav class="nav" aria-label="Sections">
-        <a href="#stations">Stations</a>
-        <a href="#prices">Prices</a>
-        <a href="#book">Book</a>
-        <a href="#birthday">Birthdays</a>
+      <nav class="nav" aria-label="Screens">
+        <a href="/" aria-current="page">Home</a>
+        <a href="/book">Book</a>
+        <a href="/birthdays">Birthdays</a>
         <a href="/menu">Food menu</a>
-        <a class="nav-wide" href="#fifa">FIFA Cup</a>
-        <a href="#visit">Visit</a>
-        <span class="nav-ind" aria-hidden="true"></span>
+        <a href="/pass">My pass</a>
       </nav>
       <div class="topbar-actions">
         <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
           <svg class="i i-sun"><use href="#i-sun"/></svg>
           <svg class="i i-moon"><use href="#i-moon"/></svg>
         </button>
-        <a class="btn btn-sm btn-ghost press my-pass" href="/pass" aria-label="Log in to see your pass hours"><svg class="i"><use href="#i-user"/></svg><span>Log in</span></a>
-        <a class="btn btn-sm btn-accent press topbar-book" href="#book">Book</a>
+        <a class="btn btn-sm btn-accent press topbar-book" href="/book">Book</a>
       </div>
     </div>
   </header>
 
   <main id="main">
-    <!-- HERO -->
+    <!-- HERO: static HTML and a CSS fade, nothing here waits for JavaScript -->
     <section class="hero" id="top">
       <div class="hero-glow" aria-hidden="true"></div>
       <div class="wrap">
@@ -112,513 +118,99 @@
           <span class="line">PS5 &amp; Xbox.</span>
           <span class="line"><em class="shine">Game on.</em></span>
         </h1>
-        <p class="lede" data-reveal>Your own gaming room inside MR. Sandwich, Gachibowli. ₹199 an hour solo, ₹320 for two on one console, plus 10% off food while you play.</p>
+        <p class="lede" data-reveal>Your own gaming room inside MR. Sandwich. ₹199 an hour solo, ₹320 for two on one console, 10% off food while you play.</p>
         <div class="actions" data-reveal>
-          <a class="btn btn-accent press" href="#book">
+          <a class="btn btn-accent press" href="/book">
             <svg class="i"><use href="#i-calendar"/></svg> <span>Book a slot</span>
           </a>
           <a class="btn btn-ghost press" data-wa="Hi MR. GAMING! I'd like to book a console." href="https://wa.me/917337230311" target="_blank" rel="noopener">
             <svg class="i"><use href="#i-wa"/></svg> <span>WhatsApp</span>
           </a>
         </div>
-        <!-- Real hours left today, from the booking database (main.js); hidden until it answers -->
-        <p class="hero-live" id="hero-live" hidden><span class="live-dot" aria-hidden="true"></span><a href="#book" id="hero-live-text"></a></p>
+        <!-- Real hours left today, from the booking database (home.js); hidden until it answers -->
+        <p class="hero-live" id="hero-live" hidden><span class="live-dot" aria-hidden="true"></span><a href="/book" id="hero-live-text"></a></p>
 
-        <nav class="quick" aria-label="Quick links" data-stagger>
-          <a class="quick-tile press" href="#book" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-calendar"/></svg></span><b>Book a slot</b><small>Live availability</small></a>
-          <a class="quick-tile press" href="#birthday" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthday party</b><small>₹675 per child</small></a>
+        <nav class="quick" aria-label="Quick links">
+          <a class="quick-tile press" href="/book" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-calendar"/></svg></span><b>Book a slot</b><small>Live slots · booked instantly</small></a>
+          <a class="quick-tile press" href="/birthdays" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-cake"/></svg></span><b>Birthdays</b><small>₹675 per child · 3 hrs</small></a>
           <a class="quick-tile press" href="/menu" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-food"/></svg></span><b>Food menu</b><small>10% off while you play</small></a>
-          <a class="quick-tile press" href="/pass" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-ticket"/></svg></span><b>Log in</b><small>See your pass hours</small></a>
+          <a class="quick-tile press" href="/pass" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-ticket"/></svg></span><b>My pass</b><small>Hours and meals left</small></a>
           <a class="quick-tile press" href="#fifa" data-reveal><span class="quick-ic"><svg class="i"><use href="#i-trophy"/></svg></span><b>FIFA Cup</b><small>Coming soon · join the waitlist</small></a>
         </nav>
-
-        <dl class="facts" data-stagger>
-          <div class="fact" data-reveal>
-            <dt>Solo</dt>
-            <dd><span class="roll" data-roll="199" data-prefix="₹"></span><small>/hr</small></dd>
-          </div>
-          <div class="fact" data-reveal>
-            <dt>Duo, one console</dt>
-            <dd><span class="roll" data-roll="320" data-prefix="₹"></span><small>/hr</small></dd>
-          </div>
-          <div class="fact" data-reveal>
-            <dt>Food &amp; drinks</dt>
-            <dd><span class="roll" data-roll="10"></span><small>% off</small></dd>
-          </div>
-        </dl>
-
-        <ul class="trust" data-reveal>
-          <li class="trust-where"><svg class="i"><use href="#i-pin"/></svg><a href="https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6" target="_blank" rel="noopener">110, My Home Vihanga Rd, Gachibowli</a></li>
-          <li><svg class="i"><use href="#i-door"/></svg>Private room</li>
-          <li><svg class="i"><use href="#i-leaf"/></svg>100% pure veg</li>
-          <li><svg class="i"><use href="#i-card"/></svg>UPI, cash or card</li>
-        </ul>
       </div>
     </section>
 
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track">
-        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>Birthday parties</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
-        <span>PS5</span><b>✦</b><span>Xbox Series X</span><b>✦</b><span>Private room</span><b>✦</b><span>Birthday parties</span><b>✦</b><span>100% pure veg</span><b>✦</b><span>Gachibowli</span><b>✦</b>
-      </div>
-    </div>
-
-    <!-- 01 STATIONS -->
-    <section class="section" id="stations">
+    <!-- GAMES: a sideways row on phones; each card opens /book with the game picked -->
+    <section class="section section-tight" id="stations">
       <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">01</span> Stations</p>
-          <h2 class="h2">PS5 &amp; Xbox. <span class="dim">Ready when you are.</span></h2>
+        <header class="row-head" data-reveal>
+          <h2 class="h3">Games on PS5 &amp; Xbox</h2>
+          <a class="link-arrow" href="/book">Book <svg class="i"><use href="#i-arrow"/></svg></a>
         </header>
-
-        <div class="grid-2" data-stagger>
-          <article class="station card" data-reveal style="--tone: var(--ps)">
-            <p class="station-tag"><span class="dot"></span>PlayStation</p>
-            <h3 class="station-name">PS5</h3>
-            <ul class="specs">
-              <li>PlayStation Plus</li>
-              <li>Multiplayer ready</li>
-              <li>Beanbag seating</li>
-              <li>Solo ₹199/hr · Duo ₹320/hr</li>
-            </ul>
-            <a class="link-arrow" href="#availability" data-pick="ps5">
-              See when it's free <svg class="i"><use href="#i-arrow"/></svg>
-            </a>
-          </article>
-
-          <article class="station card" data-reveal style="--tone: var(--xbox)">
-            <p class="station-tag"><span class="dot"></span>Xbox Series X</p>
-            <h3 class="station-name">Xbox</h3>
-            <ul class="specs">
-              <li>Multiplayer ready</li>
-              <li>Beanbag seating</li>
-              <li>Solo ₹199/hr · Duo ₹320/hr</li>
-            </ul>
-            <a class="link-arrow" href="#availability" data-pick="xbox">
-              See when it's free <svg class="i"><use href="#i-arrow"/></svg>
-            </a>
-          </article>
-        </div>
-
         <div class="games" data-reveal>
-          <p class="games-label">Games</p>
-          <!-- Original artwork (no official game art); tapping a game picks it in the booking form -->
+          <!-- Original artwork (no official game art) -->
           <ul class="game-cards" id="game-cards">
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="FC 27" aria-label="FC 27: book a slot"><img src="/assets/images/games/fc27-600.webp" srcset="/assets/images/games/fc27-360.webp 360w, /assets/images/games/fc27-600.webp 600w, /assets/images/games/fc27-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>FC 27</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Call of Duty" aria-label="Call of Duty: book a slot"><img src="/assets/images/games/callofduty-600.webp" srcset="/assets/images/games/callofduty-360.webp 360w, /assets/images/games/callofduty-600.webp 600w, /assets/images/games/callofduty-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Call of Duty</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="GTA V" aria-label="GTA V: book a slot"><img src="/assets/images/games/gta-600.webp" srcset="/assets/images/games/gta-360.webp 360w, /assets/images/games/gta-600.webp 600w, /assets/images/games/gta-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>GTA V</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="God of War" aria-label="God of War: book a slot"><img src="/assets/images/games/godofwar-600.webp" srcset="/assets/images/games/godofwar-360.webp 360w, /assets/images/games/godofwar-600.webp 600w, /assets/images/games/godofwar-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>God of War</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Tekken" aria-label="Tekken: book a slot"><img src="/assets/images/games/tekken-600.webp" srcset="/assets/images/games/tekken-360.webp 360w, /assets/images/games/tekken-600.webp 600w, /assets/images/games/tekken-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Tekken</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Rocket League" aria-label="Rocket League: book a slot"><img src="/assets/images/games/rocketleague-600.webp" srcset="/assets/images/games/rocketleague-360.webp 360w, /assets/images/games/rocketleague-600.webp 600w, /assets/images/games/rocketleague-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Rocket League</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="WWE 2K" aria-label="WWE 2K: book a slot"><img src="/assets/images/games/wwe-600.webp" srcset="/assets/images/games/wwe-360.webp 360w, /assets/images/games/wwe-600.webp 600w, /assets/images/games/wwe-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>WWE 2K</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="AO Tennis" aria-label="AO Tennis: book a slot"><img src="/assets/images/games/aotennis-600.webp" srcset="/assets/images/games/aotennis-360.webp 360w, /assets/images/games/aotennis-600.webp 600w, /assets/images/games/aotennis-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>AO Tennis</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Spider-Man" aria-label="Spider-Man: book a slot"><img src="/assets/images/games/spiderman-600.webp" srcset="/assets/images/games/spiderman-360.webp 360w, /assets/images/games/spiderman-600.webp 600w, /assets/images/games/spiderman-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Spider-Man</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Forza" aria-label="Forza: book a slot"><img src="/assets/images/games/forza-600.webp" srcset="/assets/images/games/forza-360.webp 360w, /assets/images/games/forza-600.webp 600w, /assets/images/games/forza-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Forza</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Fortnite" aria-label="Fortnite: book a slot"><img src="/assets/images/games/fortnite-600.webp" srcset="/assets/images/games/fortnite-360.webp 360w, /assets/images/games/fortnite-600.webp 600w, /assets/images/games/fortnite-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Fortnite</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#book" data-pick-game="Minecraft" aria-label="Minecraft: book a slot"><img src="/assets/images/games/minecraft-600.webp" srcset="/assets/images/games/minecraft-360.webp 360w, /assets/images/games/minecraft-600.webp 600w, /assets/images/games/minecraft-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Minecraft</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=FC%2027" data-pick-game="FC 27" aria-label="FC 27: book a slot"><img src="/assets/images/games/fc27-600.webp" srcset="/assets/images/games/fc27-360.webp 360w, /assets/images/games/fc27-600.webp 600w, /assets/images/games/fc27-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>FC 27</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Call%20of%20Duty" data-pick-game="Call of Duty" aria-label="Call of Duty: book a slot"><img src="/assets/images/games/callofduty-600.webp" srcset="/assets/images/games/callofduty-360.webp 360w, /assets/images/games/callofduty-600.webp 600w, /assets/images/games/callofduty-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Call of Duty</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=GTA%20V" data-pick-game="GTA V" aria-label="GTA V: book a slot"><img src="/assets/images/games/gta-600.webp" srcset="/assets/images/games/gta-360.webp 360w, /assets/images/games/gta-600.webp 600w, /assets/images/games/gta-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>GTA V</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=God%20of%20War" data-pick-game="God of War" aria-label="God of War: book a slot"><img src="/assets/images/games/godofwar-600.webp" srcset="/assets/images/games/godofwar-360.webp 360w, /assets/images/games/godofwar-600.webp 600w, /assets/images/games/godofwar-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>God of War</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Tekken" data-pick-game="Tekken" aria-label="Tekken: book a slot"><img src="/assets/images/games/tekken-600.webp" srcset="/assets/images/games/tekken-360.webp 360w, /assets/images/games/tekken-600.webp 600w, /assets/images/games/tekken-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Tekken</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Rocket%20League" data-pick-game="Rocket League" aria-label="Rocket League: book a slot"><img src="/assets/images/games/rocketleague-600.webp" srcset="/assets/images/games/rocketleague-360.webp 360w, /assets/images/games/rocketleague-600.webp 600w, /assets/images/games/rocketleague-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Rocket League</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=WWE%202K" data-pick-game="WWE 2K" aria-label="WWE 2K: book a slot"><img src="/assets/images/games/wwe-600.webp" srcset="/assets/images/games/wwe-360.webp 360w, /assets/images/games/wwe-600.webp 600w, /assets/images/games/wwe-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>WWE 2K</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=AO%20Tennis" data-pick-game="AO Tennis" aria-label="AO Tennis: book a slot"><img src="/assets/images/games/aotennis-600.webp" srcset="/assets/images/games/aotennis-360.webp 360w, /assets/images/games/aotennis-600.webp 600w, /assets/images/games/aotennis-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>AO Tennis</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Spider-Man" data-pick-game="Spider-Man" aria-label="Spider-Man: book a slot"><img src="/assets/images/games/spiderman-600.webp" srcset="/assets/images/games/spiderman-360.webp 360w, /assets/images/games/spiderman-600.webp 600w, /assets/images/games/spiderman-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Spider-Man</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Forza" data-pick-game="Forza" aria-label="Forza: book a slot"><img src="/assets/images/games/forza-600.webp" srcset="/assets/images/games/forza-360.webp 360w, /assets/images/games/forza-600.webp 600w, /assets/images/games/forza-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Forza</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Fortnite" data-pick-game="Fortnite" aria-label="Fortnite: book a slot"><img src="/assets/images/games/fortnite-600.webp" srcset="/assets/images/games/fortnite-360.webp 360w, /assets/images/games/fortnite-600.webp 600w, /assets/images/games/fortnite-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Fortnite</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?game=Minecraft" data-pick-game="Minecraft" aria-label="Minecraft: book a slot"><img src="/assets/images/games/minecraft-600.webp" srcset="/assets/images/games/minecraft-360.webp 360w, /assets/images/games/minecraft-600.webp 600w, /assets/images/games/minecraft-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><b>Minecraft</b></span></a></li>
             <li class="game-card is-soon"><div class="game-link"><img src="/assets/images/games/gta6-600.webp" srcset="/assets/images/games/gta6-360.webp 360w, /assets/images/games/gta6-600.webp 600w, /assets/images/games/gta6-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>Pre-ordered</small><b>GTA VI</b></span></div></li>
             <li class="game-card"><a class="game-link press" data-wa="Hi MR. GAMING! What's on PlayStation Plus today?" href="https://wa.me/917337230311" target="_blank" rel="noopener"><img src="/assets/images/games/psplus-600.webp" srcset="/assets/images/games/psplus-360.webp 360w, /assets/images/games/psplus-600.webp 600w, /assets/images/games/psplus-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>Ask what's on</small><b>And more on PS Plus</b></span></a></li>
-            <li class="game-card"><a class="game-link press" href="#group-rates"><img src="/assets/images/games/coop-600.webp" srcset="/assets/images/games/coop-360.webp 360w, /assets/images/games/coop-600.webp 600w, /assets/images/games/coop-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>₹420 · ₹499/hr</small><b>3–4 players, one console</b></span></a></li>
+            <li class="game-card"><a class="game-link press" href="/book?players=3"><img src="/assets/images/games/coop-600.webp" srcset="/assets/images/games/coop-360.webp 360w, /assets/images/games/coop-600.webp 600w, /assets/images/games/coop-900.webp 900w" sizes="(min-width: 900px) 230px, 44vw" width="600" height="800" loading="lazy" decoding="async" alt=""><span class="game-meta"><small>₹519 · ₹640/hr</small><b>3–4 players · Whole room</b></span></a></li>
           </ul>
-          <p class="games-note">Tap a game to book it. GTA VI is pre-ordered: play it here from launch day. More to play on the PS5 with our PlayStation Plus subscription.</p>
+          <p class="games-note">Tap a game to book it. GTA VI is pre-ordered: play it here from launch day. More on PS5 with PlayStation Plus.</p>
         </div>
-
-        <figure class="room" data-reveal>
-          <img src="/assets/images/room-800.webp" srcset="/assets/images/room-800.webp 800w, /assets/images/room-1376.webp 1376w" sizes="(min-width: 1200px) 1120px, 100vw" width="1376" height="768" loading="lazy" alt="Representative image of a console gaming room">
-          <figcaption>Representative image. Real photos of the room coming soon.</figcaption>
-        </figure>
       </div>
     </section>
 
-    <!-- 02 PRICES -->
-    <section class="section" id="prices">
+    <!-- PRICES: the summary; every fare, pass and group rate is on /book -->
+    <section class="section section-tight" id="prices">
       <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">02</span> Prices</p>
-          <h2 class="h2">Simple prices. <span class="dim">Bring a friend.</span></h2>
-        </header>
-
-        <div class="grid-3" data-stagger>
-          <article class="plan card" data-reveal>
-            <p class="plan-name">Solo</p>
-            <p class="plan-price">₹199<small>/hr</small></p>
-            <p class="plan-note">One player on PS5 or Xbox.</p>
-          </article>
-          <article class="plan card plan-hot" data-reveal>
-            <p class="plan-name">Duo <span class="tag">₹160 each</span></p>
-            <p class="plan-price">₹320<small>/hr</small></p>
-            <p class="plan-note">Two players on one console. 1v1 or co-op.</p>
-          </article>
-          <article class="plan card" data-reveal>
-            <p class="plan-name">Whole room</p>
-            <p class="plan-price">₹640<small>/hr</small></p>
-            <p class="plan-note">The whole room for 4: two duos. 3 players ₹519/hr. Minimum 2 hours.</p>
-          </article>
+        <div class="card price-sum" data-reveal>
+          <dl class="price-sum-list">
+            <div><dt>Solo</dt><dd>₹199<small>/hr</small></dd></div>
+            <div><dt>Duo, one console</dt><dd>₹320<small>/hr</small></dd></div>
+            <div><dt>6-hr pass</dt><dd>₹899<small> solo</small></dd></div>
+            <div><dt>Food &amp; drinks</dt><dd>10%<small> off</small></dd></div>
+          </dl>
+          <p class="price-sum-foot"><span>Up to 2 players per console; 3–4 take the whole room. No advance: pay at the venue.</span><a class="link-arrow" href="/book#prices">All prices <svg class="i"><use href="#i-arrow"/></svg></a></p>
         </div>
-
-        <p class="perk group-rates" id="group-rates" data-reveal><strong>3 or 4 on one console</strong> 3 players ₹420/hr · 4 players ₹499/hr, for games that support couch play. Ask us what's on.</p>
-
-        <div class="grid-2 passes" data-stagger>
-          <article class="plan pass card" data-reveal>
-            <p class="plan-name">Solo pass</p>
-            <p class="plan-price">₹899<small>/6 hrs</small></p>
-            <p class="plan-note">One player. Use the 6 hours any time within 30 days. Saves ₹295.</p>
-          </article>
-          <article class="plan pass card" data-reveal>
-            <p class="plan-name">Duo pass</p>
-            <p class="plan-price">₹1,499<small>/6 hrs</small></p>
-            <p class="plan-note">Two players on one console. 6 hours within 30 days. Saves ₹421.</p>
-          </article>
-        </div>
-        <p class="perk member-rate" data-reveal><strong>Member rate</strong> Used all 6 hours? Until your pass's 30 days end, keep playing at ₹169/hr solo · ₹279/hr duo (regular ₹199 · ₹320).</p>
-        <p class="pass-login-link" data-reveal>Already have a pass? <a class="link-arrow" href="/pass">Sign in to see your hours <svg class="i"><use href="#i-arrow"/></svg></a></p>
-
-        <p class="perk" data-reveal><strong>Gamer perk</strong> Book any console and get 10% off all MR. Sandwich food &amp; drinks, served right to your seat.</p>
       </div>
     </section>
 
-    <!-- 03 BOOK: three short steps, like booking a flight. 1 pick a live slot, 2 choose your fare (the 6-hr pass is the upgrade),
-         3 confirm and hold. Every "only N left" comes from the booking database or the clock. -->
-    <section class="section" id="book">
+    <!-- FIFA -->
+    <section class="section section-tight" id="fifa">
       <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">03</span> Book</p>
-          <h2 class="h2">Book in 3 steps. <span class="dim">Live slots, held for you instantly.</span></h2>
-        </header>
-
-        <ol class="steps-bar" id="steps-bar" aria-label="Booking steps">
-          <li><button type="button" data-go="1" aria-current="step"><span>1</span>Slot</button></li>
-          <li><button type="button" data-go="2" disabled><span>2</span>Fare</button></li>
-          <li><button type="button" data-go="3" disabled><span>3</span>Confirm</button></li>
-        </ol>
-
-        <div class="builder" id="availability">
-          <div class="funnel">
-            <!-- Step 1: search card + live results -->
-            <div class="step-panel" data-step="1">
-              <div class="search card">
-                <div class="search-row">
-                  <p class="field-label">Players</p>
-                  <div class="seg seg-players" data-key="players">
-                    <button type="button" data-value="1" aria-pressed="true"><b>Solo</b><small>₹199/hr</small></button>
-                    <button type="button" data-value="2" aria-pressed="false"><b>Duo</b><small>₹320/hr</small></button>
-                    <button type="button" data-value="3" aria-pressed="false"><b>3</b><small>₹420/hr</small></button>
-                    <button type="button" data-value="4" aria-pressed="false"><b>4</b><small>₹499/hr</small></button>
-                    <span class="seg-ind" aria-hidden="true"></span>
-                  </div>
-                </div>
-                <div class="search-row">
-                  <p class="field-label">Date</p>
-                  <div class="seg seg-scroll seg-days" id="avail-days">
-                    <!-- Next 7 days with real "hours left" from the database, filled by main.js -->
-                    <span class="seg-ind" aria-hidden="true"></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="filters" aria-label="Filters">
-                <div class="seg seg-chips" data-key="time" aria-label="How long">
-                  <button type="button" data-value="1" aria-pressed="true">1 hr</button>
-                  <button type="button" data-value="2" aria-pressed="false">2 hrs</button>
-                  <button type="button" data-value="3" aria-pressed="false">3 hrs</button>
-                  <span class="seg-ind" aria-hidden="true"></span>
-                </div>
-                <div class="seg seg-chips" data-key="con" aria-label="Console">
-                  <button type="button" data-value="any" aria-pressed="true">Any</button>
-                  <button type="button" data-value="ps5" aria-pressed="false">PS5</button>
-                  <button type="button" data-value="xbox" aria-pressed="false">Xbox</button>
-                  <button type="button" data-value="room" aria-pressed="false" hidden>Whole room</button>
-                  <span class="seg-ind" aria-hidden="true"></span>
-                </div>
-              </div>
-
-              <p class="live-strip" id="live-strip"><span class="live-dot" aria-hidden="true"></span><span id="avail-note">Loading live slots… or ask us on WhatsApp.</span></p>
-              <div class="results" id="results" aria-live="polite"></div>
-            </div>
-
-            <!-- Step 2: the chosen slot, fares (the pass is the upgrade) and add-ons -->
-            <div class="step-panel" data-step="2" hidden>
-              <div class="trip card" id="trip"></div>
-              <p class="field-label step-label">Choose your fare</p>
-              <div class="fares" id="fares" role="radiogroup" aria-label="Fare"></div>
-              <details class="sum-extras" id="sum-pass">
-                <summary>Already have a pass?</summary>
-                <div class="extras-body">
-                  <div class="seg seg-wrap" data-key="plan">
-                    <button type="button" data-value="use-pass" aria-pressed="false">Use my pass</button>
-                    <button type="button" data-value="member" aria-pressed="false">Pass used up</button>
-                    <span class="seg-ind" aria-hidden="true"></span>
-                  </div>
-                  <p class="step-hint" id="plan-hint"></p>
-                </div>
-              </details>
-              <p class="field-label step-label">Combos to your seat <span class="field-note">10% off for gamers</span></p>
-              <!-- The Top Combos from menu-data.js (same as the printed menu), filled by main.js -->
-              <div class="combos" id="combos"></div>
-            </div>
-
-            <!-- Step 3: the ticket, your name, hold -->
-            <div class="step-panel" data-step="3" hidden>
-              <div class="ticket" id="ticket"></div>
-              <div class="sum-name">
-                <label class="field-label" for="book-name">Your name</label>
-                <input class="field" id="book-name" type="text" autocomplete="given-name" placeholder="So we know who's coming" maxlength="40">
-              </div>
-              <details class="sum-extras" id="sum-game">
-                <summary>Playing something? <span class="dim" id="game-pick">Optional</span></summary>
-                <div class="extras-body">
-                  <div class="seg seg-wrap" data-key="game">
-                    <button type="button" data-value="any" aria-pressed="true">Any</button>
-                    <!-- Installed games, from the game cards (main.js) -->
-                    <span class="seg-ind" aria-hidden="true"></span>
-                  </div>
-                </div>
-              </details>
-              <p class="book-status" id="book-status" role="status"></p>
-              <p class="summary-note">We hold it for 3 hours while you confirm on WhatsApp. No advance for gaming: you pay at the venue.</p>
-            </div>
-          </div>
-
-          <!-- Birthday upsell: slides down to the planner with the date filled in -->
-          <a class="upsell card" id="bday-upsell" href="#bday-plan">
-            <span class="upsell-ic"><svg class="i"><use href="#i-cake"/></svg></span>
-            <span class="upsell-text"><b>Birthday coming up?</b><span>3 hrs of games, food included · ₹675/child · min 10 guests</span></span>
-            <span class="upsell-go"><svg class="i"><use href="#i-arrow"/></svg></span>
+        <div class="cup" data-reveal>
+          <p class="eyebrow">Coming soon</p>
+          <h2 class="cup-title">FIFA Cup</h2>
+          <p class="cup-copy">Our first FIFA tournament, 1v1 on the PS5 and Xbox. Date, entry fee and prizes coming soon.</p>
+          <a class="btn btn-dark press" data-wa="Hi MR. GAMING! Please add me to the FIFA Cup waitlist. My name / gamer tag is:" href="https://wa.me/917337230311" target="_blank" rel="noopener">
+            <svg class="i"><use href="#i-wa"/></svg> Join the waitlist
           </a>
-
-          <!-- Laptop: fare summary beside the steps -->
-          <aside class="summary card checkout" id="checkout" aria-live="polite">
-            <p class="summary-title">Fare summary</p>
-            <p class="summary-when" id="sum-when">Pick a slot</p>
-            <dl class="summary-lines">
-              <div><dt id="sum-gaming-label">Gaming</dt><dd id="sum-gaming">₹0</dd></div>
-              <div id="sum-food-row" hidden><dt>Food</dt><dd id="sum-food">₹0</dd></div>
-              <div id="sum-perk-row" hidden><dt>Gamer perk (10% off food)</dt><dd id="sum-perk">−₹0</dd></div>
-            </dl>
-            <div class="summary-total">
-              <span>Total</span>
-              <span class="total"><span class="roll" id="sum-total" data-prefix="₹"></span></span>
-            </div>
-            <button class="btn btn-accent btn-block press" id="side-go" type="button" disabled>Continue</button>
-          </aside>
-        </div>
-      </div>
-
-      <!-- Phones: price and the next step, pinned to the bottom (replaces the tab bar during checkout) -->
-      <div class="book-bar" id="book-bar" hidden>
-        <div class="book-bar-text"><b id="bar-price"></b><span id="bar-what"></span></div>
-        <button class="btn btn-accent press" id="bar-go" type="button">Continue</button>
-      </div>
-    </section>
-
-    <!-- 04 BIRTHDAYS -->
-    <section class="section" id="birthday">
-      <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">04</span> Birthdays</p>
-          <h2 class="h2">Birthday package. <span class="dim">Good food, great games.</span></h2>
-        </header>
-
-        <div class="bday" data-stagger>
-          <figure class="bday-flyer" data-reveal>
-            <a href="/assets/images/birthday-package.jpg" target="_blank" rel="noopener" aria-label="Open the birthday package flyer full size">
-              <picture>
-                <source type="image/webp" srcset="/assets/images/birthday-package-560.webp 560w, /assets/images/birthday-package-853.webp 853w" sizes="(min-width: 900px) 40vw, 100vw">
-                <img src="/assets/images/birthday-package.jpg" width="853" height="1280" loading="lazy" decoding="async"
-                  alt="MR. Sandwich birthday package flyer: 3 hours, ₹675 per child. Children at a party table with pizza and a birthday cake, and playing PS5 and Xbox on beanbags. Food included per child: 2 Margherita pizza slices, white sauce pasta, chilli potato garlic shots, cheese corn nuggets and a boba mint mojito. Adults ₹399 with paneer pizza. Bookings and enquiries 7337230311.">
-              </picture>
-            </a>
-          </figure>
-          <article class="card plan plan-hot bday-deal" data-reveal>
-            <p class="plan-name">3 hours, food included <span class="tag">Per child</span></p>
-            <p class="plan-price">₹675<small>/child</small></p>
-            <ul class="bday-food" aria-label="Food included for each child">
-              <li><b>2</b> Margherita pizza slices</li>
-              <li><b>+</b> white sauce pasta</li>
-              <li><b>+</b> chilli potato garlic shots</li>
-              <li><b>+</b> cheese corn nuggets</li>
-              <li><b>1</b> boba mint mojito</li>
-            </ul>
-            <ul class="specs"><li>Play PS5 &amp; Xbox</li><li>Board games</li><li>Celebrate together</li></ul>
-            <ul class="bday-terms">
-              <li><strong>Minimum 10 guests.</strong> Adults are welcome at ₹399 each (paneer pizza instead of Margherita) and count towards the 10.</li>
-              <li><strong>The game room is all yours.</strong> More than 15 guests? You get the whole restaurant.</li>
-              <li><strong>₹4,000 advance</strong> to book. If you cancel, we keep a ₹1,000 cancellation charge and refund ₹3,000.</li>
-            </ul>
-          </article>
-
-          <div class="card bday-plan" id="bday-plan" data-reveal>
-            <p class="summary-title">Plan the party</p>
-            <div class="bday-grid">
-              <div class="bday-field">
-                <span class="field-label" id="bday-kids-label">Children <span class="field-note">₹675 each</span></span>
-                <div class="stepper" role="group" aria-labelledby="bday-kids-label">
-                  <button class="icon-btn press" type="button" id="bday-kids-minus" aria-label="One fewer child">−</button>
-                  <output id="bday-kids" aria-live="polite">10</output>
-                  <button class="icon-btn press" type="button" id="bday-kids-plus" aria-label="One more child">+</button>
-                </div>
-              </div>
-              <div class="bday-field">
-                <span class="field-label" id="bday-adults-label">Adults <span class="field-note">₹399 each</span></span>
-                <div class="stepper" role="group" aria-labelledby="bday-adults-label">
-                  <button class="icon-btn press" type="button" id="bday-adults-minus" aria-label="One fewer adult">−</button>
-                  <output id="bday-adults" aria-live="polite">0</output>
-                  <button class="icon-btn press" type="button" id="bday-adults-plus" aria-label="One more adult">+</button>
-                </div>
-              </div>
-              <p class="bday-run" aria-live="polite"><span id="bday-run-sum">10 × ₹675</span><b id="bday-run-total">₹6,750</b></p>
-              <p class="bday-min" id="bday-min">Minimum 10 guests in total. Adults count towards it.</p>
-              <label class="bday-field"><span class="field-label">Date</span><input class="field" id="bday-date" type="date"></label>
-              <label class="bday-field"><span class="field-label">Time</span><select class="field" id="bday-start"></select></label>
-              <label class="bday-field"><span class="field-label">Your name</span><input class="field" id="bday-name" type="text" autocomplete="given-name" placeholder="Parent's name" maxlength="40"></label>
-            </div>
-            <dl class="summary-lines bday-lines">
-              <div><dt>Space</dt><dd id="bday-space">Exclusive game room</dd></div>
-              <div><dt>Advance to book</dt><dd>₹4,000</dd></div>
-            </dl>
-            <div class="summary-total">
-              <span id="bday-sum">10 guests × ₹675</span>
-              <span class="total"><span class="roll" id="bday-total" data-prefix="₹"></span></span>
-            </div>
-            <a class="btn btn-accent btn-block press" id="bday-send" href="https://wa.me/917337230311" target="_blank" rel="noopener">
-              <svg class="i"><use href="#i-wa"/></svg> Enquire on WhatsApp
-            </a>
-            <p class="summary-note">We confirm the date and details on WhatsApp. Bookings &amp; enquiries: <a class="text-link" href="tel:+917337230311">73372 30311</a>. Booking means you agree to our <a class="text-link" href="#birthday-terms">terms &amp; cancellation policy</a>.</p>
-          </div>
-        </div>
-
-        <details class="card bday-tc" id="birthday-terms" data-reveal>
-          <summary>
-            <span class="bday-tc-title">Terms &amp; conditions</span>
-            <span class="bday-tc-sub">Booking, guests, time, food, safety and cancellation</span>
-          </summary>
-          <div class="bday-tc-body">
-            <section>
-              <h3>Booking &amp; payment</h3>
-              <ol>
-                <li>Your date and time are confirmed only after the ₹4,000 advance is received.</li>
-                <li>The balance is paid on the day of the party, at the venue.</li>
-                <li>We accept UPI, cash and card.</li>
-                <li>Prices: ₹675 per child and ₹399 per adult for the 3-hour package. Minimum charge is for 10 guests.</li>
-              </ol>
-            </section>
-            <section>
-              <h3>Guests</h3>
-              <ol start="5">
-                <li>Please confirm your final guest count at least 2 days before the party. We bill the confirmed count, or the guests who attend if that is more.</li>
-                <li>Extra guests on the day are added at the same per-guest rates, as long as we can serve them.</li>
-                <li>Up to 15 guests: the game room is exclusively yours. More than 15: the whole restaurant is yours.</li>
-              </ol>
-            </section>
-            <section>
-              <h3>Time</h3>
-              <ol start="8">
-                <li>The package runs for 3 hours from the booked start time. A late start does not extend the end time.</li>
-                <li>Extra time can be added only if the room is free; please ask us for the rate.</li>
-                <li>All parties finish by 11 pm.</li>
-              </ol>
-            </section>
-            <section>
-              <h3>Food</h3>
-              <ol start="11">
-                <li>We are 100% pure veg. Every guest gets the food listed in the package; adults get paneer pizza instead of Margherita.</li>
-                <li>Outside food and drinks are not allowed, except your birthday cake.</li>
-                <li>Please tell us about any food allergies when you confirm the guest count.</li>
-              </ol>
-            </section>
-            <section>
-              <h3>Games &amp; safety</h3>
-              <ol start="14">
-                <li>A parent or guardian must stay with the children for the whole party.</li>
-                <li>Please handle consoles, controllers, board games and furniture with care. Damage is charged at repair or replacement cost.</li>
-                <li>Our staff may pause games if equipment is being misused.</li>
-              </ol>
-            </section>
-            <section>
-              <h3>General</h3>
-              <ol start="17">
-                <li>Bookings and changes are made by call or WhatsApp on +91 73372 30311.</li>
-                <li>Quotes are for the package and guest count shown on them.</li>
-              </ol>
-            </section>
-            <section class="bday-tc-cancel">
-              <h3>Cancellation &amp; change policy</h3>
-              <ol start="19">
-                <li><strong>You cancel:</strong> a ₹1,000 cancellation charge applies. We keep ₹1,000 of the ₹4,000 advance and refund ₹3,000.</li>
-                <li><strong>You change the date:</strong> one change is free if you ask at least 3 days before the party, subject to availability. Your advance moves to the new date.</li>
-                <li><strong>No-show:</strong> if no one arrives within the booked time, the advance is not refunded.</li>
-                <li><strong>We cancel:</strong> you get the full advance back or a new date of your choice.</li>
-                <li><strong>Refunds</strong> go back to the same UPI account or the payment method you used.</li>
-              </ol>
-            </section>
-            <p class="bday-tc-back"><a class="link-arrow" href="#bday-plan">Back to the planner <svg class="i"><use href="#i-arrow"/></svg></a></p>
-          </div>
-        </details>
-      </div>
-    </section>
-
-    <!-- 05 FOOD -->
-    <section class="section" id="food">
-      <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">05</span> Food from MR. Sandwich</p>
-          <h2 class="h2">Fuel between matches. <span class="dim">100% pure veg.</span></h2>
-        </header>
-
-        <ul class="food-list" data-stagger id="food-list">
-          <!-- Filled from /assets/js/menu-data.js (featured items) -->
-        </ul>
-
-        <!-- MR. Sandwich meal plans: plans, prices and the combos one meal buys, filled by main.js from menu-data.js (MENU.mealPlans) -->
-        <div class="meals" id="meal-plans" hidden></div>
-
-        <div class="food-cta" data-reveal>
-          <a class="btn btn-ghost press" href="/menu">See the full menu <svg class="i"><use href="#i-arrow"/></svg></a>
-          <p>Order from your beanbag and we bring it to the room. Subs, pizzas, burgers, momos, boba, mastani, waffles and more.</p>
         </div>
       </div>
     </section>
 
-    <!-- 05 FIFA -->
-    <section class="cup" id="fifa">
-      <div class="wrap cup-in" data-reveal>
-        <p class="eyebrow"><span class="num">06</span> Coming soon</p>
-        <h2 class="cup-title">FIFA Cup</h2>
-        <p class="cup-copy">Our first FIFA tournament, played 1v1 on the PS5 and Xbox. Date, entry fee and prizes coming soon. Join the waitlist to hear first.</p>
-        <a class="btn btn-dark press" data-wa="Hi MR. GAMING! Please add me to the FIFA Cup waitlist. My name / gamer tag is:" href="https://wa.me/917337230311" target="_blank" rel="noopener">
-          <svg class="i"><use href="#i-wa"/></svg> Join the waitlist
-        </a>
-      </div>
-    </section>
-
-    <!-- 06 VISIT -->
-    <section class="section" id="visit">
+    <!-- VISIT -->
+    <section class="section section-tight" id="visit">
       <div class="wrap">
-        <header class="sec-head" data-reveal>
-          <p class="eyebrow"><span class="num">07</span> Visit</p>
-          <h2 class="h2">Inside MR. Sandwich, <span class="dim">Gachibowli.</span></h2>
-        </header>
-
-        <div class="grid-2 visit" data-stagger>
-          <div class="card visit-card" data-reveal>
-            <p class="visit-label">Address</p>
-            <address class="visit-address">110, My Home Vihanga Rd<br>Gachibowli, Hyderabad<br>Telangana 500032</address>
-            <a class="btn btn-ghost press" href="https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6" target="_blank" rel="noopener">
-              <svg class="i"><use href="#i-pin"/></svg> Open in Google Maps
-            </a>
-          </div>
-          <div class="card visit-card" data-reveal>
-            <p class="visit-label">Book or ask</p>
-            <p class="visit-phone"><a href="tel:+917337230311">+91 73372 30311</a></p>
-            <p class="visit-hours">Open 11 am – 11 pm, every day</p>
-            <p class="open-status" data-open-status><span class="open-dot" aria-hidden="true"></span><span class="open-text"></span></p>
-            <p class="visit-note">WhatsApp or call to check a free slot. Pay by UPI, cash or card.</p>
-            <div class="actions">
-              <a class="btn btn-accent press" data-wa="Hi MR. GAMING! Is there a slot free today?" href="https://wa.me/917337230311" target="_blank" rel="noopener">
-                <svg class="i"><use href="#i-wa"/></svg> WhatsApp
-              </a>
-              <a class="btn btn-ghost press" href="tel:+917337230311"><svg class="i"><use href="#i-phone"/></svg> Call</a>
-            </div>
+        <div class="card visit-card" data-reveal>
+          <p class="visit-label">Visit · inside MR. Sandwich</p>
+          <address class="visit-address">110, My Home Vihanga Rd, Gachibowli, Hyderabad 500032</address>
+          <p class="open-status" data-open-status><span class="open-dot" aria-hidden="true"></span><span class="open-text"></span></p>
+          <p class="visit-note">Open 11 am – 11 pm, every day · <a class="text-link" href="tel:+917337230311">+91 73372 30311</a> · 100% pure veg · UPI, cash or card</p>
+          <div class="actions">
+            <a class="btn btn-ghost press" href="https://maps.app.goo.gl/2uf7ZZLB5XGUUP3s6" target="_blank" rel="noopener"><svg class="i"><use href="#i-pin"/></svg> Directions</a>
+            <a class="btn btn-ghost press" data-wa="Hi MR. GAMING! I have a question." href="https://wa.me/917337230311" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg> WhatsApp</a>
           </div>
         </div>
       </div>
@@ -628,25 +220,25 @@
   <footer class="footer">
     <div class="wrap footer-in">
       <div class="brand">
-        <img src="/assets/images/logo-96.webp" width="32" height="32" alt="">
+        <img src="/assets/images/logo-96.webp" width="32" height="32" alt="" loading="lazy">
         <span class="brand-name">MR. GAMING</span>
       </div>
       <p>An independent gaming room inside MR. Sandwich, Gachibowli. Food prepared by MR. Sandwich. PlayStation and Xbox are trademarks of their owners.</p>
-      <p class="footer-links"><a href="/pass">My pass</a> · <a href="/menu">Food menu</a></p>
+      <p class="footer-links"><a href="/book">Book</a> · <a href="/birthdays">Birthdays</a> · <a href="/menu">Food menu</a> · <a href="/pass">My pass</a></p>
       <p class="footer-meta">© 2026 MR. GAMING · <a href="https://brandmintstudios.in" target="_blank" rel="noopener">Built with Brand Mint</a></p>
     </div>
   </footer>
 
-  <!-- Phone tab bar -->
+  <!-- Phone tab bar: the five screens, the current one lit (same on every customer page) -->
   <nav class="tabbar" id="tabbar" aria-label="App">
-    <a class="tab" href="#top" data-tab="top"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
-    <a class="tab" href="#book" data-tab="book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
-    <a class="tab" href="#birthday" data-tab="birthday"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
-    <a class="tab" href="#food" data-tab="food"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
+    <a class="tab" href="/" aria-current="page"><span class="tab-ic"><svg class="i"><use href="#i-home"/></svg></span><span>Home</span></a>
+    <a class="tab" href="/book"><span class="tab-ic"><svg class="i"><use href="#i-calendar"/></svg></span><span>Book</span></a>
+    <a class="tab" href="/birthdays"><span class="tab-ic"><svg class="i"><use href="#i-cake"/></svg></span><span>Birthdays</span></a>
+    <a class="tab" href="/menu"><span class="tab-ic"><svg class="i"><use href="#i-food"/></svg></span><span>Food</span></a>
     <a class="tab" href="/pass"><span class="tab-ic"><svg class="i"><use href="#i-ticket"/></svg></span><span>My pass</span></a>
   </nav>
 
-  <script src="/assets/js/menu-data.js"></script>
   <script src="/assets/js/main.js"></script>
+  <script src="/assets/js/home.js"></script>
 </body>
 </html>
