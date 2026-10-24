@@ -7,6 +7,7 @@ rules_version = '2';
 // under that number.
 // Signed in, they may also order food from /menu for delivery or pickup and read their own food orders.
 // Settings/shop (shop location, delivery radius, tax details) and single bills by their link are public reads.
+// Signed in, they keep a profile (users/{uid}: name, email, WhatsApp opt-in) that only they and the owners read.
 // Everything else is owner-only.
 // An owner is a signed-in user whose uid has a document in /admins (created with the admin key, never from the site).
 service cloud.firestore {
@@ -94,6 +95,27 @@ service cloud.firestore {
       allow get: if true;
       allow list: if false;
       allow write: if isAdmin();
+    }
+
+    // ---- Customer profiles (users/{uid}): the welcome form after a first sign-in, and "Edit profile" (profile.js).
+    // Full name, an optional email, the verified number and the WhatsApp opt-in. Only that customer writes their own,
+    // with the number their SMS code verified; they and the owners read it; only owners list them (console > Customers).
+    function validProfile() {
+      let u = request.resource.data;
+      return u.keys().hasOnly(['name', 'email', 'phone', 'waOptIn', 'createdAt', 'updatedAt'])
+        && u.keys().hasAll(['name', 'email', 'phone', 'waOptIn', 'createdAt', 'updatedAt'])
+        && u.name is string && u.name.size() > 0 && u.name.size() <= 40
+        && (u.email == null || (u.email is string && u.email.size() <= 100 && u.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')))
+        && u.phone == request.auth.token.phone_number
+        && u.waOptIn is bool
+        && u.updatedAt == request.time;
+    }
+    match /users/{uid} {
+      allow get: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow list: if isAdmin();
+      allow create: if isVerified() && request.auth.uid == uid && validProfile() && request.resource.data.createdAt == request.time;
+      allow update: if isVerified() && request.auth.uid == uid && validProfile() && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
     }
 
     match /admins/{uid} {

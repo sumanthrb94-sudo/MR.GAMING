@@ -130,10 +130,13 @@
     acct = m;
     m.onUser((u) => {
       user = u;
-      if (u && !nameInput.value.trim()) { try { nameInput.value = localStorage.getItem('mg-name') || ''; } catch (e) {} }
-      // The top bar's "Log in" follows (main.js labels it on the next page load)
-      const top = $('[data-login] span'), first = (nameInput.value.trim() || '').split(/\s+/)[0].slice(0, 20);
-      if (top) top.textContent = u ? first || 'My pass' : 'Log in';
+      // Signed in: the name from the profile (users/{uid}), else the one typed last time. The top bar follows (account.js)
+      if (u && !nameInput.value.trim()) {
+        const c = m.cachedProfile();
+        nameInput.value = (c && c.uid === u.uid && c.name) || (() => { try { return localStorage.getItem('mg-name') || ''; } catch (e) { return ''; } })();
+        if (!c || c.uid !== u.uid) m.getProfile(u).then((p) => { if (p && p.name && !nameInput.value.trim()) nameInput.value = p.name; }).catch(() => {});
+      }
+      if (!u && user === null && sign === 'done') nameInput.value = '';   // signed out from here or the account sheet
       sign = u ? 'done' : sign === 'code' ? 'code' : 'phone';
       if (!state.booked) { paintSign(); render(); }
     });
@@ -501,7 +504,7 @@
     if (state.start === null || busy || state.booked) return;
     if (state.step < 3) return goStep(state.step + 1);
     if (fallbackUrl) { window.open(fallbackUrl, '_blank', 'noopener'); return; }
-    const name = nameInput.value.trim();
+    let name = nameInput.value.trim();
     if (!name) { nameInput.focus(); nameInput.setAttribute('aria-invalid', 'true'); statusEl.textContent = 'Add your name to book.'; return; }
     nameInput.removeAttribute('aria-invalid');
     try { localStorage.setItem('mg-name', name); } catch (e) {}
@@ -547,6 +550,12 @@
       busy = false; user = r.user; sign = 'done'; paintSign();
     }
     if (!user) return;
+    // A first sign-in: the welcome form (profile.js) before the booking goes in, then the booking carries on.
+    // Returning customers skip it (cached profile); a profile that can't be read never blocks the booking.
+    busy = true; render();
+    const prof = await acct.ensureProfile(user, { name }).catch(() => null);
+    busy = false;
+    if (prof && prof.name && (prof.created || !nameInput.value.trim())) { nameInput.value = prof.name; name = prof.name; }
 
     const phoneNo = pretty(user.phoneNumber).replace(/\D/g, '').slice(-10), s0 = +st.start, id = newId(st);
     const waBooked = waUrl([`Hi MR. GAMING! I booked online: ${id}`, '', ...billLines(st, id, name, phoneNo), '', 'Paying at the venue.'].join('\n'));

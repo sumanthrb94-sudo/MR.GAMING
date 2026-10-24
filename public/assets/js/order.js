@@ -8,7 +8,8 @@
      line from "Use my location". Beyond it: "We don't deliver there yet — ask us on WhatsApp". Until the owner has set
      the shop location: "Delivery coming soon — pickup available".
    - Orders only while we're open (CONFIG.open/close in main.js, India time); otherwise it says when we open.
-   - Placing needs the same mobile + SMS code sign-in as /book (account.js, loaded only when the cart opens). The order
+   - Placing needs the same mobile + SMS code sign-in as /book (account.js, loaded only when the cart opens); after a
+     first sign-in the welcome form (profile.js) asks for name, email and WhatsApp opt-in, then the order goes on. The order
      goes to foodOrders/{id} with the caller's uid and verified number (its lines also as parts/0..4 of six, so the
      rules can check each one); firestore.rules check the lines, the subtotal, the hours and the delivery distance. Then the sheet tracks it (re-read every 15 s while open; no listeners).
    The cart and the last order id are kept in this browser only (localStorage), for convenience. */
@@ -257,9 +258,14 @@ export function start({ MENU, live, ov }) {
   const loadAccount = () => acctLoad || (acctLoad = Promise.all([import('/assets/js/account.js'), import(BUNDLE)]).then(([m, fb]) => {
     acct = { ...m, fb };
     m.onUser((u) => {
+      // Signed in: the name from the profile (users/{uid}) when the field is empty. The top bar follows (account.js)
+      if (u && !nameIn.value.trim()) {
+        const c = m.cachedProfile();
+        if (c && c.uid === u.uid && c.name) nameIn.value = c.name;
+        else m.getProfile(u).then((p) => { if (p && p.name && !nameIn.value.trim()) nameIn.value = p.name; }).catch(() => {});
+      }
+      if (!u && user && sign === 'done') { nameIn.value = ''; phoneIn.value = ''; }   // signed out here or from the account sheet
       user = u;
-      const top = $('[data-login] span'), first = (nameIn.value.trim() || '').split(/\s+/)[0].slice(0, 20);
-      if (top) top.textContent = u ? first || 'My pass' : 'Log in';
       sign = u ? 'done' : sign === 'code' ? 'code' : 'phone';
       if (sheet.open && view === 'cart') paintCart();
       if (sheet.open && view === 'track') readTrack();
@@ -299,7 +305,7 @@ export function start({ MENU, live, ov }) {
       if (d > radius()) return err("We don't deliver there yet. Choose pickup, or ask us on WhatsApp.");
       if ($('#o-address').value.trim().length < 5) { $('#o-address').focus(); return err('Add your address for the delivery.'); }
     }
-    const name = nameIn.value.trim();
+    let name = nameIn.value.trim();
     if (!name) { nameIn.focus(); return err('Add your name.'); }
     store.set('mg-name', name);
     if (!acct) { work('Checking sign-in…'); await loadAccount(); work(''); if (!acct) return err("Sign-in isn't loading right now. Order on WhatsApp instead (link below)."); if (!user) return; }
@@ -325,6 +331,10 @@ export function start({ MENU, live, ov }) {
       user = r.user; sign = 'done';
     }
     if (!user) return;
+    // A first sign-in: the welcome form (profile.js), then the order carries on. Returning customers skip it.
+    work('Checking your profile…');
+    const prof = await import('/assets/js/profile.js').then((m) => m.ensureProfile(user, { name })).catch(() => null);
+    if (prof && prof.name && prof.created) { nameIn.value = prof.name; name = prof.name; store.set('mg-name', name); }
 
     work('Placing your order…');
     try {

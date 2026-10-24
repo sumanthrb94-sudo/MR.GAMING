@@ -102,6 +102,77 @@
 }
 @media (max-width: 339px) { .topbar .brand img { display: none; } }   /* very narrow phones: the name, Log in and Book still fit */
 
+/* Signed in: the first name with its initial (main.js paintLogin) */
+.topbar-login.is-signed { gap: var(--s2); padding-left: 6px; }
+.login-av {
+  display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); font: 800 13px/1 "Archivo", system-ui, sans-serif; font-style: normal;
+}
+/* Phones: signed in, the logo stands for the brand so the first name fits beside it (the wordmark comes back on Log in) */
+@media (max-width: 479px) {
+  .topbar-in:has(.topbar-login.is-signed) .brand-name { display: none; }
+  .topbar-login.is-signed span { max-width: 12ch; }
+}
+@media (max-width: 379px) { .topbar-login.is-signed { padding-left: 4px; } .login-av { width: 26px; height: 26px; font-size: 12px; } }
+
+/* ---------- the account sheet and the welcome / edit-profile form (profile.js): from the bottom on phones, a centred panel
+   on wider screens. Page tokens only, so it takes the MR. GAMING lime or the MR. Sandwich paper and yellow ---------- */
+.acct {
+  width: 100%; max-width: 100%; max-height: 92dvh; margin: auto 0 0; padding: 0; overflow: auto; overscroll-behavior: contain;
+  border: 1px solid var(--line-strong); border-bottom: 0; border-radius: var(--r-lg) var(--r-lg) 0 0;
+  background: var(--bg); color: var(--text); font: 400 16px/1.5 "Archivo", system-ui, sans-serif;
+}
+.acct::backdrop { background: var(--scrim, rgba(11, 11, 10, .7)); }
+@media (min-width: 700px) { .acct { width: min(440px, calc(100% - 32px)); margin: auto; border-bottom: 1px solid var(--line-strong); border-radius: var(--r-lg); } }
+@media (prefers-reduced-motion: no-preference) {
+  .acct[open] { animation: acct-in .35s var(--ease-out) both; }
+  @media (min-width: 700px) { .acct[open] { animation-name: acct-pop; } }
+}
+@keyframes acct-in { from { transform: translateY(40px); opacity: 0; } }
+@keyframes acct-pop { from { transform: translateY(12px) scale(.98); opacity: 0; } }
+.acct-body { display: grid; gap: var(--s4); padding: var(--s5) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom)); }
+@media (min-width: 700px) { .acct-body { padding: var(--s6); } }
+.acct-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
+.acct-me { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.acct-me > div { min-width: 0; }
+.acct-av { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 20px/1 "Archivo", system-ui, sans-serif; }
+.acct-eyebrow { font: 600 12px/1.2 "Archivo", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.acct-title { margin-top: var(--s1); font: 800 24px/1.15 "Archivo", system-ui, sans-serif; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.acct-lede { color: var(--muted); }
+.acct-x { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line-strong); background: none; color: var(--text); cursor: pointer; }
+.acct-x .i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.acct-field { display: grid; gap: var(--s2); }
+.acct-label { font: 600 12px/1.2 "Archivo", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.acct-label small { font-size: inherit; font-weight: 500; letter-spacing: .04em; text-transform: none; }
+.acct-input {
+  width: 100%; min-height: 52px; padding: 0 var(--s4); border-radius: var(--r-md); border: 1px solid var(--line-strong);
+  background: var(--surface); color: var(--text); font: 500 16px "Archivo", system-ui, sans-serif;
+}
+.acct-input::placeholder { color: var(--muted); }
+.acct-input:focus { outline: none; border-color: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+.acct-input[aria-invalid="true"] { border-color: var(--danger); }
+.acct-phone { display: flex; align-items: center; gap: var(--s2); min-height: 52px; padding: 0 var(--s4); border-radius: var(--r-md); background: var(--surface-2); }
+.acct-tag { font: 700 11px/1 "Archivo", system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); white-space: nowrap; }
+.acct-check { display: flex; align-items: flex-start; gap: var(--s3); cursor: pointer; }
+.acct-check input { width: 22px; height: 22px; flex: none; margin-top: 1px; accent-color: var(--accent); }
+.acct-err { color: var(--danger); font-weight: 600; font-size: 14px; }
+.acct-err:empty { display: none; }
+.acct-skip { justify-self: center; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font: 500 14px "Archivo", system-ui, sans-serif; background: none; border: 0; cursor: pointer; }
+.acct-dl { display: grid; gap: var(--s3); padding: var(--s4); border-radius: var(--r-md); background: var(--surface-2); }
+.acct-dl > div { display: grid; grid-template-columns: 72px 1fr; gap: var(--s3); align-items: center; }
+.acct-dl dt { font: 600 12px/1.2 "Archivo", system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.acct-dl dd { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.acct-dl dd.is-none { color: var(--muted); font-weight: 400; }
+.acct-links { display: grid; border-top: 1px solid var(--line); }
+.acct-links a, .acct-links button {
+  display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 var(--s1);
+  border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); text-decoration: none; text-align: left;
+  font: 600 16px "Archivo", system-ui, sans-serif; cursor: pointer;
+}
+.acct-links a::after, .acct-links button::after { content: "›"; color: var(--muted); font-size: 22px; line-height: 1; }
+.acct-out { background: var(--danger-btn, var(--danger)); color: var(--on-danger); }
+.acct-out:hover { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 22%, transparent); }
+
 /* ---------- phone tab bar: one tab per screen, the current one lit ---------- */
 .tabbar {
   position: fixed; z-index: 60; left: 0; right: 0; bottom: 0;

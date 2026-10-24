@@ -35,6 +35,7 @@
   --line: color-mix(in srgb, var(--ink) 14%, transparent); --line-strong: color-mix(in srgb, var(--ink) 32%, transparent);
   --text: var(--ink); --muted: var(--ink-2);
   --accent: var(--yellow); --accent-ink: var(--on-yellow); --accent-text: var(--ink);
+  --danger: var(--red); --on-danger: var(--paper);   /* Sign out in the account sheet (shell.css) */
   color-scheme: light;
 }
 /* dark newspaper: ink page, warm off-white type, same yellow. Follows the phone, or the theme picked on the home page */

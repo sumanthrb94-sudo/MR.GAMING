@@ -21,6 +21,8 @@
   --ps: #3B7BFF;
   --xbox: #2DBE5A;
   --danger: #E5484D;
+  --danger-btn: #C9363B;      /* Sign out: white text on it passes contrast */
+  --on-danger: #FFFFFF;
   --on-image: #F3F2EC;                  /* text on the (always dark) game artwork, both themes */
   --scrim: rgba(11, 11, 10, .9);
   --shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 24px 48px -24px rgba(0,0,0,.6);
@@ -435,8 +437,12 @@ em { font-style: normal; color: var(--accent-text); }
 .pass-form .btn { margin-top: var(--s2); }
 .pass-msg { color: var(--muted); font-size: 14px; }
 .pass-msg:empty, #recaptcha:empty { display: none; }
-.pass-who { font-size: 13px; color: var(--muted); white-space: nowrap; }
-@media (max-width: 559px) { .pass-who { display: none; } }
+.pass-me { gap: var(--s4); }
+.pass-me-top { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+.pass-me-who { min-width: 0; display: grid; gap: 2px; }
+.pass-me-name { font-weight: 800; font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
+.pass-me-phone { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); color: var(--muted); font-size: 14px; }
+.pass-me-acts { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .pass-foot { text-align: center; }
 .text-link { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .pass-card { max-width: 520px; margin-inline: auto; padding: clamp(24px, 5vw, 40px); display: grid; gap: var(--s4); transition: opacity .4s; }

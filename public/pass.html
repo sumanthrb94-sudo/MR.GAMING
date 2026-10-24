@@ -54,12 +54,11 @@
         <a href="/pass" aria-current="page">My pass</a>
       </nav>
       <div class="topbar-actions">
-        <span class="pass-who" id="who"></span>
-        <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
         <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">
           <svg class="i i-sun"><use href="#i-sun"/></svg>
           <svg class="i i-moon"><use href="#i-moon"/></svg>
         </button>
+        <a class="btn btn-sm btn-ghost press topbar-login" href="/pass" data-login><span>Log in</span></a>
         <a class="btn btn-sm btn-accent press topbar-book" href="/book">Book</a>
       </div>
     </div>
@@ -90,6 +89,18 @@
       <p class="pass-note">No pass yet? Choose the 6-hr pass fare when you <a class="text-link" href="/book">book a slot</a>, or see the <a class="text-link" href="/menu#meal-plans">MR. Sandwich meal plans</a>.</p>
     </section>
 
+    <!-- Signed in: who, Edit profile and Sign out (the same as the account sheet behind the top bar's name, profile.js) -->
+    <section class="card pass-card pass-me" id="me" hidden aria-label="Your account">
+      <div class="pass-me-top">
+        <span class="acct-av" id="me-av" aria-hidden="true"></span>
+        <div class="pass-me-who"><p class="eyebrow">Signed in</p><p class="pass-me-name" id="me-name"></p><p class="pass-me-phone"><span id="me-phone"></span> <span class="tag">Verified</span></p></div>
+      </div>
+      <div class="pass-me-acts">
+        <button class="btn btn-sm btn-ghost press" id="me-edit" type="button">Edit profile</button>
+        <button class="btn btn-sm press acct-out" id="signout" type="button">Sign out</button>
+      </div>
+    </section>
+
     <!-- Loading, or a message with no pass to show -->
     <section class="card pass-card" id="status" aria-live="polite">
       <p class="eyebrow">My pass</p>
@@ -106,7 +117,7 @@
     <!-- Signed in: the MR. Sandwich food orders and the gaming bookings made with this sign-in, newest and upcoming first
          (firestore.rules let a customer read only orders and requests carrying their own uid), each with its bill once
          we've billed it. Changes and cancellations go through us on WhatsApp. -->
-    <section class="card pass-card my-bookings" id="bookings" hidden aria-labelledby="bookings-title">
+    <section class="card pass-card my-bookings" id="mine" hidden aria-labelledby="bookings-title">
       <p class="eyebrow">My orders &amp; bookings</p>
       <h2 class="bookings-title" id="bookings-title">Your food orders and gaming slots</h2>
       <h3 class="bookings-sub" id="orders-sub" hidden>Food orders</h3>

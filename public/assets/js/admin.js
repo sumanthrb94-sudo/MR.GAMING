@@ -10,6 +10,9 @@
    Birthdays   upcoming parties (station 'party') and "Add a birthday".
    Menu        today's price, "Sold out today" and "Hide" per item, saved in /menuOverrides (read by /menu, home, booking).
    Stock       expired, expiring in 3 days and running low, worked out like stock.js; the full stock page is /stock.
+   Customers   the profiles customers save after their first sign-in (users/{uid}: name, verified number, email,
+               WhatsApp opt-in), searchable; opening one reads their bookings and food orders (one query each).
+               Bookings and food orders show the profile's name when the customer has one.
    Settings    (admin-shop.js) the shop location for delivery, the free-delivery radius, delivery on/off, GSTIN and GST.
    Access is enforced by firestore.rules (owner = signed-in user listed in /admins).
    Owners log in on /pass like everyone else; it sees their /admins entry and opens this page.
@@ -52,7 +55,8 @@ const show = (id) => ['login', 'denied', 'dash'].forEach((x) => { $('#' + x).hid
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }, del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
 
 /* ---------- sign in happens on /pass (one login for everyone); it sends owners here ---------- */
-$('#signout').addEventListener('click', () => signOut(auth));
+// Signing out here signs this browser out of the customer pages too (their top bar reads mg-auth / mg-profile)
+$('#signout').addEventListener('click', () => { ['mg-auth', 'mg-profile', 'mg-name', 'mg-phone'].forEach((k) => store.del(k)); signOut(auth); });
 
 /* ---------- reads: Firestore Lite has no live listeners, so each list re-reads on a timer ---------- */
 const watchers = new Set();
@@ -101,8 +105,8 @@ onAuthStateChanged(auth, async (user) => {
   begin();
 });
 
-/* ---------- screens: #orders, #schedule, #bills, #passes, #birthdays, #menu, #stock, #settings ---------- */
-const VIEWS = ['orders', 'schedule', 'bills', 'passes', 'birthdays', 'menu', 'stock', 'settings'];
+/* ---------- screens: #orders, #schedule, #bills, #passes, #birthdays, #menu, #stock, #customers, #settings ---------- */
+const VIEWS = ['orders', 'schedule', 'bills', 'passes', 'birthdays', 'menu', 'stock', 'customers', 'settings'];
 let shop = null;   // admin-shop.js: food orders, bills and settings
 let view = 'orders';
 const isView = (v) => () => view === v;
@@ -128,14 +132,14 @@ $('#stats').addEventListener('click', (e) => {
 
 function startConsole() {
   shop = shop || initShop({
-    db, me: () => me, watch, refreshAll, toast, esc, inr, pad, clock, dayName, timeOf, istKey, todayIst, nowIst, telHref, waDigits, firstName,
+    db, me: () => me, watch, refreshAll, toast, esc, inr, pad, clock, dayName, timeOf, istKey, todayIst, nowIst, telHref, waDigits, firstName, nameHtml,
     badge, countOf, loadScript, isView, popNew, registerPop, paintNew, NAMES, PASS, MEALS, BDAY, PLANS, KIND,
     record: { requests: (id) => orders.get(id) || dayRequests.find((x) => x.id === id), passes: (id) => (passData[id] ? { id, ...passData[id] } : null) }
   });
-  $('#gear').hidden = false;
+  $('#gear').hidden = false; $('#people').hidden = false;
   setView(location.hash.slice(1));
   shop.start();
-  startDays(); watchOrders(); watchPasses(); watchStock(); fillBookingForm(); alertsUi();
+  startDays(); watchOrders(); watchPasses(); watchStock(); watchCustomers(); fillBookingForm(); alertsUi();
   $('#bday-rules').textContent = `Party package: ${BDAY.hours} hours in the game room, ${inr(BDAY.perChild)} per child, ${inr(BDAY.perAdult)} per adult, at least ${BDAY.minGuests} guests (more than ${BDAY.roomMax} takes the whole restaurant). ${inr(BDAY.advance)} advance to confirm.`;
 }
 
@@ -178,7 +182,7 @@ function orderCard(r, { day = true } = {}) {
       <strong>${day ? esc(dayName(r.date)) + ' · ' : ''}${clock(r.start)} – ${clock(r.start + r.hours)}</strong>
       <span class="pill">${esc(statusText(r))}</span>
     </div>
-    <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(NAMES[r.station] || r.station)}</span></p>
+    <p class="admin-item-name">${nameHtml(r)} <span class="dim">· ${esc(NAMES[r.station] || r.station)}</span></p>
     <p class="admin-item-meta">${who}${r.game ? ' · ' + esc(r.game) : ''}</p>
     ${r.food ? `<p class="admin-item-meta con-food">Food: ${esc(r.food)}</p>` : ''}
     <p class="admin-item-meta">${esc(sourceOf(r))}${r.createdAt?.toMillis ? ' · booked ' + esc(dayName(istKey(r.createdAt.toMillis()))) + ', ' + esc(timeOf(r.createdAt)) : ''}${r.arrivedAt ? ' · arrived ' + esc(timeOf(r.arrivedAt)) : ''} · <span class="dim">${id}</span></p>
@@ -312,7 +316,7 @@ registerPop('g', {
   html: (r, n) => `
     <div class="con-pop-top"><span class="pill">New booking${n > 1 ? ` · ${n}` : ''}</span><button class="icon-btn press" type="button" data-pop="close" aria-label="Hide"><svg class="i"><use href="#i-x"/></svg></button></div>
     <p class="con-pop-when">${esc(dayName(r.date))} · ${clock(r.start)} – ${clock(r.start + r.hours)}</p>
-    <p class="admin-item-name">${esc(r.name)} <span class="dim">· ${esc(NAMES[r.station] || r.station)} · ${r.players} ${r.station === 'party' ? 'guests' : 'player' + (r.players > 1 ? 's' : '')}</span></p>
+    <p class="admin-item-name">${nameHtml(r)} <span class="dim">· ${esc(NAMES[r.station] || r.station)} · ${r.players} ${r.station === 'party' ? 'guests' : 'player' + (r.players > 1 ? 's' : '')}</span></p>
     <p class="admin-item-meta">${esc(sourceOf(r))}${r.food ? ' · ' + esc(r.food) : ''} · <b class="admin-left">${inr(r.total)}</b></p>
     <div class="admin-actions">
       <button class="btn btn-sm btn-accent press" data-act="seen" data-id="${esc(r.id)}">Seen</button>
@@ -359,6 +363,71 @@ function toast(text) {
   const t = $('#toast'); t.textContent = text; t.hidden = false;
   clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3500);
 }
+
+/* ---------- customers: users/{uid}, the profile a customer saves after their first sign-in ---------- */
+let profiles = new Map(), profilesLoaded = false;
+const custOpen = new Set(), custMore = new Map();
+// A booking's or order's name: the customer's profile name when they have one (the name typed on it, if different, after)
+function nameHtml(r) {
+  const p = r.uid && profiles.get(r.uid), typed = String(r.name || '').trim();
+  if (!p || !p.name) return esc(typed);
+  return esc(p.name) + (typed && typed.toLowerCase() !== p.name.toLowerCase() ? ` <span class="dim">(as ${esc(typed)})</span>` : '');
+}
+const joinedOf = (p) => (p.createdAt?.toMillis ? dayName(istKey(p.createdAt.toMillis())) + ' ' + new Date(p.createdAt.toMillis() + 330 * 60000).getUTCFullYear() : '');
+function watchCustomers() {
+  // Every profile (a small collection): the names on orders need them too. Re-read every 2 minutes on screen
+  watch(() => collection(db, 'users'), (s) => {
+    profiles = new Map(s.docs.map((d) => [d.id, d.data()])); profilesLoaded = true;
+    renderCustomers(); if (loaded) renderOrders(); if (shop) shop.rerender();
+  }, { every: 120000 });
+}
+function custCard(uid, p) {
+  const wa = waDigits(p.phone), open = custOpen.has(uid);
+  return `<li class="card admin-item con-cust" data-cust="${esc(uid)}">
+    <div class="admin-item-top"><strong>${esc(p.name || 'No name')}</strong><span class="pill${p.waOptIn ? ' is-on' : ''}">${p.waOptIn ? 'WhatsApp offers: yes' : 'WhatsApp offers: no'}</span></div>
+    <p class="admin-item-meta">${p.email ? `<a class="text-link" href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : 'No email'}${joinedOf(p) ? ` · joined ${esc(joinedOf(p))}` : ''}</p>
+    <div class="con-contact">
+      ${p.phone ? `<a class="btn btn-sm btn-ghost press" href="${esc(telHref(p.phone))}"><svg class="i"><use href="#i-phone"/></svg>${esc(p.phone)}</a>` : ''}
+      ${wa ? `<a class="btn btn-sm btn-ghost press" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener"><svg class="i"><use href="#i-wa"/></svg>WhatsApp</a>` : ''}
+      <button class="btn btn-sm btn-ghost press" type="button" data-cust-more="${esc(uid)}" aria-expanded="${open}">${open ? 'Hide' : 'Bookings &amp; orders'}</button>
+    </div>
+    ${open ? `<div class="con-cust-more">${custMore.get(uid) || '<p class="admin-item-meta">Loading…</p>'}</div>` : ''}
+  </li>`;
+}
+function renderCustomers() {
+  if (!profilesLoaded) return;
+  const q = $('#cust-search').value.trim().toLowerCase(), digits = q.replace(/\D/g, '');
+  const all = [...profiles.entries()].sort(([, a], [, b]) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  const rows = q ? all.filter(([, p]) => (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q) || (digits.length >= 3 && String(p.phone || '').replace(/\D/g, '').includes(digits))) : all;
+  $('#cust-count').textContent = q ? `${rows.length} of ${all.length}` : `${all.length} customer${all.length === 1 ? '' : 's'} · ${all.filter(([, p]) => p.waOptIn).length} want WhatsApp offers`;
+  $('#customers').innerHTML = rows.length ? rows.map(([uid, p]) => custCard(uid, p)).join('') : `<li class="admin-empty">${q ? 'No customer matches that.' : 'No customer profiles yet. They appear here once customers sign in and fill in the welcome form.'}</li>`;
+}
+$('#cust-search').addEventListener('input', renderCustomers);
+// Opening a customer: their bookings and food orders, one query each (only then)
+async function loadCustomerMore(uid) {
+  try {
+    const [req, food] = await Promise.all([
+      getDocs(query(collection(db, 'requests'), where('uid', '==', uid))),
+      getDocs(query(collection(db, 'foodOrders'), where('uid', '==', uid)))
+    ]);
+    const bookings = req.docs.map((d) => d.data()).sort((a, b) => `${b.date}${pad(b.start)}`.localeCompare(`${a.date}${pad(a.start)}`));
+    const orders = food.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    const live = (r) => !['cancelled', 'no-show'].includes(r.status);
+    const spent = bookings.filter(live).reduce((t, r) => t + (+r.total || 0), 0) + orders.filter((o) => o.status !== 'cancelled').reduce((t, o) => t + (+o.subtotal || 0), 0);
+    custMore.set(uid, `<p class="admin-item-meta"><b>${bookings.length} booking${bookings.length === 1 ? '' : 's'} · ${orders.length} food order${orders.length === 1 ? '' : 's'}</b>${spent ? ` · ${inr(spent)} not cancelled` : ''}</p>
+      <ul class="con-lines">${[
+        ...bookings.slice(0, 5).map((r) => `<li><span>${esc(dayName(r.date))} ${clock(r.start)} · ${esc(NAMES[r.station] || r.station)} · ${esc(r.status)} <span class="dim">${esc(r.id)}</span></span><b>${inr(r.total)}</b></li>`),
+        ...orders.slice(0, 5).map((o) => `<li><span>Food ${o.createdAt?.toMillis ? esc(dayName(istKey(o.createdAt.toMillis()))) + ' ' + esc(timeOf(o.createdAt)) : ''} · ${o.mode === 'delivery' ? 'delivery' : 'pickup'} · ${esc(o.status)} <span class="dim">${esc(o.id)}</span></span><b>${inr(o.subtotal)}</b></li>`)
+      ].join('')}</ul>`);
+  } catch (e) { console.warn('customer history not read', e.code || e); custMore.set(uid, '<p class="admin-item-meta">Couldn\'t load their bookings and orders. Try again.</p>'); custOpen.delete(uid); }
+  renderCustomers();
+}
+$('#customers').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cust-more]'); if (!b) return;
+  const uid = b.dataset.custMore;
+  if (custOpen.has(uid)) { custOpen.delete(uid); renderCustomers(); return; }
+  custOpen.add(uid); custMore.delete(uid); renderCustomers(); loadCustomerMore(uid);
+});
 
 /* ---------- schedule: one day ---------- */
 let day = todayIst(), dayRequests = [], holds = [];
@@ -661,7 +730,7 @@ const istKey = (ms) => new Date(ms + 330 * 60000).toISOString().slice(0, 10);
 const keyMs = (key) => Date.UTC(+key.slice(0, 4), +key.slice(5, 7) - 1, +key.slice(8, 10));
 const expKey = (b) => (b.expiry?.toMillis ? istKey(b.expiry.toMillis()) : null);   // null = no expiry
 const daysLeft = (b) => { const k = expKey(b); return k === null ? Infinity : Math.round((keyMs(k) - keyMs(istKey(Date.now()))) / DAY_MS); };
-const stockDay = (key) => { const d = new Date(keyMs(key)); return `${WEEK[d.getUTCDay()]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };
+const stockDay = (key) => { const d = new Date(keyMs(key)); return `${WEEK[d.getUTCDay()]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };   // "Thu 15 Jul 2027", like stock.js
 const expiryText = (b) => { const n = daysLeft(b), k = expKey(b); return n < 0 ? `Expired ${stockDay(k)}` : n === 0 ? 'Expires today' : n === 1 ? 'Expires tomorrow' : `Expires in ${n} days · ${stockDay(k)}`; };
 const round = (q) => Math.round(q * 1000) / 1000;
 const qtyUnit = (q, unit) => `${round(+q || 0).toLocaleString('en-IN', { maximumFractionDigits: 3 })} ${q === 1 ? unit : PLURAL[unit] || unit}`;

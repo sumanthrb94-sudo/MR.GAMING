@@ -92,15 +92,33 @@
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
-  /* ---------- top bar "Log in" (to My pass): the first name, or "My pass", once this phone is signed in. /pass and /book
-     leave a hint (mg-auth) when Firebase signs someone in or out, so no Firebase code loads here ---------- */
-  $$('[data-login]').forEach((a) => {
-    let signed = false, first = '';
-    try { signed = localStorage.getItem('mg-auth') === '1'; first = (localStorage.getItem('mg-name') || '').trim().split(/\s+/)[0].slice(0, 20); } catch (e) {}
-    if (!signed) return;
-    $('span', a).textContent = first || 'My pass';
-    a.setAttribute('aria-label', first ? `My pass, signed in as ${first}` : 'My pass');
-  });
+  /* ---------- top bar "Log in": once this phone is signed in, the customer's first name with their initial; tapping it
+     opens the account sheet (profile.js). account.js keeps a small cached profile (mg-profile) and a signed-in hint
+     (mg-auth) in this browser, so no Firebase code loads for the label; the sheet loads it and checks the real
+     sign-in (if it has gone, the button goes back to "Log in") ---------- */
+  const readJson = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  function paintLogin() {
+    let signed = false, name = '';
+    try { signed = localStorage.getItem('mg-auth') === '1'; const p = readJson('mg-profile'); name = (p && p.name) || localStorage.getItem('mg-name') || ''; } catch (e) {}
+    const first = String(name).trim().split(/\s+/)[0].slice(0, 20);
+    $$('[data-login]').forEach((a) => {
+      let av = $('.login-av', a);
+      if (signed && first) { if (!av) { av = document.createElement('i'); av.className = 'login-av'; av.setAttribute('aria-hidden', 'true'); a.prepend(av); } av.textContent = first.charAt(0).toUpperCase(); }
+      else if (av) av.remove();
+      $('span', a).textContent = signed ? first || 'Account' : 'Log in';
+      a.classList.toggle('is-signed', signed);
+      if (signed) { a.setAttribute('aria-label', first ? `Your account, signed in as ${first}` : 'Your account'); a.setAttribute('aria-haspopup', 'dialog'); }
+      else { a.removeAttribute('aria-label'); a.removeAttribute('aria-haspopup'); }
+    });
+  }
+  paintLogin();
+  $$('[data-login]').forEach((a) => a.addEventListener('click', (e) => {
+    if (!a.classList.contains('is-signed')) return;   // signed out: the plain link to the sign-in on /pass
+    e.preventDefault();
+    import('/assets/js/profile.js').then((m) => m.openAccountSheet()).catch(() => { location.href = '/pass'; });
+  }));
+  // Another tab signed in or out
+  window.addEventListener('storage', (e) => { if (!e.key || /^mg-(auth|profile|name)$/.test(e.key)) paintLogin(); });
 
   /* ---------- open now? (Hyderabad time, from CONFIG.open/close) ---------- */
   const statuses = $$('#open-status, [data-open-status]');
@@ -129,5 +147,5 @@
     paintMeta(); paintLabels();
   }));
 
-  window.MG = { CONFIG, $, $$, inr, waUrl, wireWa, setRoll, reveal, reduced, clock12, nowIst };
+  window.MG = { CONFIG, $, $$, inr, waUrl, wireWa, setRoll, reveal, reduced, clock12, nowIst, paintLogin };
 })();

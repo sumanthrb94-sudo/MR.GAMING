@@ -3,9 +3,11 @@
    The sign-in itself is account.js (shared with food orders on /menu): same Firebase app and auth persistence as
    /pass (pass.js), so one sign-in serves every page.
    firestore.rules accepts a website request only with uid == the caller and phone == the verified number, and each
-   hold only next to a request of the caller's. */
+   hold only next to a request of the caller's.
+   After a first sign-in, ensureProfile (profile.js) shows the welcome form before the booking is saved. */
 import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from '/assets/vendor/firebase-account.0e285128.js';
-import { db, ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser } from '/assets/js/account.js';
+import { db, ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser, cachedProfile, getProfile } from '/assets/js/account.js';
+import { ensureProfile } from '/assets/js/profile.js';
 
 // Taken "console_hour" keys on a day (holds are public; no names)
 async function takenFor(date) {
@@ -49,4 +51,4 @@ async function reserve(b) {
   }
 }
 
-export { ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser, reserve };
+export { ready, onUser, sendCode, confirmCode, forgetCode, signOut, currentUser, cachedProfile, getProfile, ensureProfile, reserve };

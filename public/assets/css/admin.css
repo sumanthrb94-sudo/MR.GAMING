@@ -279,3 +279,6 @@
 .con-set .i { width: 18px; height: 18px; }
 /* narrow phones: the logo stays, the name gives way to Live, Settings and Sign out */
 @media (max-width: 419px) { .console .brand-name { display: none; } }
+/* Customers: profiles (users/{uid}), their bookings and food orders on demand */
+.con-cust .pill.is-on { background: color-mix(in srgb, var(--xbox) 25%, transparent); color: var(--text); }
+.con-cust-more { display: grid; gap: var(--s2); padding-top: var(--s2); border-top: 1px solid var(--line); }

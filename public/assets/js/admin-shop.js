@@ -95,7 +95,7 @@ export function initShop(c) {
     const id = esc(o.id), next = nextOf(o), wa = waDigits(o.phone), live = !FINAL.includes(o.status);
     return `<li class="card admin-item con-food-item status-${esc(o.status)}${isNew(o) ? ' is-new' : ''}" data-food-order="${id}">
       <div class="admin-item-top"><strong>${esc(timeOf(o.createdAt))}${o.createdAt && istKey(ms(o.createdAt)) !== istKey(Date.now()) ? ' yesterday' : ''} · ${esc(modeText(o))}</strong><span class="pill">${esc(isNew(o) ? 'new' : STATUS[o.status] || o.status)}</span></div>
-      <p class="admin-item-name">${esc(o.name)} <span class="dim">· ${count(o)} item${count(o) === 1 ? '' : 's'} · ${id}</span></p>
+      <p class="admin-item-name">${c.nameHtml(o)} <span class="dim">· ${count(o)} item${count(o) === 1 ? '' : 's'} · ${id}</span></p>
       <ul class="con-lines">${(o.items || []).map((l) => `<li><span>${esc(l.qty)} × ${esc(l.name)}${l.col ? ` <span class="dim">(${esc(l.col)})</span>` : ''} ${priceFlag(l)}</span><b>${inr(l.price * l.qty)}</b></li>`).join('')}</ul>
       ${o.note ? `<p class="admin-item-meta con-food">Note: ${esc(o.note)}</p>` : ''}
       ${o.mode === 'delivery' ? `<p class="admin-item-meta con-food">To: ${esc(o.address)}${o.landmark ? ` · near ${esc(o.landmark)}` : ''}</p>` : ''}
@@ -139,7 +139,7 @@ export function initShop(c) {
     html: (o, n) => `
       <div class="con-pop-top"><span class="pill">New food order${n > 1 ? ` · ${n}` : ''}</span><button class="icon-btn press" type="button" data-pop="close" aria-label="Hide"><svg class="i"><use href="#i-x"/></svg></button></div>
       <p class="con-pop-when">${esc(modeText(o))} · ${inr(o.subtotal)}</p>
-      <p class="admin-item-name">${esc(o.name)} <span class="dim">· ${count(o)} item${count(o) === 1 ? '' : 's'}</span></p>
+      <p class="admin-item-name">${c.nameHtml(o)} <span class="dim">· ${count(o)} item${count(o) === 1 ? '' : 's'}</span></p>
       <p class="admin-item-meta">${esc(itemsText(o))}</p>
       <div class="admin-actions">
         <button class="btn btn-sm btn-accent press" data-food="next" data-id="${esc(o.id)}">Accept</button>
@@ -462,6 +462,7 @@ export function initShop(c) {
   return {
     start() { readSettings(); watchFood(); watchBills(); showOrders(tab); },
     freshFood: () => [...food.values()].filter(isNew).length,
+    rerender: () => renderFood(),   // the customers' profile names arrived
     showOrders,
     viewChanged(v) {
       if (v === 'settings') readSettings().then(paintSettings);

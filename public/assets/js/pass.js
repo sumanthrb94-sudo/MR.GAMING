@@ -9,20 +9,18 @@
    made with this sign-in (whose uid is the caller's; firestore.rules allow no others), newest orders and upcoming slots
    first, each with a link to its bill once billed (/bill?id=...) and food orders with "Track" (/menu?order=...).
    Changes and cancellations go through us on WhatsApp.
+   The sign-in is account.js (shared with /book, /menu and the top bar's account sheet). After a customer's first sign-in
+   (no users/{uid} profile yet) the welcome form asks for their name, email and WhatsApp opt-in (profile.js); the
+   passes load behind it. The "Signed in" card has Edit profile and Sign out.
    Hours, meals and bookings are re-read every 30 seconds and when the page comes back into view. */
-import {
-  initializeApp, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence,
-  RecaptchaVerifier, signInWithPhoneNumber, signOut, onAuthStateChanged,
-  getFirestore, collection, query, where, getDocs, getDoc, doc
-} from '/assets/vendor/firebase-account.0e285128.js';
-import { firebaseConfig } from '/assets/js/firebase-config.js';
+import { collection, query, where, getDocs, getDoc, doc } from '/assets/vendor/firebase-account.0e285128.js';
+import { db, onUser, sendCode, confirmCode, forgetCode, signOut, cachedProfile } from '/assets/js/account.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const WA = '917337230311';
 const LABEL = { solo: 'Solo pass', duo: 'Duo pass' };
 const MEMBER = { solo: 169, duo: 279 };   // member rate per hour once the hours are used, until the pass's 30 days end (CONFIG.memberRates in main.js)
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const app = initializeApp(firebaseConfig), db = getFirestore(app);
 const linkId = new URLSearchParams(location.search).get('id');
 const firstName = (n) => String(n || '').trim().split(/\s+/)[0].slice(0, 20);
 const prettyPhone = (p) => { const d = String(p || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : p; };
@@ -150,8 +148,10 @@ function renderBookings(rows) {
   $('#slots-sub').hidden = !list.length || !foodRows.length;
   $('#bookings-note').innerHTML = !list.length && !foodRows.length ? 'No orders or bookings with this number yet. <a class="text-link" href="/book">Book a slot</a> or <a class="text-link" href="/menu">order food</a>.'
     : `Pay at the venue, on delivery or at pickup. To change or cancel, <a class="text-link" href="${esc(waLink('Hi MR. GAMING! About my booking or order'))}" target="_blank" rel="noopener">message us on WhatsApp</a>.`;
-  $('#bookings').hidden = false;
+  $('#mine').hidden = false;
+  if (location.hash === '#mine' && !scrolledToMine) { scrolledToMine = true; $('#mine').scrollIntoView({ block: 'start' }); }
 }
+let scrolledToMine = false;
 // Food orders: the ones still on their way first, then the latest few
 let foodRows = [];
 function renderOrders(rows) {
@@ -180,14 +180,13 @@ async function loadBookings() {
     if (food) renderOrders(food.docs.map((d) => ({ id: d.id, ...d.data() })));
     renderBookings(snap.docs.map((d) => ({ id: d.id, ...d.data() }))); bookingsLoaded = true;
   } catch (e) {
-    if (!bookingsLoaded) { $('#booking-list').innerHTML = ''; $('#bookings-note').textContent = "Couldn't load your orders and bookings right now. Try again in a minute."; $('#bookings').hidden = false; }
+    if (!bookingsLoaded) { $('#booking-list').innerHTML = ''; $('#bookings-note').textContent = "Couldn't load your orders and bookings right now. Try again in a minute."; $('#mine').hidden = false; }
   }
 }
 
-/* ---------- way 2: sign in with mobile number ---------- */
-let user = null, verifier = null, confirmation = null;
+/* ---------- way 2: sign in with mobile number (account.js) ---------- */
+let user = null;
 const msg = (t) => { $('#login-msg').textContent = t; };
-const resetVerifier = () => { if (verifier) { verifier.clear(); verifier = null; } };
 
 const myPasses = () => getDocs(query(collection(db, 'passes'), where('phoneE164', '==', user.phoneNumber)));
 async function loadMine(started) {
@@ -204,48 +203,57 @@ async function loadMine(started) {
   } catch (e) { if (!loaded) showStatus("Couldn't load your passes right now. Try again in a minute.", true); }
 }
 
+// The "Signed in" card: the profile's name (or just the number until the welcome form is saved)
+function paintMe() {
+  const p = cachedProfile(), name = p && user && p.uid === user.uid ? p.name : '';
+  $('#me').hidden = !user;
+  if (!user) return;
+  $('#me-av').textContent = firstName(name).charAt(0).toUpperCase(); $('#me-av').hidden = !name;
+  $('#me-name').textContent = name || 'Your account';
+  $('#me-phone').textContent = prettyPhone(user.phoneNumber);
+}
+const profile = () => import('/assets/js/profile.js');
+
 function startAccount() {
-  // Same persistence list as getAuth(), so existing sign-ins carry over
-  const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence] }); auth.languageCode = 'en';
   $('#phone-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const digits = $('#phone').value.replace(/\D/g, '').replace(/^0/, '').replace(/^91(?=\d{10}$)/, '');
     if (digits.length !== 10) { msg('Enter your 10-digit mobile number.'); return; }
     $('#send-code').disabled = true; msg('Sending code…');
-    try {
-      resetVerifier();
-      verifier = new RecaptchaVerifier(auth, 'recaptcha', { size: 'invisible' });
-      confirmation = await signInWithPhoneNumber(auth, '+91' + digits, verifier);
+    const r = await sendCode('+91' + digits, $('#recaptcha'));
+    $('#send-code').disabled = false;
+    if (r.ok) {
       $('#phone-form').hidden = true; $('#code-form').hidden = false; $('#code').focus();
       msg(`Code sent to +91 ${digits.slice(0, 5)} ${digits.slice(5)}.`);
-    } catch (err) {
-      resetVerifier();
-      msg(err.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.'
-        : err.code === 'auth/invalid-phone-number' ? 'That number looks wrong. Check it and try again.'
+    } else {
+      msg(r.code === 'auth/too-many-requests' ? 'Too many tries. Wait a while and try again.'
+        : r.code === 'auth/invalid-phone-number' ? 'That number looks wrong. Check it and try again.'
         : "We couldn't send a code right now. Ask us on WhatsApp for your hours or meals, or try again later.");
-      if (err.code) console.warn('Sign-in code not sent:', err.code);
-    } finally { $('#send-code').disabled = false; }
+    }
   });
   $('#code-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!confirmation) return;
     msg('Checking…');
-    try { await confirmation.confirm($('#code').value.trim()); msg(''); } catch (err) { msg('That code is wrong or expired.'); }
+    const r = await confirmCode($('#code').value.trim());
+    msg(r.ok ? '' : r.code === 'no-code' ? 'Send the code again.' : 'That code is wrong or expired.');
   });
   $('#change-number').addEventListener('click', () => {
-    confirmation = null; resetVerifier();
+    forgetCode();
     $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; msg('');
   });
-  $('#signout').addEventListener('click', () => signOut(auth));
-  onAuthStateChanged(auth, (u) => {
-    user = u && u.phoneNumber ? u : null; loaded = false; bookingsLoaded = false;
-    // The top bar's "Log in" reads this on every page (main.js), without loading Firebase
-    try { if (user) localStorage.setItem('mg-auth', '1'); else localStorage.removeItem('mg-auth'); } catch (e) {}
-    $('#who').textContent = user ? prettyPhone(user.phoneNumber) : '';
-    $('#foot').textContent = user ? `Signed in as ${prettyPhone(user.phoneNumber)}. Updates on its own when we add or use hours or meals.` : '';
-    $('#signout').hidden = !user;
+  $('#signout').addEventListener('click', async () => {
+    $('#signout').disabled = true;
+    try { await signOut(); } catch (e) { msg("Couldn't sign out right now. Try again."); }
+    $('#signout').disabled = false;
+  });
+  $('#me-edit').addEventListener('click', () => profile().then((m) => m.editProfile()).then(paintMe));
+  onUser((u) => {
+    if (u && user && u.uid === user.uid) return;   // the same sign-in again (no change)
+    user = u; loaded = false; bookingsLoaded = false;
+    paintMe();
     $('#login').hidden = !!user;
-    if (!user) { $('#bookings').hidden = true; $('#booking-list').innerHTML = ''; $('#order-list').innerHTML = ''; foodRows = []; $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; return; }
+    if (!user) { $('#mine').hidden = true; $('#booking-list').innerHTML = ''; $('#order-list').innerHTML = ''; foodRows = []; $('#status').hidden = true; $('#cards').innerHTML = ''; $('#foot').hidden = true; $('#code-form').hidden = true; $('#phone-form').hidden = false; $('#code').value = ''; msg(''); return; }
+    $('#foot').textContent = `Updates on its own when we add or use hours or meals.`;
     showStatus('Loading your hours and meals…', false);
     // One login for everyone: a number on the owner list (/admins) opens the owner dashboard instead,
     // and one on the stock list (/stockStaff, and not an owner) opens the stock page.
@@ -253,9 +261,14 @@ function startAccount() {
     const passes = myPasses(); passes.catch(() => {});
     const has = (col) => getDoc(doc(db, col, u.uid)).then((a) => a.exists()).catch(() => false);
     Promise.all([has('admins'), has('stockStaff')]).then(([owner, stock]) => {
+      if (user !== u) return;
       if (owner) { try { localStorage.setItem('mg-owner', u.uid); } catch (e) {} showStatus('Opening the owner dashboard…', false); location.replace('/admin'); }
       else if (stock) { try { localStorage.setItem('mg-stock', u.uid); } catch (e) {} showStatus('Opening the stock page…', false); location.replace('/stock'); }
-      else { loadMine(passes); loadBookings(); }
+      else {
+        loadMine(passes); loadBookings();
+        // A customer's first sign-in: the welcome form (name, email, WhatsApp), over the passes loading behind it
+        profile().then((m) => m.ensureProfile(u)).then(paintMe).catch(() => {});
+      }
     });
   });
 }

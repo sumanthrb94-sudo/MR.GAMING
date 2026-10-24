@@ -34,6 +34,7 @@
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
     <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17l-3-2-2 2-2-2-2 2-2-2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M9 7a4 4 0 1 0 8 0 4 4 0 1 0-8 0"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><path d="M10.3 4.3a1.7 1.7 0 0 1 3.4 0 1.7 1.7 0 0 0 2.6 1.1 1.7 1.7 0 0 1 2.3 2.3 1.7 1.7 0 0 0 1.1 2.6 1.7 1.7 0 0 1 0 3.4 1.7 1.7 0 0 0-1.1 2.6 1.7 1.7 0 0 1-2.3 2.3 1.7 1.7 0 0 0-2.6 1.1 1.7 1.7 0 0 1-3.4 0 1.7 1.7 0 0 0-2.6-1.1 1.7 1.7 0 0 1-2.3-2.3 1.7 1.7 0 0 0-1.1-2.6 1.7 1.7 0 0 1 0-3.4 1.7 1.7 0 0 0 1.1-2.6 1.7 1.7 0 0 1 2.3-2.3 1.7 1.7 0 0 0 2.6-1.1z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 11a3 3 0 1 0 6 0 3 3 0 0 0-6 0"/><path d="M17.66 16.66l-4.25 4.24a2 2 0 0 1-2.82 0l-4.25-4.24a8 8 0 1 1 11.32 0z"/></symbol>
   </svg>
@@ -44,6 +45,7 @@
       <div class="topbar-actions">
         <span class="con-live" id="live" role="status" hidden></span>
         <span class="admin-who" id="who"></span>
+        <a class="icon-btn press con-gear" href="#customers" id="people" aria-label="Customers" hidden><svg class="i"><use href="#i-users"/></svg></a>
         <a class="icon-btn press con-gear" href="#settings" id="gear" aria-label="Settings" hidden><svg class="i"><use href="#i-gear"/></svg></a>
         <button class="btn btn-sm btn-ghost press" id="signout" type="button" hidden>Sign out</button>
       </div>
@@ -75,6 +77,7 @@
         <a class="con-tab" href="#birthdays" data-view="birthdays"><span class="con-ic"><svg class="i"><use href="#i-cake"/></svg><b class="con-badge is-quiet" id="b-bdays" hidden></b></span><span>Birthdays</span></a>
         <a class="con-tab" href="#menu" data-view="menu"><span class="con-ic"><svg class="i"><use href="#i-food"/></svg><b class="con-badge is-quiet" id="b-menu" hidden></b></span><span>Menu</span></a>
         <a class="con-tab" href="#stock" data-view="stock"><span class="con-ic"><svg class="i"><use href="#i-box"/></svg><b class="con-badge" id="b-stock" hidden></b></span><span>Stock</span></a>
+        <a class="con-tab con-tab-rail" href="#customers" data-view="customers"><span class="con-ic"><svg class="i"><use href="#i-users"/></svg></span><span>Customers</span></a>
         <a class="con-tab con-tab-rail" href="#settings" data-view="settings"><span class="con-ic"><svg class="i"><use href="#i-gear"/></svg></span><span>Settings</span></a>
       </nav>
 
@@ -136,6 +139,17 @@
             <button class="btn btn-accent press" id="ex-go" type="submit">Download CSV</button>
             <p class="admin-msg" id="ex-msg" role="status"></p>
           </form>
+        </section>
+
+        <!-- Customers: the profiles customers saved after their first sign-in (users/{uid}) -->
+        <section class="con-view" id="v-customers" data-view="customers" aria-labelledby="h-customers" hidden>
+          <div class="con-head"><div><p class="eyebrow">MR. Gaming · MR. Sandwich</p><h1 class="con-title" id="h-customers">Customers</h1></div></div>
+          <p class="admin-note">Everyone who signed in with their mobile number and filled in the welcome form: name, verified number, email and whether they want offers and booking updates on WhatsApp. Open one to see their bookings and food orders.</p>
+          <div class="con-filter">
+            <input class="field" id="cust-search" type="search" placeholder="Find by name, mobile or email" aria-label="Find a customer" autocomplete="off">
+            <span class="admin-count" id="cust-count"></span>
+          </div>
+          <ul class="admin-list" id="customers"><li class="admin-empty">Loading…</li></ul>
         </section>
 
         <!-- Settings (settings/shop): shop location, delivery radius, delivery on/off, tax details -->
