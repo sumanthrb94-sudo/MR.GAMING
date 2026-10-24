@@ -33,7 +33,7 @@ const expiryTs = (key) => Timestamp.fromMillis(keyMs(key) - 330 * 60000);       
 const expKey = (b) => (b.expiry?.toMillis ? istKey(b.expiry.toMillis()) : null);   // null = no expiry
 const daysLeft = (b) => { const k = expKey(b); return k === null ? Infinity : Math.round((keyMs(k) - keyMs(todayKey())) / DAY_MS); };
 const isExpired = (b) => daysLeft(b) < 0;
-const dayLabel = (key) => { const d = new Date(keyMs(key)); return `${WEEK[d.getUTCDay()]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}`; };   // "Thu 23 Oct"
+const dayLabel = (key) => { const d = new Date(keyMs(key)); return `${WEEK[d.getUTCDay()]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };   // "Thu 23 Oct 2026"
 const whenLabel = (ts) => {
   if (!ts?.toMillis) return 'just now';
   const ms = ts.toMillis(), d = new Date(ms + 330 * 60000), h = d.getUTCHours();
